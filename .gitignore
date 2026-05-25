@@ -1,0 +1,7 @@
+*.h5
+*.pyc
+__pycache__/
+logs/
+results/
+err/
+out/
