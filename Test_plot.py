@@ -21,30 +21,6 @@ plt.rcParams.update({
 
 
 
-def display_top(snapshot, key_type='lineno', limit=3):
-    snapshot = snapshot.filter_traces((
-        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
-        tracemalloc.Filter(False, "<unknown>"),
-    ))
-    top_stats = snapshot.statistics(key_type)
-
-    print("Top %s lines" % limit)
-    for index, stat in enumerate(top_stats[:limit], 1):
-        frame = stat.traceback[0]
-        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
-        print("#%s: %s:%s: %.1f KiB"
-              % (index, filename, frame.lineno, stat.size / 1024))
-        line = linecache.getline(frame.filename, frame.lineno).strip()
-        if line:
-            print('    %s' % line)
-
-    other = top_stats[limit:]
-    if other:
-        size = sum(stat.size for stat in other)
-        print("%s other: %.1f KiB" % (len(other), size / 1024))
-    total = sum(stat.size for stat in top_stats)
-    print("Total allocated size: %.1f KiB" % (total / 1024))
-
 def plot_slab_variances(A, path2save: str,name_figure: str,name: str, DBa:None) -> None:
     import numpy as np
     import matplotlib.pyplot as plt
@@ -136,8 +112,6 @@ def plot_slab_variances(A, path2save: str,name_figure: str,name: str, DBa:None) 
         b = ax0.scatter(x300,z300, color='firebrick', s=1,marker='x')
         d = ax0.scatter(x600,z600, color='firebrick', s=1,marker='d')
 
-        
-        
         
     divider = make_axes_locatable(ax0)
     cax = divider.append_axes("bottom", size="5%", pad=0.05)
@@ -282,7 +256,7 @@ class Surfaces():
         return self
     
 #------------------------------------------------------------------------------
-def plot_heart_flux(path2save:str, surface_data:Surfaces,name_figure:str,name:str):
+def plot_heat_flux(path2save:str, surface_data:Surfaces,name_figure:str,name:str):
 
     name_plot = f'Figure_{name_figure}_{name}.png'
     
@@ -1741,6 +1715,20 @@ def plot_slab_versus_thermalpar_normalised(path2save: str, DB: pd.DataFrame, sca
 
 # ----------------------- Main code ------------------ #
 if __name__ == "__main__":
+   """ Explorative script to plot the results of the sensitivity test. 
+   This script is meant to merge the partial data files, extract the relevant data,
+   and experimenting. 
+   TO DO: 
+   Create a more structured script for the production of the final figure: 
+   -> Template function that accept function as argument (wrapped)
+   -> A better data flow -> a few functions have hard coded data, which is not ideal.
+   -> Better comments. 
+   The script is not commented yet, as the results of the following study has not been published yet. I don't 
+   want to make the life easier to those that want to use my code before my paper is out.
+   
+   """
+
+
     plate = 'Sensitivity'
 
     print("Merging partial data files...")
@@ -1802,7 +1790,7 @@ if __name__ == "__main__":
     #---------------------------------------------------------
     # Create figure for the histograms and scatter plots.
     # Plot heat fluxes
-    plot_heart_flux(path2save=path2save, surface_data=surface_data, name_figure='Figure6',name='PT')
+    plot_heat_flux(path2save=path2save, surface_data=surface_data, name_figure='Figure6',name='PT')
 
 
 
