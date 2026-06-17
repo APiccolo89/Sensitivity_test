@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "name": "Sensitivity Test - case 0",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/Sensitivity_tests.py",
+      "args": [
+        "--case_index", "0",
+        "--k", "3.1",
+        "--id_db", "3",
+        "--id_batch", "3",
+        "--option_shear_heating", "False"
+      ],
+      "console": "integratedTerminal"
+    }
+  ]
+}

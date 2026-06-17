@@ -15,6 +15,7 @@ import pandas as pd
 from post_process_module.post_process_data import save_test_data, timing_function
 import shutil
 
+
 # Global flag to decide wether or not to remove the results -> debug reason. 
 DEBUG = False
 def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace:
@@ -25,6 +26,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
     k_arr = args.k
     id_batch = args.id_batch
     id_db = args.id_db
+    shear_heating = 'WetQuartzite_disl'
     # If debug flag is set, use default values for the parameters
     if args.debug_defaults:
         case_index = 0
@@ -32,12 +34,17 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         id_batch = 0
         id_db = 0
         option_thermal = 0
+        options_shear_heating = 'False'
     else:
-        required = ["case_index", "k", "id_batch", "id_db"]
+        required = ["case_index", "k", "id_batch", "id_db", "option_shear_heating"]
         missing = [name for name in required if getattr(args, name) is None]
         if missing:
             raise ValueError(f"missing required arguments: {', '.join('--' + m for m in missing)}")
 
+        if args.option_shear_heating == 'True': 
+            args.option_shear_heating = bool(1)
+        else: 
+            args.option_shear_heating = bool(0)
         # case index is the index of the case in the csv file, k is the thermal conductivity, id_batch and id_db are used for saving the results in the database.
         case_index = args.case_index
         k_arr = args.k
@@ -48,6 +55,9 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         else:
             option_thermal = 0
         
+        
+
+        
         id_batch = args.id_batch
         
         id_db = args.id_db
@@ -56,16 +66,18 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
     
     row = cases.iloc[case_index]
 
+
     args_test = SimpleNamespace(
         case_index = case_index,
         id_batch = id_batch,
         id_db = id_db,
-        shear_heating=str('WetQuartzite_disl'),
+        shear_heating=shear_heating,
         vc=float(row["vc"]),
         age=float(row["age"]),
         Tp=float(row["Tp"]),
         k = k_arr,
         option_thermal=option_thermal,
+        option_shear_heating = args.option_shear_heating,
         steady_state=int(1),
     )
     return args_test
@@ -93,7 +105,10 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.v_s = np.array([args.vc,0],dtype=np.float64)
     inp.time_max = 20.0
     inp.decoupling_ctrl = 1
-    inp.model_shear = 'SelfConsistent'
+    if args.option_shear_heating:
+        inp.model_shear = 'SelfConsistent'
+    else: 
+        inp.model_shear = 'NoShear'
     # Geometrical input
     inp.cr = 40.0e3   # Overriding crust 
     inp.lc = 0.2   # relative amount of lower crust
@@ -159,8 +174,11 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
 
         print_ph('Thermal non linearities not active')
 
-
+    if args.shear_heating != 'False':
+        print_ph('Shear heating active')
+    
     inp.dislocation_creep_wz = args.shear_heating
+        
     name_diffusion = 'Van_Keken_diff'
     name_dislocation = 'Van_Keken_disl'                 
 
@@ -240,6 +258,7 @@ def main():
     parser.add_argument("--k", type=float)
     parser.add_argument("--id_batch", type=int)
     parser.add_argument("--id_db", type=int)
+    parser.add_argument("--option_shear_heating",type=str, default='False')
 
     args_cli = parser.parse_args()
     
@@ -254,6 +273,7 @@ def main():
     print(f"  - Thermal non linearities: {'Active' if arguments.option_thermal == 1 else 'Not active'}")
     print(f"  - Thermal conductivity: {arguments.k} W/m/K")
     print(f"  - Thermal parameters : {arguments.vc * arguments.age * (1/1e5 * 1e6) * np.sin(np.radians(45))} km")
+    print(f"  - Shear heating: {'Active' if arguments.option_shear_heating else 'Not active'}")
     pathtest = perform_test(args=arguments,plate='Sensitivity')
     
     print(f"Test completed for case {arguments.case_index}. Results saved in {os.path.join(pathtest[0], pathtest[1])}")

@@ -153,24 +153,54 @@ def extract_isotherm(X, Y, T, level):
 @timing_function
 def extract_relevant_data(path:str)->list:
     T = Test(path_2_test=path)
-    Temp = T._interpolate_data('SteadyState.Temp')
-    x_300, y_300 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Temp, 300.0)
-    x_400, y_400 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Temp, 400.0)
-    x_500, y_500 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Temp, 500.0)
-    x_600, y_600 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Temp, 600.0)
-    x_700, y_700 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Temp, 700.0)
-    x_800, y_800 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Temp, 800.0)
-    x_900, y_900 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Temp, 900.0)
+    Slab_surface = extract_slab_surface(T=T)
+    x_150, y_150 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 150.0)
+    x_200, y_200 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 200.0)
+    x_250, y_250 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 250.0)
+    x_300, y_300 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 300.0)
+    x_350, y_350 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 350.0)
+    x_400, y_400 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 400.0)
+    x_450, y_450 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 450.0)
+    x_500, y_500 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 500.0)
+    x_550, y_550 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 550.0)
+    x_600, y_600 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 600.0)
+    x_700, y_700 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 700.0)
+    x_800, y_800 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 800.0)
+    x_900, y_900 = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 900.0)
 
 
 
     X_S, X_O, T_S, T_O, P_S, P_O = extract_slab_oceanic_surface_Temperature(T)
     Slab_surface = extract_slab_surface(T=T)
     x_top, heat_flux = extract_heat_flux(T)
-    data_extracted = namedtuple('data_extracted',['x_300','y_300','x_400','y_400','x_500','y_500','x_600','y_600','x_700','y_700','x_800','y_800','x_900','y_900','X_S','X_O','T_S','T_O','P_S','P_O','x_top','heat_flux','Slab_surface','Xi','Yi'])
-    list_data = data_extracted(x_300, y_300,
+    data_extracted = namedtuple('data_extracted',['x_150','y_150',
+                                                  'x_200','y_200',
+                                                  'x_250','y_250',
+                                                  'x_300','y_300',
+                                                  'x_350','y_350',
+                                                  'x_400','y_400',
+                                                  'x_450','y_450',
+                                                  'x_500','y_500',
+                                                  'x_550','y_550',
+                                                  'x_600','y_600',
+                                                  'x_700','y_700',
+                                                  'x_800','y_800',
+                                                  'x_900','y_900'
+                                                  ,'X_S','X_O',
+                                                  'T_S','T_O',
+                                                  'P_S','P_O',
+                                                  'x_top','heat_flux'
+                                                  ,'Slab_surface'
+                                                  ,'Xi','Yi'])
+    list_data = data_extracted(x_150, y_150,
+                               x_200, y_200,
+                               x_250, y_250,
+                               x_300, y_300,
+                               x_350, y_350,
                                x_400, y_400,
+                               x_450, y_450,
                                x_500, y_500,
+                               x_550, y_550,
                                x_600, y_600,
                                x_700, y_700,
                                x_800, y_800,
@@ -241,6 +271,8 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
 
                 if "Xi" in f and "Yi" in f:
                     save_grid = False
+                
+
             if name_test in f:
                 print(f"Overwriting existing case group: {name_test}")
                 del f[name_test]
@@ -256,14 +288,24 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
                 else:
                     grp.create_dataset(key, data=value)
 
-
-            
+            save_dataset(grp, f'x_150', list_data.x_150)
+            save_dataset(grp, f'y_150', list_data.y_150)         
+            save_dataset(grp, f'x_200', list_data.x_200)
+            save_dataset(grp, f'y_200', list_data.y_200)
+            save_dataset(grp, f'x_250', list_data.x_250)
+            save_dataset(grp, f'y_250', list_data.y_250) 
             save_dataset(grp, f'x_300', list_data.x_300)
             save_dataset(grp, f'y_300', list_data.y_300)
+            save_dataset(grp, f'x_350', list_data.x_350)
+            save_dataset(grp, f'y_350', list_data.y_350)
             save_dataset(grp, f'x_400', list_data.x_400)
             save_dataset(grp, f'y_400', list_data.y_400)
+            save_dataset(grp, f'x_450', list_data.x_450)
+            save_dataset(grp, f'y_450', list_data.y_450)
             save_dataset(grp, f'y_500', list_data.y_500)
             save_dataset(grp, f'x_500', list_data.x_500)
+            save_dataset(grp, f'x_550', list_data.x_550)
+            save_dataset(grp, f'y_550', list_data.y_550)
             save_dataset(grp, f'x_600', list_data.x_600)
             save_dataset(grp, f'y_600', list_data.y_600)
             save_dataset(grp, f'x_700', list_data.x_700)
@@ -272,6 +314,7 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
             save_dataset(grp, f'y_800', list_data.y_800)
             save_dataset(grp, f'x_900', list_data.x_900)
             save_dataset(grp, f'y_900', list_data.y_900)
+
             save_dataset(grp, f'X_S',   data=list_data.X_S)
             save_dataset(grp, f'T_S',   data=list_data.T_S)
             save_dataset(grp, f'X_O',   data=list_data.X_O)

@@ -4,7 +4,7 @@ import scipy.stats
 import numpy as np
 import matplotlib.pyplot as plt
 
-vc_arr = [3.0, 10.0]
+vc_arr = [3.0, 15.0]
 Tp_arr = [1350.0, 1425.0]
 k_arr = [0]
 age_arr = [30, 100.0]
