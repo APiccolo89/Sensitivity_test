@@ -12,6 +12,7 @@ from numba import njit
 import time as timing
 import tracemalloc
 import cmcrameri
+from dataclasses import dataclass
 
 @dataclass(slots=True)
 class SlabPlot2D:
@@ -147,11 +148,8 @@ def merge_data_base(list_of_partial_files, plate,partial,recreate=True,sh=''):
                     if key in f_out:
                         del f_out[key]
                     f_partial.copy(key, f_out)
-                    if partial == 3:
-                        if key == 'Xi' or key == 'Yi' or key == 'global_M2' or key == 'global_mean' or key == 'global_var' or key == 'n_lc_tst' or key == 'mean_lc_tst' or key == 'var_lc_tst':
-                            print('no')
-                        else:
-                            f_out[f'{key}/option_thermal'][()] = 2
+                
+                    
             i = i + 1
             if i % 10 == 0:
                 print(f"Processed {i} files")   
@@ -218,12 +216,10 @@ def interpolate_value_0D(ar:np.ndarray,x:np.ndarray,depth:float,ind:None|int)->f
     if ind is None: 
        ind=np.nonzero(depth >= x)[0][0]
 
-    else: 
-        continue
     
     dv = ar[ind+1]-ar[ind]
     dx = x[ind+1]-x[ind]
-    v = ar[ind]+(dv/dx)*(depth-ar[ind])
+    val = ar[ind]+(dv/dx)*(depth-ar[ind])
     
     return val,ind 
 
@@ -249,7 +245,7 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
         Data Frame with all the information, named tuple with the coordinate system of the surface, name tuple with the 2D averages of the slab
     """
     rows = []
-
+    ind = None
     
     with h5py.File(hdf5_file, 'r') as f:
         time_A = timing.time()
@@ -305,15 +301,13 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 z_ocean = np.array(f[f'{i}/X_O'][1,:])
                 
                 # Interpolate value into a reduced array
-                temp_s = interpolate_surfaces_slab(np.array(f[f'{i}/T_S'][:]),z_slab)[0]
-                pres_s = interpolate_surfaces_slab(np.array(f[f'{i}/P_S'][:]),z_slab)[0]
-                temp_o = interpolate_surfaces_slab(np.array(f[f'{i}/T_O'][:]),z_ocean)[0]
-                pres_o = interpolate_surfaces_slab(np.array(f[f'{i}/P_O'][:]),z_ocean)[0]
-                heat_f = interpolate_surfaces_slab(np.array(f[f'{i}/heat_flux'][:]),x_heat)[0]
-                T_s_dc,ind = interpolate_value_0D(ar=temp_s,x=z_slab,depth=-80.0,ind=ind)
-                P_s_dc,ind = interpolate_value_0D(ar=pres_s,x=z_slab,depth=-80.0,ind=ind)
-                
-                
+                temp_s,z_slab_n = interpolate_surfaces_slab(np.array(f[f'{i}/T_S'][:]),z_slab)
+                pres_s,_ = interpolate_surfaces_slab(np.array(f[f'{i}/P_S'][:]),z_slab)
+                temp_o,z_ocean_n = interpolate_surfaces_slab(np.array(f[f'{i}/T_O'][:]),z_ocean)
+                pres_o = interpolate_surfaces_slab(np.array(f[f'{i}/P_O'][:]),z_ocean)
+                heat_f,x_heat_n = interpolate_surfaces_slab(np.array(f[f'{i}/heat_flux'][:]),x_heat)
+                temp_s_dc = np.interp(-80.0,z_slab_n,temp_s)
+                pres_s_dc = np.interp(-80.0,z_slab_n,pres_s)
                 rows.append({
                     "case_id": case_id,
                     "k": k,
@@ -346,24 +340,24 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                     'T_O':temp_o,
                     'P_O':pres_o,
                     'Q': heat_f,
-                    'T_s_dc': temp_s,
-                    'P_s_dc': pres_s,
+                    'T_s_dc': temp_s_dc,
+                    'P_s_dc': pres_s_dc,
                 })        
         slab_plot2D =  SlabPlot2D(temp_mean_2d=f['global_mean'][:],
                                   temp_var_2d=f['global_var'][:],
                                   temp_std_2d=np.sqrt(f['global_var'][:]),
                                   xi=xi,
                                   yi=yi)
-        coordinate_surfaces = CoordinateSurface(x_heat_flux=x_heat,z_slab=z_slab,z_ocean=z_ocean)
+        coordinate_surfaces = CoordinateSurface(x_heat_flux=x_heat_n,z_slab=z_slab_n,z_ocean=z_ocean_n)
 
     rows_df = pd.DataFrame(rows)
     data_table = pd.concat([data_table, rows_df], ignore_index=True)            
     
-    return data_table, coordinate_surfaces, slab_2D
+    return data_table, coordinate_surfaces, slab_plot2D
 #----------------------- ------------------------------------------------------------------------------------------ ------------------ #
 def wrapper_merging_h5(aux_path:str, partial:int, plate:str,sh='' ,recreate=False):
 
-    if recreate and os.path.isfile(f'Data_Base_{plate}_def_{partial}_{sh}.h5'):
+    if recreate or os.path.isfile(f'Data_Base_{plate}_def_{partial}_{sh}.h5')==False:
         aux_path = os.path.join(aux_path, f'Sensitivity_h5_files_{partial}')
         list_partial_files = []
         for i in range(100):

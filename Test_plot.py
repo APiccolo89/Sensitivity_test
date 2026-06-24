@@ -13,6 +13,7 @@ import tracemalloc
 import cmcrameri
 from post_process_module.process_data_visualisation import wrapper_merging_h5
 from post_process_module.figure_plot import *
+from pathlib import Path
 
 # ----------------------- Main code ------------------ #
 def main():
@@ -34,11 +35,16 @@ def main():
 
     print("Merging partial data files...")
 
-    aux_path = f'/mnt/scratch/wlnw570/Japan_ensemble/Sensitivity_test'
+    aux_path =Path(__file__).resolve().parent
 
-    data_table_0, surface_data_0, slab_2D_0 = wrapper_merging_h5(aux_path, partial=0, plate=plate, recreate=False,sh='yes')
-    data_table_1, surface_data_1, slab_2D_1 = wrapper_merging_h5(aux_path, partial=1, plate=plate, recreate=False,sh='yes')
-    data_table_2, surface_data_2, slab_2D_2 = wrapper_merging_h5(aux_path, partial=2, plate=plate, recreate=False,sh='yes')
+    sh = 'yes'
+    if sh == 'no':
+        partials = [3,4,5]
+    else:
+        partials = [0,1,2]
+    data_table_0, surface_data_0, slab_2D_0 = wrapper_merging_h5(aux_path, partial=partials[0], plate=plate, recreate=False,sh=sh)
+    data_table_1, _, slab_2D_1 = wrapper_merging_h5(aux_path, partial=partials[1], plate=plate, recreate=False,sh=sh)
+    data_table_2, _, slab_2D_2 = wrapper_merging_h5(aux_path, partial=partials[2], plate=plate, recreate=False,sh=sh)
 
     slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
     
@@ -46,41 +52,72 @@ def main():
 
 
     
-    path2save = f'/mnt/scratch/wlnw570/Japan_ensemble/Sensitivity_test/Result_{plate}_SH'    
-    if not os.path.isdir(path2save):
-        os.mkdir(path2save)
-        print(f'Created the folder {path2save}')
+    path2save = aux_path / f'Result_shear_heating_{sh}'
+    path2save.mkdir(exist_ok=True)
 
     print(f'Saving picture into {path2save}...')
-    
-
-    #plot_slab_variances(slab_2D_alt,path2save,name_figure='Figure0',name='T')
-    
-    DB = data_base_PT_whitney()
-
-    plot_slab_surface(path2save=path2save, surface_data=surface_data, surface='slab', DB=DB,name_figure='Figure0',name='T')
-
-
-    plot_slab_versus_thermalpar(path2save=path2save, DB=data_table,scale=True,name='T',name_figure='figure1')
-
-    
-    
-    # Figure 1 suite: the mean of top surface of the slab and ocean 
-    #plot_slab_surface(path2save=path2save, surface_data=surface_data, surface='ocean', DB=DB,name_figure='Figure1_b',name='PT')
-
-
-    plot_distance_isotherm_seismic(path2save=path2save, DB=data_table,scale=True,name='PT',name_figure='figure3')
-    #plot_distance_isotherm_seismic(path2save=path2save, DB=data_table_alt,scale=True,name='T',name_figure='figure3')
-
         
+    pres_temp_hp_lt_db = data_base_PT_whitney()
+
+    plot_slab_versus_thermalpar(path2save=path2save,pdb=data_table,figure_number=1)
+
+    figure_slab_surface(path2save=path2save,
+                        pdb=data_table,
+                        crd=surface_data_0,
+                        petro_db=pres_temp_hp_lt_db,
+                        figure_number=0)
 
 
-    # produce the data table
-    #---------------------------------------------------------
-    # Create figure for the histograms and scatter plots.
-    # Plot heat fluxes
-    plot_heat_flux(path2save=path2save, surface_data=surface_data, name_figure='Figure6',name='PT')
 
+    plot_distance_isotherm_seismic(path2save=path2save, pdb=data_table,figure_number=2)
+
+def main2():
+    """ Explorative script to plot the results of the sensitivity test. 
+    This script is meant to merge the partial data files, extract the relevant data,
+    and experimenting. 
+    TO DO: 
+    Create a more structured script for the production of the final figure: 
+    -> Template function that accept function as argument (wrapped)
+    -> A better data flow -> a few functions have hard coded data, which is not ideal.
+    -> Better comments. 
+    The script is not commented yet, as the results of the following study has not been published yet. I don't 
+    want to make the life easier to those that want to use my code before my paper is out.
+    
+    """
+
+
+    plate = 'Sensitivity'
+
+    print("Merging partial data files...")
+
+    aux_path =Path(__file__).resolve().parent
+
+    sh = 'no'
+    if sh == 'no':
+        partials = [0,3,6]
+    else:
+        partials = [0,1,2]
+    data_table_0, surface_data_0, slab_2D_0 = wrapper_merging_h5(aux_path, partial=partials[0], plate=plate, recreate=False,sh=sh)
+    data_table_1, _, slab_2D_1 = wrapper_merging_h5(aux_path, partial=partials[1], plate=plate, recreate=False,sh=sh)
+    data_table_2, _, slab_2D_2 = wrapper_merging_h5(aux_path, partial=partials[2], plate=plate, recreate=False,sh=sh)
+
+    slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
+    
+    data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
+
+
+    
+    path2save = aux_path / f'Result_shear_heating_{sh}'
+    path2save.mkdir(exist_ok=True)
+
+    print(f'Saving picture into {path2save}...')
+        
+    pres_temp_hp_lt_db = data_base_PT_whitney()
+
+    test_picture_check(path2save=path2save, pdba=data_table_0,pdbb=data_table_1,pdbc=data_table_2,crd=surface_data_0,petro_db=pres_temp_hp_lt_db, figure_number=100)
+
+
+main2()
 
 main()
 

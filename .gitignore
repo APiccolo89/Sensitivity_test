@@ -27,3 +27,6 @@ Sensitivity_h5_files_3/
 Sensitivity_h5_files_4/
 Sensitivity_h5_files_5/
 case_log.*
+old/*
+err6/
+out6/

@@ -26,7 +26,15 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
     k_arr = args.k
     id_batch = args.id_batch
     id_db = args.id_db
-    shear_heating = 'WetQuartzite_disl'
+    
+    shear_heating = 'Constant'
+    
+    eps_ref = None
+    tau_ref = None 
+    n_ref = None
+    decay_viscosity = None
+    tau_min = None
+
     # If debug flag is set, use default values for the parameters
     if args.debug_defaults:
         case_index = 0
@@ -36,7 +44,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         option_thermal = 0
         options_shear_heating = 'False'
     else:
-        required = ["case_index", "k", "id_batch", "id_db", "option_shear_heating"]
+        required = ["case_index", "k", "id_batch", "id_db", "option_shear_heating","option_viscosity_weak_zone","viscosity_weak_zone"]
         missing = [name for name in required if getattr(args, name) is None]
         if missing:
             raise ValueError(f"missing required arguments: {', '.join('--' + m for m in missing)}")
@@ -45,6 +53,22 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
             args.option_shear_heating = bool(1)
         else: 
             args.option_shear_heating = bool(0)
+        if args.option_viscosity_weak_zone == 'Dislocation_Law':
+            args.shear_heating = 'WetQuartzite_disl'
+        elif args.option_viscosity_weak_zone == 'Constant':
+            args.shear_heating = 'Constant'
+        elif args.option_viscosity_weak_zone == 'Parametrised': 
+            args.shear_heating = 'Parametrised'
+            eps_ref = 1e-11 
+            tau_ref = 100e6 
+            n_ref = 4.0 
+            decay_viscosity = 5.0
+            tau_min = 1e6
+        else: 
+            raise ValueError('Wrong viscosity law for the weak zone')
+        
+        
+            
         # case index is the index of the case in the csv file, k is the thermal conductivity, id_batch and id_db are used for saving the results in the database.
         case_index = args.case_index
         k_arr = args.k
@@ -71,13 +95,21 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         case_index = case_index,
         id_batch = id_batch,
         id_db = id_db,
-        shear_heating=shear_heating,
+        shear_heating=args.shear_heating,
         vc=float(row["vc"]),
         age=float(row["age"]),
         Tp=float(row["Tp"]),
         k = k_arr,
+        phi=5.0,
         option_thermal=option_thermal,
         option_shear_heating = args.option_shear_heating,
+        option_viscosity_weak_zone = args.option_viscosity_weak_zone,
+        viscosity_weak_zone=args.viscosity_weak_zone, 
+        tau_ref = tau_ref, 
+        eps_ref = eps_ref, 
+        n_ref = n_ref, 
+        tau_min = tau_min,
+        decay_viscosity = decay_viscosity,
         steady_state=int(1),
     )
     return args_test
@@ -178,6 +210,12 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
         print_ph('Shear heating active')
     
     inp.dislocation_creep_wz = args.shear_heating
+    inp.eta_wz = args.viscosity_weak_zone
+    inp.n_ref = args.n_ref 
+    inp.tau_ref = args.tau_ref 
+    inp.eps_ref = args.eps_ref 
+    inp.tau_min = args.tau_min 
+    inp.decay_vis_wz = args.decay_viscosity 
         
     name_diffusion = 'Van_Keken_diff'
     name_dislocation = 'Van_Keken_disl'                 
@@ -259,6 +297,8 @@ def main():
     parser.add_argument("--id_batch", type=int)
     parser.add_argument("--id_db", type=int)
     parser.add_argument("--option_shear_heating",type=str, default='False')
+    parser.add_argument("--option_viscosity_weak_zone",type=str,default='Dislocation_Law')
+    parser.add_argument("--viscosity_weak_zone",type=float,default=1e19)
 
     args_cli = parser.parse_args()
     
@@ -274,6 +314,15 @@ def main():
     print(f"  - Thermal conductivity: {arguments.k} W/m/K")
     print(f"  - Thermal parameters : {arguments.vc * arguments.age * (1/1e5 * 1e6) * np.sin(np.radians(45))} km")
     print(f"  - Shear heating: {'Active' if arguments.option_shear_heating else 'Not active'}")
+    print(f"  - Shear heating viscosity law: {arguments.option_viscosity_weak_zone}")
+    print(f"  - Constant viscosity value : {arguments.viscosity_weak_zone if arguments.option_viscosity_weak_zone == 'Constant' else 'NA//' }")
+    if arguments.option_viscosity_weak_zone == 'Parametrised': 
+        print(f"  - tau ref = {arguments.tau_ref/1e6:.2f} [MPa]")
+        print(f"  - tau min = {arguments.tau_min/1e6:.2f} [MPa]")
+        print(f"  - eps ref = {arguments.eps_ref/1e6:.2e} [1/s]")
+        print(f"  - n ref = {arguments.n_ref}")
+        print(f"  - decay = {arguments.decay_viscosity}")
+        
     pathtest = perform_test(args=arguments,plate='Sensitivity')
     
     print(f"Test completed for case {arguments.case_index}. Results saved in {os.path.join(pathtest[0], pathtest[1])}")

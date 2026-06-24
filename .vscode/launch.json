@@ -1,6 +1,12 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
+
+
+
+
+  
 
     {
       "name": "Sensitivity Test - case 0",
@@ -12,7 +18,9 @@
         "--k", "3.1",
         "--id_db", "3",
         "--id_batch", "3",
-        "--option_shear_heating", "False"
+        "--option_shear_heating", "True",
+        "--option_viscosity_weak_zone", "Parametrised",
+        "--viscosity_weak_zone", "1e19",
       ],
       "console": "integratedTerminal"
     }
