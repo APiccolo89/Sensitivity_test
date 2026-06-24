@@ -141,7 +141,7 @@ def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argpar
         tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,args.shear_heating)   
         
     tau_fr = pres_slab*1e9*np.sin(np.radians(args.phi))
-    tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)
+    tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)/1e6
     tau_val = [np.nanmean(tau_eff),np.nanstd(tau_eff),np.nanmedian(tau_eff),np.nanmin(tau_eff),np.nanmax(tau_eff)]
     
     
