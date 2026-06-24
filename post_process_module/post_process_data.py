@@ -28,6 +28,18 @@ def save_dataset(group, name, data, compress=True):
         group.create_dataset(name, data=data)
 
 
+def save_namedtuple_fields(group, data, aliases=None, skip_fields=None):
+    """Save all values from a namedtuple using its field names."""
+    aliases = aliases or {}
+    skip_fields = skip_fields or set()
+
+    for field_name in getattr(data, "_fields", ()):
+        if field_name in skip_fields:
+            continue
+        dataset_name = aliases.get(field_name, field_name)
+        save_dataset(group, dataset_name, getattr(data, field_name))
+
+
 def write_case_log(log_path, case_index, id_batch, success, status, path_h5):
     record = {
         "time": datetime.now().isoformat(timespec="seconds"),
@@ -130,10 +142,10 @@ def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argpar
         
     tau_fr = pres_slab*1e9*np.sin(np.radians(args.phi))
     tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)
+    tau_val = [np.nanmean(tau_eff),np.nanstd(tau_eff),np.nanmedian(tau_eff),np.nanmin(tau_eff),np.nanmax(tau_eff)]
     
     
-    
-    return tau_eff
+    return tau_eff,tau_val
 
 
 #--------------------------------------------------
@@ -223,7 +235,7 @@ def extract_relevant_data(path:str,args:argparse.Namespace)->list:
 
 
     X_S, X_O, T_S, T_O, P_S, P_O = extract_slab_oceanic_surface_Temperature(T)
-    tau_slab, tau_mean = extract_shearzone_data(T_S,P_S,args)
+    tau_slab, tau_val = extract_shearzone_data(T_S,P_S,args)
     Slab_surface = extract_slab_surface(T=T)
     x_top, heat_flux = extract_heat_flux(T)
     data_extracted = namedtuple('data_extracted',['x_150','y_150',
@@ -244,7 +256,7 @@ def extract_relevant_data(path:str,args:argparse.Namespace)->list:
                                                   'P_S','P_O',
                                                   'x_top','heat_flux'
                                                   ,'Slab_surface'
-                                                  ,'Xi','Yi'])
+                                                  ,'Xi','Yi','tau_slab','tau_shear_mean','tau_shear_std','tau_shear_median','tau_shear_min','tau_shear_max'])
     list_data = data_extracted(x_150, y_150,
                                x_200, y_200,
                                x_250, y_250,
@@ -263,7 +275,7 @@ def extract_relevant_data(path:str,args:argparse.Namespace)->list:
                                P_S, P_O,
                                x_top, heat_flux,
                                Slab_surface,
-                               T.MeshData.Xi, T.MeshData.Yi) 
+                               T.MeshData.Xi, T.MeshData.Yi,tau_slab,tau_val[0],tau_val[1],tau_val[2],tau_val[3],tau_val[4]) 
     
     del T 
     gc.collect()   
@@ -341,41 +353,12 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
                 else:
                     grp.create_dataset(key, data=value)
 
-            save_dataset(grp, f'x_150', list_data.x_150)
-            save_dataset(grp, f'y_150', list_data.y_150)         
-            save_dataset(grp, f'x_200', list_data.x_200)
-            save_dataset(grp, f'y_200', list_data.y_200)
-            save_dataset(grp, f'x_250', list_data.x_250)
-            save_dataset(grp, f'y_250', list_data.y_250) 
-            save_dataset(grp, f'x_300', list_data.x_300)
-            save_dataset(grp, f'y_300', list_data.y_300)
-            save_dataset(grp, f'x_350', list_data.x_350)
-            save_dataset(grp, f'y_350', list_data.y_350)
-            save_dataset(grp, f'x_400', list_data.x_400)
-            save_dataset(grp, f'y_400', list_data.y_400)
-            save_dataset(grp, f'x_450', list_data.x_450)
-            save_dataset(grp, f'y_450', list_data.y_450)
-            save_dataset(grp, f'y_500', list_data.y_500)
-            save_dataset(grp, f'x_500', list_data.x_500)
-            save_dataset(grp, f'x_550', list_data.x_550)
-            save_dataset(grp, f'y_550', list_data.y_550)
-            save_dataset(grp, f'x_600', list_data.x_600)
-            save_dataset(grp, f'y_600', list_data.y_600)
-            save_dataset(grp, f'x_700', list_data.x_700)
-            save_dataset(grp, f'y_700', list_data.y_700)
-            save_dataset(grp, f'x_800', list_data.x_800)
-            save_dataset(grp, f'y_800', list_data.y_800)
-            save_dataset(grp, f'x_900', list_data.x_900)
-            save_dataset(grp, f'y_900', list_data.y_900)
-
-            save_dataset(grp, f'X_S',   data=list_data.X_S)
-            save_dataset(grp, f'T_S',   data=list_data.T_S)
-            save_dataset(grp, f'X_O',   data=list_data.X_O)
-            save_dataset(grp, f'T_O',   data=list_data.T_O)
-            save_dataset(grp, f'P_S',   data=list_data.P_S)
-            save_dataset(grp, f'P_O',   data=list_data.P_O)
-            save_dataset(grp, f'x_top', data=list_data.x_top)
-            save_dataset(grp, f'heat_flux', data=list_data.heat_flux)
+            save_namedtuple_fields(
+                grp,
+                list_data,
+                aliases={"tau_slab": "tau_shear"},
+                skip_fields={"Xi", "Yi"},
+            )
             
             # update the local mean and variance for the Welford algorithm 
 
