@@ -153,7 +153,7 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.Tmax = args.Tp  # mantle potential temperature
     inp.steady_state = args.steady_state
     inp.tol = 1e-5
-    inp.it_max = 30 
+    inp.it_max = 10 
 
     if args.steady_state == 0: 
         inp.tol = 1e-2 

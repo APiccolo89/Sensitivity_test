@@ -87,11 +87,11 @@ def extract_slab_surface(T:Test)->np.ndarray:
 #-------------------------------------------------
 def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndarray,tag:str)->np.ndarray:
 
-    from .stonedfenicsx.material_property.phase_db import check_rheological_law 
+    from stonedfenicsx.material_property.phase_db import _check_rheological 
     
     temp_slab = temp_slab + 273.15 
     pres_slab = pres_slab * 1e9
-    A = check_rheological_law(tag)
+    A = _check_rheological(tag)
     water = (np.exp(- (A.EH20+A.VH20*pres_slab)/(A.R * temp_slab))/np.exp(- (A.EH20+A.VH20*1e5)/(A.R * 298.15)))
     
     cds = A.B * np.exp(-(A.E + pres_slab * A.V)/(A.R * temp_slab)) * water **(A.r)
@@ -103,7 +103,7 @@ def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndar
     return tau_viscous
 
 #-------------------------------------------------
-def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:args.NamedSpace)->np.ndarray:
+def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argparse.Namespace)->np.ndarray:
     """Function that extract the stress at slab interface.
 
     Args:
@@ -115,20 +115,20 @@ def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:args.N
         np.ndarray: tau_eff
     """
     
-    vel = args.vs*1e-2/365.25/60/60/24
+    vel = args.vc*1e-2/365.25/60/60/24
     eps = 0.5 * (vel *  1 /500) 
     if args.shear_heating == 'Parametrised':
         bdisl = args.eps_ref/args.tau_ref**(args.n_ref)
-        tau_min = 1e6
-        tau_v = bdisl**(-1/args.n_ref)*eps*(1/args.n_ref)
+        tau_min = args.tau_min
+        tau_v = bdisl**(-1/args.n_ref)*eps**(1/args.n_ref)
         pres_crit = tau_v/np.sin(np.radians(args.phi))/1e9
-        p_norm = (PS-pres_crit)/pres_crit
+        p_norm = (pres_slab-pres_crit)/pres_crit
         tau_viscous = tau_min + (tau_v-tau_min)*np.exp(-5.0*p_norm)
         
     else: 
-        tau_viscous = compute_tau_rheological_law(eps,TS,PS,args.phi,args.shear_heating)   
+        tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,args.shear_heating)   
         
-    tau_fr = PS*1e9*np.sin(np.radians(args.phi))
+    tau_fr = pres_slab*1e9*np.sin(np.radians(args.phi))
     tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)
     
     
@@ -223,7 +223,7 @@ def extract_relevant_data(path:str,args:argparse.Namespace)->list:
 
 
     X_S, X_O, T_S, T_O, P_S, P_O = extract_slab_oceanic_surface_Temperature(T)
-    tau_slab, tau_mean = extract_shear_zone(args,T)
+    tau_slab, tau_mean = extract_shearzone_data(T_S,P_S,args)
     Slab_surface = extract_slab_surface(T=T)
     x_top, heat_flux = extract_heat_flux(T)
     data_extracted = namedtuple('data_extracted',['x_150','y_150',
@@ -294,7 +294,7 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test)
     if test_successful:
-        list_data = extract_relevant_data(path=f'{real_test}')
+        list_data = extract_relevant_data(path=f'{real_test}',args=arguments)
         
         print(f"  Print Meta_data for case {arguments.case_index} and {name_test}")
         for key, value in vars(arguments).items():
