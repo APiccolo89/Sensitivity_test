@@ -1,14 +1,8 @@
-from stonedfenicsx.numerical_control import NumericalControls,IOControls 
-from stonedfenicsx.create_mesh.aux_create_mesh import Geom_input 
-from stonedfenicsx.scal import Scal
-from stonedfenicsx.utils import Input,print_ph
-from stonedfenicsx.create_mesh.create_mesh import create_mesh
-from stonedfenicsx.Stoned_fenicx import fill_geometrical_input
+
 import sys
 import numpy as np
 from numpy.typing import NDArray
 import os
-from stonedfenicsx.package_import import *
 import argparse
 from types import SimpleNamespace
 import pandas as pd
@@ -29,10 +23,6 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
     
     shear_heating = 'Constant'
     
-    eps_ref = None
-    tau_ref = None 
-    n_ref = None
-    decay_viscosity = None
     tau_min = None
 
     # If debug flag is set, use default values for the parameters
@@ -57,13 +47,6 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
             args.shear_heating = 'WetQuartzite_disl'
         elif args.option_viscosity_weak_zone == 'Constant':
             args.shear_heating = 'Constant'
-        elif args.option_viscosity_weak_zone == 'Parametrised': 
-            args.shear_heating = 'Parametrised'
-            eps_ref = 1e-11 
-            tau_ref = 100e6 
-            n_ref = 4.0 
-            decay_viscosity = 5.0
-            tau_min = 1e6
         else: 
             raise ValueError('Wrong viscosity law for the weak zone')
         
@@ -104,12 +87,8 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         option_thermal=option_thermal,
         option_shear_heating = args.option_shear_heating,
         option_viscosity_weak_zone = args.option_viscosity_weak_zone,
-        viscosity_weak_zone=args.viscosity_weak_zone, 
-        tau_ref = tau_ref, 
-        eps_ref = eps_ref, 
-        n_ref = n_ref, 
+        viscosity_weak_zone=args.viscosity_weak_zone,  
         tau_min = tau_min,
-        decay_viscosity = decay_viscosity,
         steady_state=int(1),
     )
     return args_test
@@ -117,49 +96,49 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
 #-------------------------------------------------------------------------------
 @timing_function
 def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[str,str]:
-    from stonedfenicsx.utils import parse_input, time_the_time, timing
-    from stonedfenicsx.Stoned_fenicx import StonedFenicsx
+    from stonedfenicsx.config.input_parser import parse_input
+    from stonedfenicsx.config.numerical_control import dict_shear_modes
+    from stonedfenicsx.stoned_fenicsx import stoned_fenicsx
 
     path_test = os.path.dirname(os.path.realpath(__file__))
     
     path_input = f"{path_test}/input_tests.yaml"
 
     inp,Ph = parse_input(path_input)
-    # option for the benchmark
+    # controls
+    inp.ctrl.decoupling_ctrl = 1
+    inp.ctrl.steady_state = 1
+    inp.ctrl.tol = 1e-5
+    inp.ctrl.it_max = 30 
+    if args.option_shear_heating:
+        inp.ctrl.model_shear = dict_shear_modes['SelfConsistent']
+    else: 
+        inp.ctrl.model_shear = dict_shear_modes['NoShear']
+
+
 
     # Create input data - Input is a class populated by default dataset
     # A flag that generate the geometry of the benchmark
-    van_keken = 0
     # The input path for saving the results
-    inp.path_test = f'{path_test}/{plate}'
-    inp.c_age_plate = args.age
+    inp.ctrl_io.path_test = f'{path_test}/{plate}'
+    inp.ctrl_tbc.slab_age = args.age
+    inp.ctrl_tbc.temp_max = args.Tp
     # Velocity of slab 
-    inp.v_s = np.array([args.vc,0],dtype=np.float64)
-    inp.time_max = 20.0
-    inp.decoupling_ctrl = 1
-    if args.option_shear_heating:
-        inp.model_shear = 'SelfConsistent'
-    else: 
-        inp.model_shear = 'NoShear'
-    # Geometrical input
-    inp.cr = 40.0e3   # Overriding crust 
-    inp.lc = 0.2   # relative amount of lower crust
-    inp.ocr = 6.0e3  # Crustal thickness
-    inp.lit_mt = 80e3  # Lithospheric mantle depth 
-    inp.lab_d = inp.lit_mt  # depth of the lab 
-    inp.decoupling = 80e3  # decoupling depth
-    inp.ns_depth = 50e3
-    inp.transition = 10e3
-    inp.Tmax = args.Tp  # mantle potential temperature
-    inp.steady_state = args.steady_state
-    inp.tol = 1e-5
-    inp.it_max = 10 
+    inp.ctrl_ky.v_s = np.array([args.vc,0],dtype=np.float64)
 
-    if args.steady_state == 0: 
-        inp.tol = 1e-2 
-        inp.tol_innerPic = 1e-2 
-        inp.it_max = 5
-    inp.slab_type = 'Costum'
+    # Geometrical input
+    inp.g_input.cr = 40.0   # Overriding crust 
+    inp.g_input.lc = 0.2   # relative amount of lower crust
+    inp.g_input.ocr = 6.0  # Crustal thickness
+    inp.g_input.decoupling = 80  # Lithospheric mantle depth 
+    inp.g_input.lab_d = inp.g_input.decoupling  # depth of the lab 
+    inp.g_input.decoupling = 80 # decoupling depth
+    inp.g_input.ns_depth = 50
+    inp.g_input.transition = 10
+    inp.g_input.slab_type = 'Costum'
+
+
+
     #inp.sub_path = f'{path_test}/{plate}_slab.pz'
     
     capacity_nameCC = 'Constant'#'Oceanic_Crust'
@@ -170,23 +149,22 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.phi = 3.0
     
     if args.option_thermal == 1: 
-        alpha_nameC = 'Crust'#'Constant'#
+        alpha_nameC = 'Oceanic_crust'#'Constant'#
         alpha_nameM = 'Mantle'#'Mantle'
         density_nameC = 'PT'#'PT'
         density_nameM = 'PT'#'PT'
-        capacity_nameM = 'Bermann_Aranovich_Fo_Fa_0_1'#'Bermann_Aranovich_Fo_Fa_0_1'
+        capacity_nameM = 'Mantle_Bernard_Ar_199x_FO_FA'#'Bermann_Aranovich_Fo_Fa_0_1'
         capacity_nameC = 'Oceanic_Crust'#'Oceanic_Crust'
-        conductivity_nameM = 'Mantle'#'Mantle'
-        conductivity_nameC = 'Oceanic_Crust'#'Oceanic_Crust'
+        conductivity_nameM = 'Mantle_Richards_2018'#'Mantle'
+        conductivity_nameC = 'Crust_Richards_2018'#'Oceanic_Crust'
         rho0_M = 3300.0
         rho0_C = 2800.0
         H_r_LC = 0.27e-6
         H_r_UC = 1.0e-6
         H_r_M  = 0*0.06e-6
-        radio_flag = 1 
+        radiative_conductivity = 1 
         density_nameCC = 'PT'#'PT'
 
-        print_ph('Thermal Non linearities active')
     elif args.option_thermal ==0 : 
         alpha_nameC = 'Constant'#
         alpha_nameM = 'Constant'
@@ -201,24 +179,16 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
         H_r_LC = 1*0.27e-6
         H_r_UC = 1*1.0e-6 
         H_r_M  = 0*0.06e-6
-        radio_flag = 0 
+        radiative_conductivity = 0 
         density_nameCC = 'Constant'#'PT'
 
-        print_ph('Thermal non linearities not active')
 
     if args.shear_heating != 'False':
-        print_ph('Shear heating active')
-    
-    inp.dislocation_creep_wz = args.shear_heating
-    inp.eta_wz = args.viscosity_weak_zone
-    inp.n_ref = args.n_ref 
-    inp.tau_ref = args.tau_ref 
-    inp.eps_ref = args.eps_ref 
-    inp.tau_min = args.tau_min 
-    inp.decay_vis_wz = args.decay_viscosity 
+        Ph.shear_heating_disl_law = args.shear_heating
+    Ph.shear_heating_disl_phi = args.phi
         
-    name_diffusion = 'Van_Keken_diff'
-    name_dislocation = 'Van_Keken_disl'                 
+    name_diffusion = 'VK_Diffusion_creep'
+    name_dislocation = 'VK_Dislocation_creep'                 
 
     # Modify the phase with the new data: 
     Ph.subducting_plate_mantle.rho0 = rho0_M
@@ -226,8 +196,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     Ph.subducting_plate_mantle.name_conductivity = conductivity_nameM
     Ph.subducting_plate_mantle.name_alpha = alpha_nameM
     Ph.subducting_plate_mantle.name_density = density_nameM
-    Ph.subducting_plate_mantle.radio_flag = radio_flag
-    Ph.subducting_plate_mantle.Hr = H_r_M
+    Ph.subducting_plate_mantle.radiative_conductivity = radiative_conductivity
+    Ph.subducting_plate_mantle.radiogenic_heat = H_r_M
     Ph.subducting_plate_mantle.k = args.k 
 
 
@@ -236,8 +206,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     Ph.oceanic_crust.name_conductivity = conductivity_nameC
     Ph.oceanic_crust.name_alpha = alpha_nameC
     Ph.oceanic_crust.name_density = density_nameC
-    Ph.oceanic_crust.radio_flag = radio_flag
-    Ph.oceanic_crust.Hr = H_r_LC 
+    Ph.oceanic_crust.radiative_conductivity = radiative_conductivity
+    Ph.oceanic_crust.radiogenic_heat = H_r_LC 
     Ph.oceanic_crust.k = 1.5 
 
     Ph.wedge_mantle.name_diffusion = name_diffusion
@@ -247,8 +217,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     Ph.wedge_mantle.name_conductivity = conductivity_nameM
     Ph.wedge_mantle.name_alpha = alpha_nameM
     Ph.wedge_mantle.name_density = density_nameM
-    Ph.wedge_mantle.radio_flag = radio_flag
-    Ph.wedge_mantle.Hr = H_r_M 
+    Ph.wedge_mantle.radiative_conductivity = radiative_conductivity
+    Ph.wedge_mantle.radiogenic_heat = H_r_M 
     Ph.wedge_mantle.k = args.k 
 
     Ph.overriding_mantle.rho0 = rho0_M 
@@ -256,8 +226,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     Ph.overriding_mantle.name_conductivity = conductivity_nameM
     Ph.overriding_mantle.name_alpha = alpha_nameM
     Ph.overriding_mantle.name_density = density_nameM
-    Ph.overriding_mantle.radio_flag = radio_flag
-    Ph.overriding_mantle.Hr = H_r_M 
+    Ph.overriding_mantle.radiative_conductivity = radiative_conductivity
+    Ph.overriding_mantle.radiogenic_heat = H_r_M 
     Ph.overriding_mantle.k = args.k
 
     Ph.overriding_upper_crust.rho0 = rho0_C 
@@ -265,8 +235,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     Ph.overriding_upper_crust.name_conductivity = conductivity_nameCC
     Ph.overriding_upper_crust.name_alpha = alpha_nameCC
     Ph.overriding_upper_crust.name_density = density_nameCC
-    Ph.overriding_upper_crust.radio_flag = radio_flag
-    Ph.overriding_upper_crust.Hr = H_r_UC 
+    Ph.overriding_upper_crust.radiative_conductivity = radiative_conductivity
+    Ph.overriding_upper_crust.radiogenic_heat = H_r_UC 
     Ph.overriding_upper_crust.k = 2.5 
 
     Ph.overriding_lower_crust.rho0 = rho0_C 
@@ -274,16 +244,15 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     Ph.overriding_lower_crust.name_conductivity = conductivity_nameC
     Ph.overriding_lower_crust.name_alpha = alpha_nameC
     Ph.overriding_lower_crust.name_density = density_nameC
-    Ph.overriding_lower_crust.radio_flag = radio_flag
-    Ph.overriding_lower_crust.Hr = H_r_LC 
+    Ph.overriding_lower_crust.radiative_conductivity = radiative_conductivity
+    Ph.overriding_lower_crust.radiogenic_heat = H_r_LC 
     Ph.overriding_lower_crust.k = 1.5 
 
 
-    inp.sname = f'{plate}_case{args.case_index}_{args.id_db}'
+    inp.ctrl_io.test_name = f'{plate}_case{args.case_index}_{args.id_db}'
 
     # Initialise the input
-    inp.van_keken = van_keken
-    StonedFenicsx(inp, Ph)
+    stoned_fenicsx(inp, Ph)
     
     return tuple([inp.path_test,inp.sname])
 #-------------------------------------------------------------------------------

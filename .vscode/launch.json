@@ -19,9 +19,7 @@
         "--id_db", "3",
         "--id_batch", "3",
         "--option_shear_heating", "True",
-        "--option_viscosity_weak_zone", "Parametrised",
-        "--viscosity_weak_zone", "1e19",
-      ],
+        "--option_viscosity_weak_zone", "Dislocation_Law"],
       "console": "integratedTerminal"
     }
   ]
