@@ -240,7 +240,7 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
     Args:
         data_table (pd.DataFrame): initial data table
         hdf5_file (str): path to the h5file
-
+'tau_shear_mean','tau_shear_std','tau_shear_median','tau_shear_min','tau_shear_max'
     Returns:
         Data Frame with all the information, named tuple with the coordinate system of the surface, name tuple with the 2D averages of the slab
     """
@@ -283,6 +283,14 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 max_dpth800 = extract_max_depth(f, i, '800')
 
                 ell = compute_total_length(np.array(f[f'{i}/X_S']))
+                temp_slab = np.array(f[f'{i}/T_S'][:])
+                z = np.array(f[f'{i}/X_S'])[1,:]
+                slab_surf_150 = [ell[np.where(temp_slab>=150)[0][0]],z[np.where(temp_slab>=150)[0][0]]]
+                slab_surf_450 = [ell[np.where(temp_slab>=450)[0][0]],z[np.where(temp_slab>=450)[0][0]]]
+                slab_surf_600 = [ell[np.where(temp_slab>=600)[0][0]],z[np.where(temp_slab>=600)[0][0]]]
+                
+                
+                
                 slab_c_150 = find_distance_isotherm(max_dpth150,np.array(f[f'{i}/X_S']),ell)
                 slab_c_300 = find_distance_isotherm(max_dpth300,np.array(f[f'{i}/X_S']),ell)
                 slab_c_350 = find_distance_isotherm(max_dpth350,np.array(f[f'{i}/X_S']),ell)
@@ -305,6 +313,7 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 pres_s,_ = interpolate_surfaces_slab(np.array(f[f'{i}/P_S'][:]),z_slab)
                 temp_o,z_ocean_n = interpolate_surfaces_slab(np.array(f[f'{i}/T_O'][:]),z_ocean)
                 pres_o = interpolate_surfaces_slab(np.array(f[f'{i}/P_O'][:]),z_ocean)
+                tau_surf, _ = interpolate_surfaces_slab(np.array(f[f'{i}/tau_shear']),z_slab)
                 heat_f,x_heat_n = interpolate_surfaces_slab(np.array(f[f'{i}/heat_flux'][:]),x_heat)
                 temp_s_dc = np.interp(-80.0,z_slab_n,temp_s)
                 pres_s_dc = np.interp(-80.0,z_slab_n,pres_s)
@@ -335,6 +344,9 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                     "slab_c_600" :slab_c_600,
                     "slab_c_700" :slab_c_700,
                     "slab_c_800" :slab_c_800,
+                    "slab_surf_150":slab_surf_150,
+                    "slab_surf_450":slab_surf_450,
+                    "slab_surf_600":slab_surf_600,
                     'T_S':temp_s,
                     'P_S':pres_s,
                     'T_O':temp_o,
@@ -342,6 +354,11 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                     'Q': heat_f,
                     'T_s_dc': temp_s_dc,
                     'P_s_dc': pres_s_dc,
+                    'tau_mean': f[f'{i}/tau_shear_mean'][()],
+                    'tau_max' : f[f'{i}/tau_shear_max'][()],
+                    'tau_min' :f[f'{i}/tau_shear_min'][()],
+                    'tau_std':f[f'{i}/tau_shear_max'][()],
+                    'tau_srf':tau_surf
                 })        
         slab_plot2D =  SlabPlot2D(temp_mean_2d=f['global_mean'][:],
                                   temp_var_2d=f['global_var'][:],
@@ -389,13 +406,21 @@ def wrapper_merging_h5(aux_path:str, partial:int, plate:str,sh='' ,recreate=Fals
         'slab_c_600': [],
         'slab_c_700': [],
         'slab_c_800': [],
+        "slab_surf_150":[],
+        "slab_surf_450":[],
+        "slab_surf_600":[],
+        'tau_mean':[],
+        'tau_max' :[],
+        'tau_min' :[],
+        'tau_std':[],
+        'Tau_s' : [],
         'T_S':[],
         'P_S':[],
         'T_O':[],
         'P_O':[],
         'Q':[],
         'T_s_dc':[],
-        'P_s_dc':[]
+        'P_s_dc':[],
     })
     
     data_table, coordinate_system, slab_2D = create_data_frame(data_table,   f'Data_Base_{plate}_def_{partial}_{sh}.h5')

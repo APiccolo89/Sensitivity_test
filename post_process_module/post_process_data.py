@@ -129,22 +129,25 @@ def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argpar
     
     vel = args.vc*1e-2/365.25/60/60/24
     eps = 0.5 * (vel *  1 /500) 
-    if args.shear_heating == 'Parametrised':
-        bdisl = args.eps_ref/args.tau_ref**(args.n_ref)
-        tau_min = args.tau_min
-        tau_v = bdisl**(-1/args.n_ref)*eps**(1/args.n_ref)
-        pres_crit = tau_v/np.sin(np.radians(args.phi))/1e9
-        p_norm = (pres_slab-pres_crit)/pres_crit
-        tau_viscous = tau_min + (tau_v-tau_min)*np.exp(-5.0*p_norm)
-        
+    if args.option_shear_heating:
+        if args.shear_heating == 'Parametrised':
+            bdisl = args.eps_ref/args.tau_ref**(args.n_ref)
+            tau_min = args.tau_min
+            tau_v = bdisl**(-1/args.n_ref)*eps**(1/args.n_ref)
+            pres_crit = tau_v/np.sin(np.radians(args.phi))/1e9
+            p_norm = (pres_slab-pres_crit)/pres_crit
+            tau_viscous = tau_min + (tau_v-tau_min)*np.exp(-5.0*p_norm)
+
+        else: 
+            tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,args.shear_heating)   
+
+        tau_fr = pres_slab*1e9*np.sin(np.radians(args.phi))
+        tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)/1e6
     else: 
-        tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,args.shear_heating)   
+        tau_eff = pres_slab*0.0
         
-    tau_fr = pres_slab*1e9*np.sin(np.radians(args.phi))
-    tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)/1e6
     tau_val = [np.nanmean(tau_eff),np.nanstd(tau_eff),np.nanmedian(tau_eff),np.nanmin(tau_eff),np.nanmax(tau_eff)]
-    
-    
+
     return tau_eff,tau_val
 
 
