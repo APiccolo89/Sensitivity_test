@@ -34,7 +34,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         option_thermal = 0
         options_shear_heating = 'False'
     else:
-        required = ["case_index", "k", "id_batch", "id_db", "option_shear_heating","option_viscosity_weak_zone","viscosity_weak_zone"]
+        required = ["case_index", "k", "id_batch", "id_db", "option_shear_heating","option_viscosity_weak_zone"]
         missing = [name for name in required if getattr(args, name) is None]
         if missing:
             raise ValueError(f"missing required arguments: {', '.join('--' + m for m in missing)}")
@@ -44,7 +44,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         else: 
             args.option_shear_heating = bool(0)
         if args.option_viscosity_weak_zone == 'Dislocation_Law':
-            args.shear_heating = 'WetQuartzite_disl'
+            args.shear_heating = 'Wet_Quartzite_2001_Dislocation_creep'
         elif args.option_viscosity_weak_zone == 'Constant':
             args.shear_heating = 'Constant'
         else: 
@@ -87,7 +87,6 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         option_thermal=option_thermal,
         option_shear_heating = args.option_shear_heating,
         option_viscosity_weak_zone = args.option_viscosity_weak_zone,
-        viscosity_weak_zone=args.viscosity_weak_zone,  
         tau_min = tau_min,
         steady_state=int(1),
     )
@@ -100,9 +99,9 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     from stonedfenicsx.config.numerical_control import dict_shear_modes
     from stonedfenicsx.stoned_fenicsx import stoned_fenicsx
 
-    path_test = os.path.dirname(os.path.realpath(__file__))
+    path_general = os.path.dirname(os.path.realpath(__file__))
     
-    path_input = f"{path_test}/input_tests.yaml"
+    path_input = f"{path_general}/input_tests.yaml"
 
     inp,Ph = parse_input(path_input)
     # controls
@@ -120,7 +119,6 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     # Create input data - Input is a class populated by default dataset
     # A flag that generate the geometry of the benchmark
     # The input path for saving the results
-    inp.ctrl_io.path_test = f'{path_test}/{plate}'
     inp.ctrl_tbc.slab_age = args.age
     inp.ctrl_tbc.temp_max = args.Tp
     # Velocity of slab 
@@ -135,18 +133,14 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.g_input.decoupling = 80 # decoupling depth
     inp.g_input.ns_depth = 50
     inp.g_input.transition = 10
-    inp.g_input.slab_type = 'Costum'
+    inp.g_input.slab_type = 'CustomRibe'
 
 
 
     #inp.sub_path = f'{path_test}/{plate}_slab.pz'
     
-    capacity_nameCC = 'Constant'#'Oceanic_Crust'
-    conductivity_nameCC = 'Constant'#'Oceanic_Crust'
-    alpha_nameCC = 'Constant'#'Oceanic_Crust'
-    density_nameCC = 'PT'#'PT'
+
     
-    inp.phi = 3.0
     
     if args.option_thermal == 1: 
         alpha_nameC = 'Oceanic_crust'#'Constant'#
@@ -154,9 +148,14 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
         density_nameC = 'PT'#'PT'
         density_nameM = 'PT'#'PT'
         capacity_nameM = 'Mantle_Bernard_Ar_199x_FO_FA'#'Bermann_Aranovich_Fo_Fa_0_1'
-        capacity_nameC = 'Oceanic_Crust'#'Oceanic_Crust'
+        capacity_nameC = 'Oceanic_crust'#'Oceanic_Crust'
         conductivity_nameM = 'Mantle_Richards_2018'#'Mantle'
         conductivity_nameC = 'Crust_Richards_2018'#'Oceanic_Crust'
+        conductivity_nameC = 'Constant'#'Oceanic_Crust'
+        capacity_nameCC = 'Oceanic_crust'#'Oceanic_Crust'
+        conductivity_nameCC = 'Crust_Richards_2018'#'Oceanic_Crust'
+        alpha_nameCC = 'Oceanic_crust'#'Oceanic_Crust'
+        density_nameCC = 'PT'#'PT'
         rho0_M = 3300.0
         rho0_C = 2800.0
         H_r_LC = 0.27e-6
@@ -174,13 +173,17 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
         capacity_nameC = 'Constant'#'Oceanic_Crust'
         conductivity_nameM = 'Constant'#'Mantle'
         conductivity_nameC = 'Constant'#'Oceanic_Crust'
+        capacity_nameCC = 'Constant'#'Oceanic_Crust'
+        conductivity_nameCC = 'Constant'#'Oceanic_Crust'
+        alpha_nameCC = 'Constant'#'Oceanic_Crust'
+        density_nameCC = 'Constant'#'PT'
+
         rho0_M = 3300.0
         rho0_C = 2800.0
         H_r_LC = 1*0.27e-6
         H_r_UC = 1*1.0e-6 
         H_r_M  = 0*0.06e-6
         radiative_conductivity = 0 
-        density_nameCC = 'Constant'#'PT'
 
 
     if args.shear_heating != 'False':
@@ -249,12 +252,13 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     Ph.overriding_lower_crust.k = 1.5 
 
 
+    inp.ctrl_io.path_save = os.path.join(path_general,f'Sensitivity{args.id_db}')
     inp.ctrl_io.test_name = f'{plate}_case{args.case_index}_{args.id_db}'
 
     # Initialise the input
     stoned_fenicsx(inp, Ph)
     
-    return tuple([inp.path_test,inp.sname])
+    return tuple([inp.ctrl_io.path_test,inp.ctrl_io.test_name])
 #-------------------------------------------------------------------------------
 @timing_function
 def main():
@@ -267,7 +271,6 @@ def main():
     parser.add_argument("--id_db", type=int)
     parser.add_argument("--option_shear_heating",type=str, default='False')
     parser.add_argument("--option_viscosity_weak_zone",type=str,default='Dislocation_Law')
-    parser.add_argument("--viscosity_weak_zone",type=float,default=1e19)
 
     args_cli = parser.parse_args()
     

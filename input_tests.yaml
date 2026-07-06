@@ -203,9 +203,9 @@ Input:
   geometry:
     x: [0.0, 660.0] # Coordinate of X
     y: [-600.0, 0.0] # Coordinate of Y
-    redo_mesh : False
+    redo_mesh : True
     van_keken: False
-    sub_constant_flag : True
+    sub_constant_flag : False
     slab_tk: 130.0 # Slab Thickness
     cr: 30.0 # Overriding Crust {if lc==0.0 -> only overriding upper crust}
     ocr: 7.0 # Oceanic crust
