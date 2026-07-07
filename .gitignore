@@ -37,3 +37,9 @@ Sensitivity3/Cached_information/mesh_meta_data.yml
 Sensitivity3/Cached_information/mesh.msh
 mesh.xdmf
 boundary.xdmf
+Steady_state.xdmf
+Steady_state.h5
+err0/
+out0/
+mesh_meta_data.yml
+mesh.msh

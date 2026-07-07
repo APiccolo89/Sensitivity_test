@@ -9,7 +9,7 @@
 
 Input:
   NumericalControls:
-    it_max: 20
+    it_max: 2
     it_inner_max : 3 
     tol: 1.0e-5
     relax: 0.9
@@ -24,7 +24,7 @@ Input:
     adiabatic_heating: 0
     stokes_solver_type : "Direct"
     energy_solver_type : "Direct"
-    pressure_dependency: 1
+    pressure_dependency: 0
 
   Shear_Heating: 
     shear_heating_disl_phi: 5.0 
@@ -203,7 +203,7 @@ Input:
   geometry:
     x: [0.0, 660.0] # Coordinate of X
     y: [-600.0, 0.0] # Coordinate of Y
-    redo_mesh : True
+    redo_mesh : False
     van_keken: False
     sub_constant_flag : False
     slab_tk: 130.0 # Slab Thickness

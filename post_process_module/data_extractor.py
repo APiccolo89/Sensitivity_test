@@ -244,11 +244,11 @@ class Data_experiment():
             
             self.Cp = np.array(fl['/Function/Cp  [J/kg]/0']).flatten()
             
-            self.k  = np.array(fl['/Function/k  [W/m/k]/0']).flatten()
+            self.k  = np.array(fl['/Function/k  [W/m/K]/0']).flatten()
             
             self.rho = np.array(fl['/Function/Density  [kg/m3]/0']).flatten()
             
-            self.eta = np.array(fl['/Function/eta  [Pa s]/0']).flatten()
+            self.eta = np.array(fl['/Function/Viscosity  [Pa.s]/0']).flatten()
             
             self.alpha = np.array(fl['/Function/alpha  [1/K]/0']).flatten()
             

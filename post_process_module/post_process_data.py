@@ -99,14 +99,14 @@ def extract_slab_surface(T:Test)->np.ndarray:
 #-------------------------------------------------
 def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndarray,tag:str)->np.ndarray:
 
-    from stonedfenicsx.material_property.phase_db import _check_rheological 
+    from stonedfenicsx.config.phase_db import read_rheology 
     
     temp_slab = temp_slab + 273.15 
     pres_slab = pres_slab * 1e9
-    A = _check_rheological(tag)
-    water = (np.exp(- (A.EH20+A.VH20*pres_slab)/(A.R * temp_slab))/np.exp(- (A.EH20+A.VH20*1e5)/(A.R * 298.15)))
+    A = read_rheology(tag,1)
+    water = (np.exp(- (A.eh2o+A.vh2o*pres_slab)/(8.314 * temp_slab))/np.exp(- (A.eh2o+A.vh2o*1e5)/(8.314 * 298.15)))
     
-    cds = A.B * np.exp(-(A.E + pres_slab * A.V)/(A.R * temp_slab)) * water **(A.r)
+    cds = A.b * np.exp(-(A.e + pres_slab * A.v)/(8.314 * temp_slab)) * water **(A.r)
     
     tau_viscous = cds ** (-1/A.n) * eps**(1/A.n)
 
@@ -303,7 +303,7 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
     save_grid = True    
     # Paths
     name_test = pathtotest[1]
-    real_test = os.path.join(pathtotest[0], name_test)
+    real_test = os.path.join(pathtotest[0])
 
     print(f"Extracting relevant data for case {arguments.case_index} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")

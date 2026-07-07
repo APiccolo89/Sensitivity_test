@@ -5,8 +5,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=34:00:00
 #SBATCH --mem=10G
-#SBATCH --output=out4/Sensitivity_%A_%a.txt
-#SBATCH --error=err4/Sensitivity_%A_%a.txt
+#SBATCH --output=out1/Sensitivity_%A_%a.txt
+#SBATCH --error=err1/Sensitivity_%A_%a.txt
 
 module purge
 module load python/3.13.0
@@ -36,9 +36,10 @@ for case_index in $(seq ${worker_id} 100 6999); do
     mpirun -n 1 "$PYTHON" -u Sensitivity_tests.py \
         --case_index ${case_index} \
         --k 5.0 \
-        --id_db 4 \
+        --id_db 1 \
         --id_batch ${id_batch} \
-    	--option_shear_heating False
+    	--option_shear_heating True \
+	--option_viscosity_weak_zone Dislocation_Law\
 
     rm -rf "$XDG_CACHE_HOME"
 done

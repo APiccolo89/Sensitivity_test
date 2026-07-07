@@ -86,8 +86,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
         phi=5.0,
         option_thermal=option_thermal,
         option_shear_heating = args.option_shear_heating,
-        option_viscosity_weak_zone = args.option_viscosity_weak_zone,
-        tau_min = tau_min,
+        tau_min = 10e6,
         steady_state=int(1),
     )
     return args_test
@@ -134,49 +133,42 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.g_input.ns_depth = 50
     inp.g_input.transition = 10
     inp.g_input.slab_type = 'CustomRibe'
-
-
-
-    #inp.sub_path = f'{path_test}/{plate}_slab.pz'
-    
-
-    
     
     if args.option_thermal == 1: 
-        alpha_nameC = 'Oceanic_crust'#'Constant'#
-        alpha_nameM = 'Mantle'#'Mantle'
-        density_nameC = 'PT'#'PT'
-        density_nameM = 'PT'#'PT'
-        capacity_nameM = 'Mantle_Bernard_Ar_199x_FO_FA'#'Bermann_Aranovich_Fo_Fa_0_1'
-        capacity_nameC = 'Oceanic_crust'#'Oceanic_Crust'
-        conductivity_nameM = 'Mantle_Richards_2018'#'Mantle'
-        conductivity_nameC = 'Crust_Richards_2018'#'Oceanic_Crust'
-        conductivity_nameC = 'Constant'#'Oceanic_Crust'
-        capacity_nameCC = 'Oceanic_crust'#'Oceanic_Crust'
-        conductivity_nameCC = 'Crust_Richards_2018'#'Oceanic_Crust'
-        alpha_nameCC = 'Oceanic_crust'#'Oceanic_Crust'
-        density_nameCC = 'PT'#'PT'
+        alpha_nameC = 'Oceanic_crust'
+        alpha_nameM = 'Mantle'
+        density_nameC = 'PT'
+        density_nameM = 'PT'
+        capacity_nameM = 'Mantle_Bernard_Ar_199x_FO_FA'
+        capacity_nameC = 'Oceanic_crust'
+        conductivity_nameM = 'Mantle_Richards_2018'
+        conductivity_nameC = 'Crust_Richards_2018'
+        conductivity_nameC = 'Constant'
+        capacity_nameCC = 'Oceanic_crust'
+        conductivity_nameCC = 'Crust_Richards_2018'
+        alpha_nameCC = 'Oceanic_crust'
+        density_nameCC = 'PT'
         rho0_M = 3300.0
         rho0_C = 2800.0
         H_r_LC = 0.27e-6
         H_r_UC = 1.0e-6
         H_r_M  = 0*0.06e-6
         radiative_conductivity = 1 
-        density_nameCC = 'PT'#'PT'
+        density_nameCC = 'PT'
 
     elif args.option_thermal ==0 : 
-        alpha_nameC = 'Constant'#
+        alpha_nameC = 'Constant'
         alpha_nameM = 'Constant'
-        density_nameC = 'Constant'#'PT'
-        density_nameM = 'Constant'#'PT'
-        capacity_nameM = 'Constant'#'Bermann_Aranovich_Fo_Fa_0_1'
-        capacity_nameC = 'Constant'#'Oceanic_Crust'
-        conductivity_nameM = 'Constant'#'Mantle'
-        conductivity_nameC = 'Constant'#'Oceanic_Crust'
-        capacity_nameCC = 'Constant'#'Oceanic_Crust'
-        conductivity_nameCC = 'Constant'#'Oceanic_Crust'
-        alpha_nameCC = 'Constant'#'Oceanic_Crust'
-        density_nameCC = 'Constant'#'PT'
+        density_nameC = 'Constant'
+        density_nameM = 'Constant'
+        capacity_nameM = 'Constant'
+        capacity_nameC = 'Constant'
+        conductivity_nameM = 'Constant'
+        conductivity_nameC = 'Constant'
+        capacity_nameCC = 'Constant'
+        conductivity_nameCC = 'Constant'
+        alpha_nameCC = 'Constant'
+        density_nameCC = 'Constant'
 
         rho0_M = 3300.0
         rho0_C = 2800.0
@@ -286,25 +278,18 @@ def main():
     print(f"  - Thermal conductivity: {arguments.k} W/m/K")
     print(f"  - Thermal parameters : {arguments.vc * arguments.age * (1/1e5 * 1e6) * np.sin(np.radians(45))} km")
     print(f"  - Shear heating: {'Active' if arguments.option_shear_heating else 'Not active'}")
-    print(f"  - Shear heating viscosity law: {arguments.option_viscosity_weak_zone}")
-    print(f"  - Constant viscosity value : {arguments.viscosity_weak_zone if arguments.option_viscosity_weak_zone == 'Constant' else 'NA//' }")
-    if arguments.option_viscosity_weak_zone == 'Parametrised': 
-        print(f"  - tau ref = {arguments.tau_ref/1e6:.2f} [MPa]")
-        print(f"  - tau min = {arguments.tau_min/1e6:.2f} [MPa]")
-        print(f"  - eps ref = {arguments.eps_ref/1e6:.2e} [1/s]")
-        print(f"  - n ref = {arguments.n_ref}")
-        print(f"  - decay = {arguments.decay_viscosity}")
+
         
-    pathtest = perform_test(args=arguments,plate='Sensitivity')
+    pathtest,_ = perform_test(args=arguments,plate='Sensitivity')
     
-    print(f"Test completed for case {arguments.case_index}. Results saved in {os.path.join(pathtest[0], pathtest[1])}")
+    print(f"Test completed for case {arguments.case_index}. Results saved in {os.path.join(pathtest[0])}")
     
     save_test_data(name_suite='Sensitivity',pathtotest=pathtest,arguments=arguments)
     
     # remove the tests folder 
     if arguments.case_index !=0:
-        shutil.rmtree(os.path.join(*pathtest))    
-        print(f"Removed {os.path.join(pathtest[0], pathtest[1])} for case {arguments.case_index}")
+        shutil.rmtree(os.path.join(pathtest))    
+        print(f"Removed {os.path.join(pathtest)} for case {arguments.case_index}")
     
     print(f"Finished case {arguments.case_index}")
 #---------------------------------------------------------------------------------    
