@@ -12,8 +12,7 @@ from post_process_module.data_extractor import Test
 import json
 import fcntl
 from datetime import datetime
-from pathlib import Path
-
+from pathlib import Path, PurePath
 
 def save_dataset(group, name, data, compress=True):
     if compress and hasattr(data, "shape") and data.shape != ():
@@ -288,7 +287,7 @@ def extract_relevant_data(path:str,args:argparse.Namespace)->list:
     
 #-------------------------------------------------
 @timing_function
-def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None):
+def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
 
     print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
     
@@ -302,8 +301,8 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
     
     save_grid = True    
     # Paths
-    name_test = pathtotest[1]
-    real_test = os.path.join(pathtotest[0])
+    name_test = PurePath(pathtotest).name
+    real_test = pathtotest
 
     print(f"Extracting relevant data for case {arguments.case_index} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")
@@ -383,10 +382,11 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
             print(f"  - Updated mean and variance for the Welford algorithm for case {arguments.case_index} and {n_lc_tst} tests")
             del list_data 
             gc.collect()
-            write_case_log(log_path=f'{path2save}/case_log.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=True, status="Test successful", path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
-
+    else:
+            write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=True, status="Test successful", path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
+    
+    print('===================================================================================================================')
         
-    return 0
 
 def update_Welfrod_ALG(Temp:np.ndarray,mean:np.ndarray,var:np.ndarray,n:int):
     delta = Temp-mean 

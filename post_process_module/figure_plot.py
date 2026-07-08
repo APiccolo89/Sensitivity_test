@@ -539,11 +539,16 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
 
     
     ax0.scatter(petro_db.T,petro_db.P,c='b',s=5.0,marker='x')
-    ax3.scatter(k3['thermal_parameter']/1000,knl['T_s_dc']-k3['T_s_dc'],color='cadetblue',s=0.5)
-    ax4.scatter(k3['thermal_parameter']/1000,knl['T_s_dc']-k5['T_s_dc'],color='olive',s=0.5)
-    ax5.scatter(knl['thermal_parameter']/1000,knl['T_s_dc'],color='firebrick',s=0.5)
-    ax5.scatter(k3['thermal_parameter']/1000,k3['T_s_dc'],color='cadetblue',s=0.5)
-    ax5.scatter(k5['thermal_parameter']/1000,k5['T_s_dc'],color='olive',s=0.5)
+    ax3.scatter(k3['thermal_parameter']/1000,knl['d_seismic_ell'],color='firebrick',s=0.5)
+    ax3.scatter(k3['thermal_parameter']/1000,k3['d_seismic_ell'],color='cadetblue',s=0.5)
+    ax3.scatter(k3['thermal_parameter']/1000,k5['d_seismic_ell'],color='olive',s=0.5)
+
+    ax4.scatter(k3['thermal_parameter']/1000,(knl['d_seismic_ell']-k5['d_seismic_ell'])/knl['d_seismic_ell'],color='olive',s=0.5)
+    ax4.scatter(k3['thermal_parameter']/1000,(knl['d_seismic_ell']-k3['d_seismic_ell'])/knl['d_seismic_ell'],color='cadetblue',s=0.5)
+
+    ax5.scatter(knl['thermal_parameter']/1000,knl['d_seismic_dpth'],color='firebrick',s=0.5)
+    ax5.scatter(k3['thermal_parameter']/1000,k3['d_seismic_dpth'],color='cadetblue',s=0.5)
+    ax5.scatter(k5['thermal_parameter']/1000,k5['d_seismic_dpth'],color='olive',s=0.5)
 
     
     # Homogeneise the layout of the figure. 
@@ -564,19 +569,24 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     ticks_x = create_list_tick(lim_x)
 
     
-    lim_y = ranges(knl['T_s_dc']-k3['T_s_dc'],knl['T_s_dc']-k5['T_s_dc'],np.nan)
+    lim_y = ranges(knl['d_seismic_ell'],k3['d_seismic_ell'],k5['d_seismic_ell'])
     lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
     ticks_y = create_list_tick(lim_y)
 
     
-    ax3 = modify_axes(ax3,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\Delta$ T [$^{\circ}$C]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[d]')
-    ax4 = modify_axes(ax4,label_x=[r'$\gamma$ [1000 km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[e]')
-    
-    lim_y = ranges(knl['T_s_dc'],k5['T_s_dc'],k3['T_s_dc'])
+    ax3 = modify_axes(ax3,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\Delta \ell^{450-150}$ [km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[d]')
+
+    lim_y = ranges((knl['d_seismic_ell']-k3['d_seismic_ell'])/knl['d_seismic_ell'],(knl['d_seismic_ell']-k5['d_seismic_ell'])/knl['d_seismic_ell'],np.nan)
     lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
     ticks_y = create_list_tick(lim_y)
     
-    ax5 = modify_axes(ax5,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'T$_{dc}$ [$^{\circ}$C]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y)
+    ax4 = modify_axes(ax4,label_x=[r'$\gamma$ [1000 km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[e]')
+    
+    lim_y = ranges(knl['d_seismic_dpth'],k5['d_seismic_dpth'],k3['d_seismic_dpth'])
+    lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
+    ticks_y = create_list_tick(lim_y)
+    
+    ax5 = modify_axes(ax5,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$z^{\mathrm{slab}}_{450}$ [km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y)
 
 
     # Custom legend entries

@@ -288,19 +288,20 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 slab_surf_150 = [ell[np.where(temp_slab>=150)[0][0]],z[np.where(temp_slab>=150)[0][0]]]
                 slab_surf_450 = [ell[np.where(temp_slab>=450)[0][0]],z[np.where(temp_slab>=450)[0][0]]]
                 slab_surf_600 = [ell[np.where(temp_slab>=600)[0][0]],z[np.where(temp_slab>=600)[0][0]]]
+                d_seismic = slab_surf_450[0]-slab_surf_150[0]
+                d_seismic_dpth = slab_surf_450[1]
+
                 
-                
-                
-                slab_c_150 = find_distance_isotherm(max_dpth150,np.array(f[f'{i}/X_S']),ell)
-                slab_c_300 = find_distance_isotherm(max_dpth300,np.array(f[f'{i}/X_S']),ell)
-                slab_c_350 = find_distance_isotherm(max_dpth350,np.array(f[f'{i}/X_S']),ell)
-                slab_c_400 = find_distance_isotherm(max_dpth400,np.array(f[f'{i}/X_S']),ell)
-                slab_c_450 = find_distance_isotherm(max_dpth450,np.array(f[f'{i}/X_S']),ell)
-                slab_c_500 = find_distance_isotherm(max_dpth500,np.array(f[f'{i}/X_S']),ell)
-                slab_c_550 = find_distance_isotherm(max_dpth550,np.array(f[f'{i}/X_S']),ell)
-                slab_c_600 = find_distance_isotherm(max_dpth600,np.array(f[f'{i}/X_S']),ell)
-                slab_c_700 = find_distance_isotherm(max_dpth700,np.array(f[f'{i}/X_S']),ell)
-                slab_c_800 = find_distance_isotherm(max_dpth800,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_150 = find_distance_isotherm(max_dpth150,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_300 = find_distance_isotherm(max_dpth300,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_350 = find_distance_isotherm(max_dpth350,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_400 = find_distance_isotherm(max_dpth400,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_450 = find_distance_isotherm(max_dpth450,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_500 = find_distance_isotherm(max_dpth500,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_550 = find_distance_isotherm(max_dpth550,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_600 = find_distance_isotherm(max_dpth600,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_700 = find_distance_isotherm(max_dpth700,np.array(f[f'{i}/X_S']),ell)
+                #slab_c_800 = find_distance_isotherm(max_dpth800,np.array(f[f'{i}/X_S']),ell)
 
                 # prepare the surface for being integrated into the database
                 
@@ -334,16 +335,8 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                     "max_dpth600": max_dpth600,
                     "max_dpth700": max_dpth700,
                     "max_dpth800": max_dpth800,
-                    "slab_c_150" :slab_c_150,
-                    "slab_c_300" :slab_c_300,
-                    "slab_c_350" :slab_c_350,
-                    "slab_c_400" :slab_c_400,
-                    "slab_c_450" :slab_c_450,
-                    "slab_c_500" :slab_c_500,
-                    "slab_c_550" :slab_c_550,
-                    "slab_c_600" :slab_c_600,
-                    "slab_c_700" :slab_c_700,
-                    "slab_c_800" :slab_c_800,
+                    "d_seismic_ell" : d_seismic,
+                    "d_seismic_dpth": d_seismic_dpth,
                     "slab_surf_150":slab_surf_150,
                     "slab_surf_450":slab_surf_450,
                     "slab_surf_600":slab_surf_600,
@@ -398,14 +391,8 @@ def wrapper_merging_h5(aux_path:str, partial:int, plate:str,sh='' ,recreate=Fals
         'max_dpth600': [],
         'max_dpth700': [],
         'max_dpth800': [],
-        'slab_c_150': [],
-        'slab_c_300': [],
-        'slab_c_450': [],
-        'slab_c_500': [],
-        'slab_c_550': [],
-        'slab_c_600': [],
-        'slab_c_700': [],
-        'slab_c_800': [],
+        "d_seismic_ell" : [],
+        "d_seismic_dpth": [],
         "slab_surf_150":[],
         "slab_surf_450":[],
         "slab_surf_600":[],

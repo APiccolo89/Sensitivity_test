@@ -106,12 +106,12 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     # controls
     inp.ctrl.decoupling_ctrl = 1
     inp.ctrl.steady_state = 1
-    inp.ctrl.tol = 1e-5
-    inp.ctrl.it_max = 30 
+    inp.ctrl.tol = 5e-5
+    inp.ctrl.it_max = 30
     if args.option_shear_heating:
-        inp.ctrl.model_shear = dict_shear_modes['SelfConsistent']
+        inp.ctrl.model_shear = 'SelfConsistent'
     else: 
-        inp.ctrl.model_shear = dict_shear_modes['NoShear']
+        inp.ctrl.model_shear = 'NoShear'
 
 
 
@@ -282,7 +282,7 @@ def main():
         
     pathtest,_ = perform_test(args=arguments,plate='Sensitivity')
     
-    print(f"Test completed for case {arguments.case_index}. Results saved in {os.path.join(pathtest[0])}")
+    print(f"Test completed for case {arguments.case_index}. Results saved in {pathtest}")
     
     save_test_data(name_suite='Sensitivity',pathtotest=pathtest,arguments=arguments)
     
