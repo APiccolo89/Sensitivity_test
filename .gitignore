@@ -43,3 +43,8 @@ err0/
 out0/
 mesh_meta_data.yml
 mesh.msh
+*.png
+Result_shear_heating_yes/*
+Result_shear_heating_no/*
+Result_shear_heating_yes/Figure_0.png
+Result_shear_heating_yes/Figure_1.png

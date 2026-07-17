@@ -271,35 +271,35 @@ def modify_axes(ax: mpl_axes = None,
 
 
 
-def plot_slab_variances(A, path2save: str,name_figure: str,name: str, DBa:None) -> None:
+def plot_slab_variances(A, path2save: str,number_figure:int) -> None:
     import numpy as np
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-    name_plot = f'Figure_{name_figure}_{name}.png'
+    name_plot = f'Figure_{number_figure}.png'
     
     def extract_limits(k3, k5, NL):
         l_m = []
         l_M = []
 
-        l_m.append(np.nanmin(k3.T_mean - NL.T_mean))
-        l_M.append(np.nanmax(k3.T_mean - NL.T_mean))
+        l_m.append(np.nanmin(NL.temp_mean_2d-k3.temp_mean_2d))
+        l_M.append(np.nanmax(NL.temp_mean_2d-k3.temp_mean_2d))
 
-        l_m.append(np.nanmin(k5.T_mean - NL.T_mean))
-        l_M.append(np.nanmax(k5.T_mean - NL.T_mean))
+        l_m.append(np.nanmin(NL.temp_mean_2d-k5.temp_mean_2d))
+        l_M.append(np.nanmax(NL.temp_mean_2d-k5.temp_mean_2d))
 
         return l_m, l_M
 
-    fig = plt.figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(12, 12))
 
     k3,k5,NL = A 
     
-    Xi,Yi = k3.Xi,k3.Yi
+    Xi,Yi = k3.xi,k3.yi
     
     
     
-    bx = 0.1
-    by = 0.2
+    bx = 0.12
+    by = 0.1
     sx = 0.38
     sy = 0.68
     dx = 0.08
@@ -307,45 +307,68 @@ def plot_slab_variances(A, path2save: str,name_figure: str,name: str, DBa:None) 
     ax0 = fig.add_axes([bx, by, sx, sy])
     ax1 = fig.add_axes([bx + sx + dx, by, sx, sy])
 
-    l_m, l_M = extract_limits(k3,k5,NL)
+    lima,limb = extract_limits(k3,k5,NL)
 
-    levels0 = np.linspace(np.floor(l_m[0]), np.ceil(l_M[0]), 10)
-    levels1 = np.linspace(np.floor(l_m[1]), np.ceil(l_M[1]), 10)
+    lim_x = [0.0, 800.0]
+    lim_y = [-600,0.0]
+
+    levels0 = np.linspace(np.floor(lima[0]), np.ceil(limb[0]), 10)
+    levels1 = np.linspace(np.floor(lima[1]), np.ceil(limb[1]), 10)
     alpha = 1.0
-    if DBa is not None:
-        alpha = 0.1
-        z300 = DBa.loc[(DBa['option_thermal'] == 1), f'max_dpth{300}']
-        z500 = DBa.loc[(DBa['option_thermal'] == 1), f'max_dpth{500}']
-        z600 = DBa.loc[(DBa['option_thermal'] == 1), f'max_dpth{600}']
-        x300 = DBa.loc[(DBa['option_thermal'] == 1), f'x_dpth{300}']
-        x500 = DBa.loc[(DBa['option_thermal'] == 1), f'x_dpth{500}']
-        x600 = DBa.loc[(DBa['option_thermal'] == 1), f'x_dpth{600}']
 
-    a = ax0.contourf(k3.Xi, k3.Yi, k3.T_mean - NL.T_mean, levels=levels0, cmap='cmc.roma',alpha=alpha)
-    if alpha != 1.0:
 
-        
-        b = ax0.scatter(x300,z300, color='firebrick', s=1,marker='x')
-        d = ax0.scatter(x600,z600, color='firebrick', s=1,marker='d')
-
+    a = ax0.pcolormesh(Xi, Yi, NL.temp_mean_2d-k3.temp_mean_2d, cmap='cmc.roma',alpha=alpha)
         
     divider = make_axes_locatable(ax0)
-    cax = divider.append_axes("bottom", size="5%", pad=0.05)
-    plt.colorbar(a, cax=cax, orientation="horizontal",
-                 label=r'$\bar{T}_{k=3} - \bar{T}_{NL}$ [$^\circ$C]')
+    cax = divider.append_axes("bottom", size="5%", pad=0.8)
+    cbar = plt.colorbar(a, cax=cax, orientation="horizontal",location="top")
 
-    b = ax1.contourf(k5.Xi, k5.Yi, k5.T_mean - NL.T_mean, levels=levels1, cmap='cmc.roma',alpha=alpha)
-    if alpha != 1.0:
-        b = ax1.scatter(x300,z300, color='firebrick', s=1,marker='x')
-        d = ax1.scatter(x600,z600, color='firebrick', s=1,marker='d')
+    b = ax1.pcolormesh(Xi, Yi, NL.temp_mean_2d-k5.temp_mean_2d, cmap='cmc.roma',alpha=alpha)
+    cbar.set_label( label=r'$\bar{T}_{k=3} - \bar{T}_{NL}$ [$^\circ$C]',fontsize=14)
+    cbar.ax.tick_params(labelsize=12)   
     divider = make_axes_locatable(ax1)
-    cax2 = divider.append_axes("bottom", size="5%", pad=0.05)
-    plt.colorbar(b, cax=cax2, orientation="horizontal",
-                 label=r'$\bar{T}_{k=5} - \bar{T}_{NL}$ [$^\circ$C]')
+    cax2 = divider.append_axes("bottom", size="5%", pad=0.8)
+    cbar2 = plt.colorbar(b, cax=cax2, orientation="horizontal",location="top")
 
-    modify_axes(ax=ax0, label_x='Distance [km]', lim=[0, 1250], label_y='Depth [km]')
-    modify_axes(ax=ax1, label_x='Distance [km]', lim=[0, 1250])
-
+    cbar2.set_label(label=r'$\bar{T}_{k=5} - \bar{T}_{NL}$ [$^\circ$C]' ,fontsize=14)
+    cbar2.ax.tick_params(labelsize=12)
+    #modify_axes(ax=ax0, label_x='Distance [km]', lim=[0, 1250], label_y='Depth [km]')
+    #modify_axes(ax=ax1, label_x='Distance [km]', lim=[0, 1250])
+    ticks_x = [0,400,800]
+    ax0 = modify_axes(ax0,label_x=[r'x, [km]','y'],label_y=[r'z, [km]','y'],lim_y=lim_y,lim_x=lim_x,letter='[a]',ticks_x=ticks_x)
+    ax1 = modify_axes(ax1,label_x=[r'x, [km]','y'],label_y=[r'','n'],lim_y=lim_y,lim_x=lim_x,letter='[b]',ticks_x=ticks_x)
+    ax0.tick_params(axis='both', which='major', pad=9)
+    
+    ax0.spines['top'].set_visible(True)
+    ax0.spines['bottom'].set_visible(False)
+    ax0.spines['right'].set_visible(False)
+    ax0.spines['left'].set_color('black')
+    ax0.spines['bottom'].set_color('black')
+    ax0.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax0.spines['left'].set_linewidth(2.0)
+    ax0.spines['top'].set_linewidth(2.0)
+    ax0.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax0.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax0.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax0.xaxis.tick_top()                  # Move ticks to the top
+    ax0.xaxis.set_label_position("top")   # Move x-axis label to the top
+    
+    ax1.spines['top'].set_visible(True)
+    ax1.spines['bottom'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['left'].set_color('black')
+    ax1.spines['bottom'].set_color('black')
+    ax1.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax1.spines['left'].set_linewidth(2.0)
+    ax1.spines['top'].set_linewidth(2.0)
+    ax1.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax1.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax1.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax1.xaxis.tick_top()                  # Move ticks to the top
+    ax1.xaxis.set_label_position("top")   # Move x-axis label to the top
+    
+    
+    
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)
     plt.close(fig)
     
@@ -492,11 +515,11 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     sy = 0.35
     dy = 0.1
     sx_top = 0.25 
-    dx_top_a = 0.08 
-    dx_top_b = 0.05 
+    dx_top_a = 0.07
+    dx_top_b = 0.07 
     sx_bot = 0.25
-    dx_bota = 0.04 
-    dx_botb = 0.08
+    dx_bota = 0.07 
+    dx_botb = 0.07
     top_row = by+sy+dy
     # --- 
     # Top row: figure ax0 -> NL slab surface // black line + scatter DB + band 80 km 
@@ -543,12 +566,13 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     ax3.scatter(k3['thermal_parameter']/1000,k3['d_seismic_ell'],color='cadetblue',s=0.5)
     ax3.scatter(k3['thermal_parameter']/1000,k5['d_seismic_ell'],color='olive',s=0.5)
 
-    ax4.scatter(k3['thermal_parameter']/1000,(knl['d_seismic_ell']-k5['d_seismic_ell'])/knl['d_seismic_ell'],color='olive',s=0.5)
-    ax4.scatter(k3['thermal_parameter']/1000,(knl['d_seismic_ell']-k3['d_seismic_ell'])/knl['d_seismic_ell'],color='cadetblue',s=0.5)
+    ax4.scatter(k5['thermal_parameter']/1000,k5['d_seismic_150'],color='olive',s=0.5)
+    ax4.scatter(k3['thermal_parameter']/1000,k3['d_seismic_150'],color='cadetblue',s=0.5)
+    ax4.scatter(knl['thermal_parameter']/1000,knl['d_seismic_150'],color='firebrick',s=0.5)
 
-    ax5.scatter(knl['thermal_parameter']/1000,knl['d_seismic_dpth'],color='firebrick',s=0.5)
-    ax5.scatter(k3['thermal_parameter']/1000,k3['d_seismic_dpth'],color='cadetblue',s=0.5)
-    ax5.scatter(k5['thermal_parameter']/1000,k5['d_seismic_dpth'],color='olive',s=0.5)
+    ax5.scatter(knl['thermal_parameter']/1000,knl['d_seismic_450'],color='firebrick',s=0.5)
+    ax5.scatter(k3['thermal_parameter']/1000,k3['d_seismic_450'],color='cadetblue',s=0.5)
+    ax5.scatter(k5['thermal_parameter']/1000,k5['d_seismic_450'],color='olive',s=0.5)
 
     
     # Homogeneise the layout of the figure. 
@@ -576,13 +600,13 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     
     ax3 = modify_axes(ax3,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\Delta \ell^{450-150}$ [km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[d]')
 
-    lim_y = ranges((knl['d_seismic_ell']-k3['d_seismic_ell'])/knl['d_seismic_ell'],(knl['d_seismic_ell']-k5['d_seismic_ell'])/knl['d_seismic_ell'],np.nan)
+    lim_y =  ranges(knl['d_seismic_150'],k5['d_seismic_150'],k3['d_seismic_150'])
     lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
     ticks_y = create_list_tick(lim_y)
     
-    ax4 = modify_axes(ax4,label_x=[r'$\gamma$ [1000 km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[e]')
+    ax4 = modify_axes(ax4,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$z^{\mathrm{slab}}_{150}$ [km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[e]')
     
-    lim_y = ranges(knl['d_seismic_dpth'],k5['d_seismic_dpth'],k3['d_seismic_dpth'])
+    lim_y = ranges(knl['d_seismic_450'],k5['d_seismic_450'],k3['d_seismic_450'])
     lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
     ticks_y = create_list_tick(lim_y)
     

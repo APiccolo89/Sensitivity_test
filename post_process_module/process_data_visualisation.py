@@ -13,6 +13,7 @@ import time as timing
 import tracemalloc
 import cmcrameri
 from dataclasses import dataclass
+from numpy.typing import NDArray
 
 @dataclass(slots=True)
 class SlabPlot2D:
@@ -222,7 +223,25 @@ def interpolate_value_0D(ar:np.ndarray,x:np.ndarray,depth:float,ind:None|int)->f
     val = ar[ind]+(dv/dx)*(depth-ar[ind])
     
     return val,ind 
+def find_real_ell_z(isotherm:float, ell:NDArray, z: NDArray,temp:NDArray)->tuple[float,float]:
+    def interpolate_value(ind,dtemp,temp0,dval,val0,val1):
+        val = (dval/dtemp) * (isotherm-temp0) + val0
+        return val
+    
+    
+    ind_ = np.where(temp>=isotherm)[0][0]
+    if temp[ind_] == isotherm: 
+        ell_p = ell[ind_]
+        z_p = z[ind_]
+    else: 
+        dtemp_ = temp[ind_]-temp[ind_-1]
+        dell_ = ell[ind_] - ell[ind_-1]
+        dz_ = z[ind_] - z[ind_-1] 
+        ell_p = interpolate_value(ind_,dtemp_,temp[ind_-1],dell_,ell[ind_-1],ell[ind_])
+        z_p = interpolate_value(ind_,dtemp_,temp[ind_-1],dz_,z[ind_-1],z[ind_])
 
+    
+    return ell_p,z_p
 #---------------------------------------------------------------------------------
 def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFrame,namedtuple,namedtuple]:
     def extract_max_depth(f:h5py.File, case_key:str, isotherm:str)->tuple[float,float]:
@@ -285,11 +304,14 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 ell = compute_total_length(np.array(f[f'{i}/X_S']))
                 temp_slab = np.array(f[f'{i}/T_S'][:])
                 z = np.array(f[f'{i}/X_S'])[1,:]
-                slab_surf_150 = [ell[np.where(temp_slab>=150)[0][0]],z[np.where(temp_slab>=150)[0][0]]]
-                slab_surf_450 = [ell[np.where(temp_slab>=450)[0][0]],z[np.where(temp_slab>=450)[0][0]]]
-                slab_surf_600 = [ell[np.where(temp_slab>=600)[0][0]],z[np.where(temp_slab>=600)[0][0]]]
+                
+
+                slab_surf_150 = find_real_ell_z(150.0,ell,z,temp_slab)
+                slab_surf_450 = find_real_ell_z(450.0,ell,z,temp_slab)
+                slab_surf_600 = find_real_ell_z(600.0,ell,z,temp_slab)
                 d_seismic = slab_surf_450[0]-slab_surf_150[0]
-                d_seismic_dpth = slab_surf_450[1]
+                d_seismic_450 = slab_surf_450[1]
+                d_seismic_150 = slab_surf_150[1]
 
                 
                 #slab_c_150 = find_distance_isotherm(max_dpth150,np.array(f[f'{i}/X_S']),ell)
@@ -336,7 +358,8 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                     "max_dpth700": max_dpth700,
                     "max_dpth800": max_dpth800,
                     "d_seismic_ell" : d_seismic,
-                    "d_seismic_dpth": d_seismic_dpth,
+                    "d_seismic_450": d_seismic_450,
+                    "d_seismic_150": d_seismic_150,
                     "slab_surf_150":slab_surf_150,
                     "slab_surf_450":slab_surf_450,
                     "slab_surf_600":slab_surf_600,
@@ -393,6 +416,7 @@ def wrapper_merging_h5(aux_path:str, partial:int, plate:str,sh='' ,recreate=Fals
         'max_dpth800': [],
         "d_seismic_ell" : [],
         "d_seismic_dpth": [],
+        "d_seismic_150": [],
         "slab_surf_150":[],
         "slab_surf_450":[],
         "slab_surf_600":[],

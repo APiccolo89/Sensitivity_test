@@ -38,7 +38,7 @@ for case_index in $(seq ${worker_id} 100 6999); do
         --k -5.0 \
         --id_db 2 \
         --id_batch ${id_batch} \
-    	--option_shear_heating True \
+    	--option_shear_heating False \
 	--option_viscosity_weak_zone Dislocation_Law\
 
     rm -rf "$XDG_CACHE_HOME"

@@ -125,7 +125,7 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
 
     # Geometrical input
     inp.g_input.cr = 40.0   # Overriding crust 
-    inp.g_input.lc = 0.2   # relative amount of lower crust
+    inp.g_input.lc = 0.5   # relative amount of lower crust
     inp.g_input.ocr = 6.0  # Crustal thickness
     inp.g_input.decoupling = 80  # Lithospheric mantle depth 
     inp.g_input.lab_d = inp.g_input.decoupling  # depth of the lab 

@@ -39,9 +39,9 @@ def main():
 
     sh = 'yes'
     if sh == 'no':
-        partials = [3,4,5]
-    else:
         partials = [0,1,2]
+    else:
+        partials = [3,4,5]
     data_table_0, surface_data_0, slab_2D_0 = wrapper_merging_h5(aux_path, partial=partials[0], plate=plate, recreate=False,sh=sh)
     data_table_1, _, slab_2D_1 = wrapper_merging_h5(aux_path, partial=partials[1], plate=plate, recreate=False,sh=sh)
     data_table_2, _, slab_2D_2 = wrapper_merging_h5(aux_path, partial=partials[2], plate=plate, recreate=False,sh=sh)
@@ -50,10 +50,10 @@ def main():
     
     data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
 
-
     
     path2save = aux_path / f'Result_shear_heating_{sh}'
     path2save.mkdir(exist_ok=True)
+    plot_slab_variances(slab_2D, path2save = path2save, number_figure=3)
 
     print(f'Saving picture into {path2save}...')
         
@@ -66,10 +66,6 @@ def main():
                         crd=surface_data_0,
                         petro_db=pres_temp_hp_lt_db,
                         figure_number=0)
-
-
-
-    plot_distance_isotherm_seismic(path2save=path2save, pdb=data_table,figure_number=2)
 
 main()
 

@@ -13,6 +13,8 @@ import json
 import fcntl
 from datetime import datetime
 from pathlib import Path, PurePath
+# ---
+# ---
 
 def save_dataset(group, name, data, compress=True):
     if compress and hasattr(data, "shape") and data.shape != ():
@@ -26,6 +28,7 @@ def save_dataset(group, name, data, compress=True):
     else:
         group.create_dataset(name, data=data)
 
+# ---
 
 def save_namedtuple_fields(group, data, aliases=None, skip_fields=None):
     """Save all values from a namedtuple using its field names."""
@@ -38,14 +41,13 @@ def save_namedtuple_fields(group, data, aliases=None, skip_fields=None):
         dataset_name = aliases.get(field_name, field_name)
         save_dataset(group, dataset_name, getattr(data, field_name))
 
+# ---
 
-def write_case_log(log_path, case_index, id_batch, success, status, path_h5):
+def write_case_log(log_path, case_index, id_batch, success, path_h5):
     record = {
-        "time": datetime.now().isoformat(timespec="seconds"),
         "case_index": int(case_index),
         "id_batch": int(id_batch),
         "success": bool(success),
-        "status": str(status),
         "path_h5": str(path_h5),
     }
 
@@ -54,7 +56,7 @@ def write_case_log(log_path, case_index, id_batch, success, status, path_h5):
         f.write(json.dumps(record) + "\n")
         f.flush()
         fcntl.flock(f, fcntl.LOCK_UN)
-#-------------------------------------------------
+# ---
 def timing_function(fun):
     @wraps(fun)
     def wrapper(*args, **kwargs):
@@ -75,7 +77,7 @@ def timing_function(fun):
     return wrapper
 
 
-#--------------------------------------------------
+# ---
 def test_success(name_test: str):
     """Check if the test produced the expected output
 
@@ -89,13 +91,14 @@ def test_success(name_test: str):
         return False
     else:
         return True
-#------------------------------------------------
+# ---
 def extract_slab_surface(T:Test)->np.ndarray:
     
     T_slab_surf = T._interpolate_data_slab('SteadyState.Temp')
     
     return T_slab_surf
-#-------------------------------------------------
+# ---
+
 def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndarray,tag:str)->np.ndarray:
 
     from stonedfenicsx.config.phase_db import read_rheology 
@@ -113,7 +116,7 @@ def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndar
 
     return tau_viscous
 
-#-------------------------------------------------
+# ---
 def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argparse.Namespace)->np.ndarray:
     """Function that extract the stress at slab interface.
 
@@ -150,7 +153,8 @@ def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argpar
     return tau_eff,tau_val
 
 
-#--------------------------------------------------
+# ---
+
 def extract_slab_oceanic_surface_Temperature(T: Test)->tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
     def surface_data(surface):
@@ -180,7 +184,7 @@ def extract_slab_oceanic_surface_Temperature(T: Test)->tuple[np.ndarray, np.ndar
     X_O, T_O, P_O = surface_data('ocean')
     
     return X_S, X_O, T_S, T_O, P_S, P_O
-#-------------------------------------------------
+# ---
 def extract_heat_flux(T: Test)->tuple[np.ndarray, np.ndarray]:
     
     q = T.Data_raw.SteadyState.qy
@@ -200,7 +204,8 @@ def extract_heat_flux(T: Test)->tuple[np.ndarray, np.ndarray]:
     
     
     return x_top, q
-#-------------------------------------------------
+# ---
+
 def extract_isotherm(X, Y, T, level):
     import matplotlib.pyplot as plt
     T = T + 0.3 * np.abs(Y) 
@@ -215,7 +220,7 @@ def extract_isotherm(X, Y, T, level):
     del cs 
     gc.collect()
     return cx, cy
-#------------------------------------------------
+# ---
 @timing_function
 def extract_relevant_data(path:str,args:argparse.Namespace)->list:
     T = Test(path_2_test=path)
@@ -285,7 +290,8 @@ def extract_relevant_data(path:str,args:argparse.Namespace)->list:
 
     return list_data
     
-#-------------------------------------------------
+# ---
+
 @timing_function
 def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
 
@@ -342,7 +348,10 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
 
             if name_test in f:
                 print(f"Overwriting existing case group: {name_test}")
+                flag_welford = False 
                 del f[name_test]
+            else: 
+                flag_welford = True
             grp = f.create_group(name_test)
             
             for key, value in vars(arguments).items():
@@ -363,31 +372,32 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
             )
             
             # update the local mean and variance for the Welford algorithm 
+            if flag_welford: # Avoid updating welford if the tested exists
+                if "n_lc_tst" not in f:
+                    f.create_dataset("n_lc_tst", data=0) 
+                    T_mean, T_var = create_arrays(list_data.Slab_surface)
+                    f.create_dataset("mean_lc_tst", data=T_mean)
+                    f.create_dataset("var_lc_tst", data=T_var)
 
-            if "n_lc_tst" not in f:
-                f.create_dataset("n_lc_tst", data=0) 
-                T_mean, T_var = create_arrays(list_data.Slab_surface)
-                f.create_dataset("mean_lc_tst", data=T_mean)
-                f.create_dataset("var_lc_tst", data=T_var)
-            
-            n_lc_tst = f["n_lc_tst"][()]
-            n_lc_tst += 1
-            f["n_lc_tst"][()] = n_lc_tst
-            T_mean = f["mean_lc_tst"][()]
-            T_var = f["var_lc_tst"][()]
-            n_lc_tst = f["n_lc_tst"][()]
-            T_mean, T_var = update_Welfrod_ALG(list_data.Slab_surface,T_mean,T_var,n_lc_tst)
-            f["mean_lc_tst"][()] = T_mean
-            f["var_lc_tst"][()] = T_var
-            print(f"  - Updated mean and variance for the Welford algorithm for case {arguments.case_index} and {n_lc_tst} tests")
+                n_lc_tst = f["n_lc_tst"][()]
+                n_lc_tst += 1
+                f["n_lc_tst"][()] = n_lc_tst
+                T_mean = f["mean_lc_tst"][()]
+                T_var = f["var_lc_tst"][()]
+                n_lc_tst = f["n_lc_tst"][()]
+                T_mean, T_var = update_Welfrod_ALG(list_data.Slab_surface,T_mean,T_var,n_lc_tst)
+                f["mean_lc_tst"][()] = T_mean
+                f["var_lc_tst"][()] = T_var
+                print(f"  - Updated mean and variance for the Welford algorithm for case {arguments.case_index} and {n_lc_tst} tests")
             del list_data 
             gc.collect()
-    else:
-            write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=True, status="Test successful", path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
+    else: 
+        test_successful = False
+        
+        write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
     
     print('===================================================================================================================')
-        
-
+# ---
 def update_Welfrod_ALG(Temp:np.ndarray,mean:np.ndarray,var:np.ndarray,n:int):
     delta = Temp-mean 
     mean = mean + delta / n 
@@ -395,7 +405,7 @@ def update_Welfrod_ALG(Temp:np.ndarray,mean:np.ndarray,var:np.ndarray,n:int):
     var = var + delta*delta2 
     
     return mean,var
- 
+# ---
 def create_arrays(Temp:np.ndarray)->tuple[np.ndarray,np.ndarray]: 
     
     T_m = np.zeros_like(Temp)
