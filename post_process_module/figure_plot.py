@@ -24,14 +24,27 @@ _PT_CM_ = 0.035
 _TICKSFONTSIZE_ = 0.8/_PT_CM_
 _LABELFONTSIZE_ = 1.0/_PT_CM_
 _TEXTFONTSIZE_ = 0.65/_PT_CM_
+# --- 
+def create_array(buf:pd.DataFrame)->np.ndarray:
+    
+    if len(buf.shape)>1:
+        raise ValueError('The function accept only 1D dataframe')
+    
+    array = np.zeros([buf.size,len(buf.iloc[0])],dtype = np.float32)
+    
+    for i in range(buf.size):
+        array[i,:] = buf.iloc[i]
 
+
+    return array 
+# ---
 def sign(num):
     return -1 if num < 0 else 1
-
+# ---
 def ranges(x,y,z): 
     lim = [np.floor(np.nanmin([np.nanmin(x),np.nanmin(y),np.nanmin(z)])),np.ceil(np.nanmax([np.nanmax(x),np.nanmax(y),np.nanmax(z)]))]
     return lim
-
+# ---
 def create_list_tick(lim)->list:
     
     d = (lim[1]-lim[0])/4
@@ -46,7 +59,7 @@ def create_list_tick(lim)->list:
         ticks.append(t)
     
     return ticks
-
+# ---
 def check_precision(value:float)-> float: 
     
     if value == 0.0:
@@ -72,8 +85,7 @@ def check_precision(value:float)-> float:
     value_u = (np.floor(value_u)+corr) * scale * direction
     
     return value_u 
-
-
+# ---
 def create_common_data_set(pdb:pd.DataFrame)->tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]:
     """Function that creates common datasets: 
     -> Time to time simulations fails,so it is necessary to check how many experiments fails,
@@ -105,7 +117,7 @@ def create_common_data_set(pdb:pd.DataFrame)->tuple[pd.DataFrame,pd.DataFrame,pd
     c_common = (c.merge(common_keys, on=keys, how="inner")).sort_values(keys).reset_index(drop=True)
 
     return a_common,b_common,c_common 
-
+# ---
 class data_base_PT_whitney():
     def __init__(self):
         self.T = [300, 550, 590, 400, 570, 610, 635, 540, 585, 510,
@@ -170,7 +182,7 @@ class data_base_PT_whitney():
                0.7, 0.8, 0.9, 0.7, 0.8, 0.3, 1.2, 0.3, 0.7, 0.6,
                1.5, 2.0, 1.1, 0.7, 0.8, 2.5, 1.0, 0.5, 0.9, 1.1,
                1.1, 1.2, 0.6, 1.8, 1.9, 0.6, 0.7, 0.8, 1.2]
-
+# ---
 # latex Font 
 TRANSPARENT = True 
 plt.rcParams.update({
@@ -178,8 +190,7 @@ plt.rcParams.update({
     "font.family": "serif",
     "mathtext.fontset": "cm",   # Computer Modern
 })
-
-# General function to change the axis behaviour
+# ---
 def modify_axes(ax: mpl_axes = None,
                 label_x: Optional[list] = ['n', 'n'],
                 lim_x: Optional[list] = None,
@@ -266,40 +277,36 @@ def modify_axes(ax: mpl_axes = None,
     )
 
     return ax
-
-
-
-
-
-def plot_slab_variances(A, path2save: str,name_figure: str,name: str, DBa:None) -> None:
+# ---
+def plot_slab_variances(A, path2save: str,number_figure:int) -> None:
     import numpy as np
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-    name_plot = f'Figure_{name_figure}_{name}.png'
+    name_plot = f'Figure_{number_figure}.png'
     
     def extract_limits(k3, k5, NL):
         l_m = []
         l_M = []
 
-        l_m.append(np.nanmin(k3.T_mean - NL.T_mean))
-        l_M.append(np.nanmax(k3.T_mean - NL.T_mean))
+        l_m.append(np.nanmin(NL.temp_mean_2d-k3.temp_mean_2d))
+        l_M.append(np.nanmax(NL.temp_mean_2d-k3.temp_mean_2d))
 
-        l_m.append(np.nanmin(k5.T_mean - NL.T_mean))
-        l_M.append(np.nanmax(k5.T_mean - NL.T_mean))
+        l_m.append(np.nanmin(NL.temp_mean_2d-k5.temp_mean_2d))
+        l_M.append(np.nanmax(NL.temp_mean_2d-k5.temp_mean_2d))
 
         return l_m, l_M
 
-    fig = plt.figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(12, 12))
 
     k3,k5,NL = A 
     
-    Xi,Yi = k3.Xi,k3.Yi
+    Xi,Yi = k3.xi,k3.yi
     
     
     
-    bx = 0.1
-    by = 0.2
+    bx = 0.12
+    by = 0.1
     sx = 0.38
     sy = 0.68
     dx = 0.08
@@ -307,89 +314,104 @@ def plot_slab_variances(A, path2save: str,name_figure: str,name: str, DBa:None) 
     ax0 = fig.add_axes([bx, by, sx, sy])
     ax1 = fig.add_axes([bx + sx + dx, by, sx, sy])
 
-    l_m, l_M = extract_limits(k3,k5,NL)
+    lima,limb = extract_limits(k3,k5,NL)
 
-    levels0 = np.linspace(np.floor(l_m[0]), np.ceil(l_M[0]), 10)
-    levels1 = np.linspace(np.floor(l_m[1]), np.ceil(l_M[1]), 10)
+    lim_x = [0.0, 800.0]
+    lim_y = [-600,0.0]
+
+    levels0 = np.linspace(np.floor(lima[0]), np.ceil(limb[0]), 10)
+    levels1 = np.linspace(np.floor(lima[1]), np.ceil(limb[1]), 10)
     alpha = 1.0
-    if DBa is not None:
-        alpha = 0.1
-        z300 = DBa.loc[(DBa['option_thermal'] == 1), f'max_dpth{300}']
-        z500 = DBa.loc[(DBa['option_thermal'] == 1), f'max_dpth{500}']
-        z600 = DBa.loc[(DBa['option_thermal'] == 1), f'max_dpth{600}']
-        x300 = DBa.loc[(DBa['option_thermal'] == 1), f'x_dpth{300}']
-        x500 = DBa.loc[(DBa['option_thermal'] == 1), f'x_dpth{500}']
-        x600 = DBa.loc[(DBa['option_thermal'] == 1), f'x_dpth{600}']
 
-    a = ax0.contourf(k3.Xi, k3.Yi, k3.T_mean - NL.T_mean, levels=levels0, cmap='cmc.roma',alpha=alpha)
-    if alpha != 1.0:
 
-        
-        b = ax0.scatter(x300,z300, color='firebrick', s=1,marker='x')
-        d = ax0.scatter(x600,z600, color='firebrick', s=1,marker='d')
-
+    a = ax0.pcolormesh(Xi, Yi, NL.temp_mean_2d-k3.temp_mean_2d, cmap='cmc.roma',alpha=alpha)
         
     divider = make_axes_locatable(ax0)
-    cax = divider.append_axes("bottom", size="5%", pad=0.05)
-    plt.colorbar(a, cax=cax, orientation="horizontal",
-                 label=r'$\bar{T}_{k=3} - \bar{T}_{NL}$ [$^\circ$C]')
+    cax = divider.append_axes("bottom", size="5%", pad=0.8)
+    cbar = plt.colorbar(a, cax=cax, orientation="horizontal",location="top")
 
-    b = ax1.contourf(k5.Xi, k5.Yi, k5.T_mean - NL.T_mean, levels=levels1, cmap='cmc.roma',alpha=alpha)
-    if alpha != 1.0:
-        b = ax1.scatter(x300,z300, color='firebrick', s=1,marker='x')
-        d = ax1.scatter(x600,z600, color='firebrick', s=1,marker='d')
+    b = ax1.pcolormesh(Xi, Yi, NL.temp_mean_2d-k5.temp_mean_2d, cmap='cmc.roma',alpha=alpha)
+    cbar.set_label( label=r'$\bar{T}_{NL}$ - $\bar{T}_{k=3}$ [$^\circ$C]',fontsize=14)
+    cbar.ax.tick_params(labelsize=12)   
     divider = make_axes_locatable(ax1)
-    cax2 = divider.append_axes("bottom", size="5%", pad=0.05)
-    plt.colorbar(b, cax=cax2, orientation="horizontal",
-                 label=r'$\bar{T}_{k=5} - \bar{T}_{NL}$ [$^\circ$C]')
+    cax2 = divider.append_axes("bottom", size="5%", pad=0.8)
+    cbar2 = plt.colorbar(b, cax=cax2, orientation="horizontal",location="top")
 
-    modify_axes(ax=ax0, label_x='Distance [km]', lim=[0, 1250], label_y='Depth [km]')
-    modify_axes(ax=ax1, label_x='Distance [km]', lim=[0, 1250])
-
-    fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)
-    plt.close(fig)
+    cbar2.set_label(label=r'$\bar{T}_{NL}$ - $\bar{T}_{k=5}$ [$^\circ$C]' ,fontsize=14)
+    cbar2.ax.tick_params(labelsize=12)
+    #modify_axes(ax=ax0, label_x='Distance [km]', lim=[0, 1250], label_y='Depth [km]')
+    #modify_axes(ax=ax1, label_x='Distance [km]', lim=[0, 1250])
+    ticks_x = [0,400,800]
+    ax0 = modify_axes(ax0,label_x=[r'x, [km]','y'],label_y=[r'z, [km]','y'],lim_y=lim_y,lim_x=lim_x,letter='[a]',ticks_x=ticks_x)
+    ax1 = modify_axes(ax1,label_x=[r'x, [km]','y'],label_y=[r'','n'],lim_y=lim_y,lim_x=lim_x,letter='[b]',ticks_x=ticks_x)
+    ax0.tick_params(axis='both', which='major', pad=9)
     
+    ax0.spines['top'].set_visible(True)
+    ax0.spines['bottom'].set_visible(False)
+    ax0.spines['right'].set_visible(False)
+    ax0.spines['left'].set_color('black')
+    ax0.spines['bottom'].set_color('black')
+    ax0.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax0.spines['left'].set_linewidth(2.0)
+    ax0.spines['top'].set_linewidth(2.0)
+    ax0.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax0.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax0.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax0.xaxis.tick_top()                  # Move ticks to the top
+    ax0.xaxis.set_label_position("top")   # Move x-axis label to the top
     
-
-
-
-#------------------------------------------------------------------------------
-def plot_heat_flux(path2save:str,pd0:pd.DataFrame,pd1:pd.DataFrame,pd2:pd.DataFrame, name_figure:str,name:str):
-
-    name_plot = f'Figure_{name_figure}_{name}.png'
-    
-    fig = plt.figure(figsize=(8, 6))
-    
-    ax0 = fig.add_axes([0.1,0.1,0.4,0.8])
-    ax1 = fig.add_axes([0.54,0.1,0.4,0.8])
-    
-    for i in range(len(surface_data[1].non_linear)):
-        ax0.plot(surface_data[1].x_top, surface_data[1].heat_flux[i,:]*1000, color='olive', lw=0.5)
-        ax0.plot(surface_data[0].x_top, surface_data[0].heat_flux[i,:]*1000, color='cadetblue', lw=0.5)
-        ax1.plot(surface_data[2].x_top, surface_data[2].heat_flux[i,:]*1000, color='firebrick', lw=0.5)
-        
-        
-    ax0.set_xlabel('Distance from trench [km]')
-    ax0.set_ylabel(r'Heat flux $[mW/m^2]$')
-    ax1.spines['top'].set_visible(False)
+    ax1.spines['top'].set_visible(True)
+    ax1.spines['bottom'].set_visible(False)
     ax1.spines['right'].set_visible(False)
     ax1.spines['left'].set_color('black')
     ax1.spines['bottom'].set_color('black')
-    ax1.tick_params(axis='both', colors='black')
-    ax1.spines['left'].set_linewidth(2.5)
-    ax1.spines['bottom'].set_linewidth(2.5)
-    ax0.set_xlim(10, 600)
-    ax0.set_ylim(0,100)
-    ax1.set_xlim(10, 600)
-    ax1.set_ylim(0,100)
-    ax1.set_yticklabels([])
-    ax1.set_xlabel('Distance from trench [km]')
+    ax1.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax1.spines['left'].set_linewidth(2.0)
+    ax1.spines['top'].set_linewidth(2.0)
+    ax1.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax1.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax1.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax1.xaxis.tick_top()                  # Move ticks to the top
+    ax1.xaxis.set_label_position("top")   # Move x-axis label to the top
+    
+    
+    fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)
+    plt.close(fig)
+# ---
+def plot_heat_flux(path2save:str,crd,pdb:pd.DataFrame, figure_number:int)->None:
+
+    name_plot = f'Figure_{figure_number}.png'
+    
+    fig = plt.figure(figsize=(8, 6))
+    
+    ax0 = fig.add_axes([0.17,0.16,0.32,0.8])
+    ax1 = fig.add_axes([0.63,0.16,0.32,0.8])
+    
+    # 
+    k3,k5,knl = create_common_data_set(pdb=pdb)
+    
+    k3_heat_flux = create_array(k3.loc[(k3['k'] == 3.1), f'Q'])*1000
+    k5_heat_flux = create_array(k5.loc[(k5['k'] == 5.0), f'Q'])*1000
+    knl_heat_flux = create_array(knl.loc[(knl['k'] == 0.0), f'Q'])*1000
+
+    k3_rer = np.abs((knl_heat_flux-k3_heat_flux)/knl_heat_flux)*100
+    k5_rer = np.abs((knl_heat_flux-k5_heat_flux)/knl_heat_flux)*100
+
+    for i in range(len(k3_heat_flux[:,0])):
+        ax0.plot(crd.x_heat_flux,k5_heat_flux[i,:], color='olive', lw=0.01)
+        ax0.plot(crd.x_heat_flux, k3_heat_flux[i,:], color='cadetblue', lw=0.01)
+        ax0.plot(crd.x_heat_flux, knl_heat_flux[i,:], color='firebrick', lw=0.01)
+        ax1.plot(crd.x_heat_flux, k3_rer[i,:], color='cadetblue', lw=0.01)
+        ax1.plot(crd.x_heat_flux, k5_rer[i,:], color='olive', lw=0.01)
+
+        
+    ax0 = modify_axes(ax0,label_x=[r'x, [km]','y'],lim_x=[0,600],lim_y=[0,100],label_y=[r'q, [$m W/m^2$]','y'],ticks_x=[0.0,300,600], ticks_y=[0,20,40,60,80,100],letter='[a]')
+    ax1 = modify_axes(ax1,label_x=[r'x, [km]','y'],lim_x=[0,600],lim_y=[0,30.0],label_y=[r'$\xi(q)$ %','y'],ticks_x=[0.0,300,600], ticks_y=[0.0,10.0,20.0,30.0],letter='[b]')
+        
+
     
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent = TRANSPARENT)
-
-
-
-
+# ---
 def colored_line_set(x_list, y_list, vc, case_ids, cmap='viridis', lw=2, ax=None):
     """
     Plot multiple lines with color mapped to scalar vc.
@@ -426,20 +448,9 @@ def colored_line_set(x_list, y_list, vc, case_ids, cmap='viridis', lw=2, ax=None
     plt.colorbar(sm, ax=ax, label='vc')
 
     return ax
-
+# ---
 def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,petro_db:data_base_PT_whitney, figure_number:int)->None:
-    def create_array(buf:pd.DataFrame)->np.ndarray:
-        
-        if len(buf.shape)>1:
-            raise ValueError('The function accept only 1D dataframe')
-        
-        array = np.zeros([buf.size,len(buf.iloc[0])],dtype = np.float32)
-        
-        for i in range(buf.size):
-            array[i,:] = buf.iloc[i]
-    
-    
-        return array 
+
     
     def difference_surface(pdb_a:pd.DataFrame,pdb_b:pd.DataFrame)->np.ndarray:
         """Enclosure to find the dT array
@@ -492,11 +503,11 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     sy = 0.35
     dy = 0.1
     sx_top = 0.25 
-    dx_top_a = 0.08 
-    dx_top_b = 0.05 
+    dx_top_a = 0.07
+    dx_top_b = 0.07 
     sx_bot = 0.25
-    dx_bota = 0.04 
-    dx_botb = 0.08
+    dx_bota = 0.07 
+    dx_botb = 0.07
     top_row = by+sy+dy
     # --- 
     # Top row: figure ax0 -> NL slab surface // black line + scatter DB + band 80 km 
@@ -539,11 +550,23 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
 
     
     ax0.scatter(petro_db.T,petro_db.P,c='b',s=5.0,marker='x')
-    ax3.scatter(k3['thermal_parameter']/1000,knl['T_s_dc']-k3['T_s_dc'],color='cadetblue',s=0.5)
-    ax4.scatter(k3['thermal_parameter']/1000,knl['T_s_dc']-k5['T_s_dc'],color='olive',s=0.5)
-    ax5.scatter(knl['thermal_parameter']/1000,knl['T_s_dc'],color='firebrick',s=0.5)
-    ax5.scatter(k3['thermal_parameter']/1000,k3['T_s_dc'],color='cadetblue',s=0.5)
-    ax5.scatter(k5['thermal_parameter']/1000,k5['T_s_dc'],color='olive',s=0.5)
+    ax3.scatter(k3['thermal_parameter']/1000,knl['d_seismic_ell'],color='firebrick',s=0.5)
+    ax3.scatter(k3['thermal_parameter']/1000,k3['d_seismic_ell'],color='cadetblue',s=0.5)
+    ax3.scatter(k3['thermal_parameter']/1000,k5['d_seismic_ell'],color='olive',s=0.5)
+
+    err_k3 = np.abs((knl['d_seismic_ell']-k3['d_seismic_ell'])/knl['d_seismic_ell'])*100
+    err_k5 = np.abs((knl['d_seismic_ell']-k5['d_seismic_ell'])/knl['d_seismic_ell'])*100
+
+    ax4.scatter(k5['thermal_parameter']/1000,err_k5,color='olive',s=0.5)
+    ax4.scatter(k3['thermal_parameter']/1000,err_k3,color='cadetblue',s=0.5)
+
+    ax5.scatter(k5['thermal_parameter']/1000,k5['d_seismic_150'],color='olive',s=0.5)
+    ax5.scatter(k3['thermal_parameter']/1000,k3['d_seismic_150'],color='cadetblue',s=0.5)
+    ax5.scatter(knl['thermal_parameter']/1000,knl['d_seismic_150'],color='firebrick',s=0.5)
+
+    ax5.scatter(knl['thermal_parameter']/1000,knl['d_seismic_450'],color='firebrick',s=0.5)
+    ax5.scatter(k3['thermal_parameter']/1000,k3['d_seismic_450'],color='cadetblue',s=0.5)
+    ax5.scatter(k5['thermal_parameter']/1000,k5['d_seismic_450'],color='olive',s=0.5)
 
     
     # Homogeneise the layout of the figure. 
@@ -564,19 +587,24 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     ticks_x = create_list_tick(lim_x)
 
     
-    lim_y = ranges(knl['T_s_dc']-k3['T_s_dc'],knl['T_s_dc']-k5['T_s_dc'],np.nan)
-    lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
+    lim_y = ranges(knl['d_seismic_ell'],k3['d_seismic_ell'],k5['d_seismic_ell'])
+    lim_y = [50.0,check_precision(lim_y[1])]
     ticks_y = create_list_tick(lim_y)
 
     
-    ax3 = modify_axes(ax3,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\Delta$ T [$^{\circ}$C]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[d]')
-    ax4 = modify_axes(ax4,label_x=[r'$\gamma$ [1000 km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[e]')
-    
-    lim_y = ranges(knl['T_s_dc'],k5['T_s_dc'],k3['T_s_dc'])
+    ax3 = modify_axes(ax3,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\Delta \ell^{450-150}$ [km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[d]')
+
+    lim_y =  ranges(err_k3,err_k5,np.nan)
     lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
     ticks_y = create_list_tick(lim_y)
     
-    ax5 = modify_axes(ax5,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'T$_{dc}$ [$^{\circ}$C]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y)
+    ax4 = modify_axes(ax4,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\xi(\Delta\ell)$','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[e]')
+    
+    lim_y = ranges(knl['d_seismic_450'],k5['d_seismic_450'],k3['d_seismic_450'])
+    lim_y = [-80,-5.0]
+    ticks_y = create_list_tick(lim_y)
+    
+    ax5 = modify_axes(ax5,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$z^{\mathrm{slab}}_{450 & 150}$ [km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[f]')
 
 
     # Custom legend entries
@@ -606,15 +634,8 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     }
     )
 
-
-    
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent = TRANSPARENT)
-
-
-
-# ----------------------- Functions ------------------ #
-
-# ---------------- 
+# ---
 def plot_distance_to_isotherms(path2save:str, DB:pd.DataFrame, scale=False, name:str='PT',name_figure:str=''):
     
     name_plot = f'{name_figure}_{name}.png'
@@ -753,12 +774,8 @@ def plot_distance_to_isotherms(path2save:str, DB:pd.DataFrame, scale=False, name
 
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)
-    # Extract data 
-    
-#---------------------------------------------------------------------------------    
-    
-
-    
+    # Extract data    
+# ---
 def plot_distance_isotherm_seismic(path2save:str, pdb:pd.DataFrame, figure_number:int =0):
     name_plot = f'Figure_{figure_number}.png'
     
@@ -858,9 +875,8 @@ def plot_distance_isotherm_seismic(path2save:str, pdb:pd.DataFrame, figure_numbe
     ax1 = modify_axes(ax1, label_x=r'$\Delta \xi [km]$', label_y=r'f []', lim_x=[0.0, 1.0], lim_y=None, isotherms=300)
     ax2 = modify_axes(ax2, label_x=r'$\Delta \xi*$ [ ]', label_y=None, lim_x=[0.0, 1.0], lim_y=None, isotherms=500)
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)
-    # Extract data 
-            
-# plot the variance along the thermal parameter
+    # Extract data             
+# ---
 def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:int=0):
     
     name_plot = f'Figure_{figure_number}.png'
@@ -909,8 +925,7 @@ def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:
             if not normalised: 
                 c_array[i, 0], c_array[i, 1], c_array[i, 2], c_array[i, 3] = compute_values(c,c ,tpl0, tpl1, isotherms,normalised=normalised)
             newthpar[i] = (tpl0 + tpl1) / 2.0  # centro del bin
-            if isotherms == 450 and normalised:
-                print(f'{a_array[i,3]},{a_array[i,2]},{newthpar[i]}')
+
         
 
 
@@ -933,6 +948,8 @@ def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:
         lim_y = ranges(lim_a,lim_b,np.nan)
         lim_x = ranges(x/1000,np.nan,np.nan)
         colors = ('cadetblue', 'olive', 'firebrick')
+        model = ('k=3.1', 'k=5.0', 'nl')
+
         
         for idx, arr in enumerate(dat):
             ax.plot(x/1000, arr[:, 0], color=colors[idx], label=labels[idx])  # mediana
@@ -940,6 +957,10 @@ def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:
                             arr[:, 2],  # mediana - std
                             arr[:, 3],  # mediana + std
                             color=colors[idx], alpha=0.4)
+            
+            d_a = arr[-1,0]-arr[0,0]
+            d_x = x[-1]-x[0]
+            print(f'd_depth{isotherms} {model[idx]} = {(d_a/d_x)*1000:.2f} and d_a = {d_a:.2f}')
 
         
         
@@ -1031,159 +1052,3 @@ def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
 
 
-
-def test_picture_check(path2save:str, pdba:pd.DataFrame,pdbb:pd.DataFrame,pdbc:pd.DataFrame,crd:CoordinateSurface,petro_db:data_base_PT_whitney, figure_number:int)->None:
-    def create_array(buf:pd.DataFrame)->np.ndarray:
-        
-        if len(buf.shape)>1:
-            raise ValueError('The function accept only 1D dataframe')
-        
-        array = np.zeros([buf.size,len(buf.iloc[0])],dtype = np.float32)
-        
-        for i in range(buf.size):
-            array[i,:] = buf.iloc[i]
-    
-    
-        return array 
-    
-    def difference_surface(pdb_a:pd.DataFrame,pdb_b:pd.DataFrame)->np.ndarray:
-        """Enclosure to find the dT array
-        -> check if the same row indicate the same [Tp,vc,age]-> if so, perform 
-        the difference-> update array. 
-
-        Args:
-            pdb_a (pd.DataFrame): Non linear database
-            pdb_b (pd.DataFrame): Linear database
-
-        Returns:
-            final array with all the experiment
-        """
-        
-        
-        count = len(pdb_a['case_id'])
-        keys = ['Tp','vc','age']
-        array = np.zeros([count,len(pdb_a.loc[0,'T_S'])],dtype = np.float32) 
-        n_exp = 0
-        
-        for i in range(count):
-            same = False
-            
-            for k in keys: 
-                if pdb_a.loc[i,k] != pdb_b.loc[i,k]:
-                    same = False
-                    break 
-                else: 
-                    same = True
-            if same:
-                array[i,:] = pdb_a.loc[i,'T_S']-pdb_b.loc[i,'T_S']
-                n_exp = n_exp + 1
-        
-        print(f'Number of experiments {n_exp}, {n_exp/count:.1f}')
-    
-        return array 
-    
-    
-    
-    name_plot = f'Figure_{figure_number}.png'
-    
-    from matplotlib.collections import LineCollection
-    
-    fig = plt.figure(figsize=(16, 10))
-
-    # Top row: 
-    
-    bx = 0.1
-    by = 0.1 
-    sy = 0.7
-    dy = 0.1
-    sx_top = 0.25 
-    dx_top_a = 0.08 
-    dx_top_b = 0.05 
-    sx_bot = 0.25
-    dx_bota = 0.04 
-    dx_botb = 0.08
-    top_row = by+sy+dy
-    # --- 
-    # Top row: figure ax0 -> NL slab surface // black line + scatter DB + band 80 km 
-    #        : figure ax1 -> dT LN_k=3.1 - NL // black line + band 80 km 
-    #        : figure ax2 -> dT LN_k=5 - NL // blacl line   + band 80 km 
-    # Bot row: figure ax3 -> scatter plot dT vs gamma (thermal parameter) : cadet_blue => k=3.1 olive_green = k=5.0 
-    #        : figure ax4 -> scatter plot dT vs Tp (potential temperature): 
-    # --- 
-    # ax5 => empty axes where to put the legend.  
-    ax0 = fig.add_axes([bx,by,sx_top,sy])
-    ax1 = fig.add_axes([bx+sx_top+dx_top_a,by,sx_top,sy])
-    ax2 = fig.add_axes([bx+2*sx_top+dx_top_a+dx_top_b,by,sx_top,sy])
-    
-    temp_min_gr = 0 + 5 * np.abs(crd.z_slab)
-    temp_max_gr = 0 + 20 * np.abs(crd.z_slab)
-    temp_mean_gr = 0 + 10 * np.abs(crd.z_slab)
-    p_fake = np.abs(crd.z_slab) * 9.81 * 3200 
-
-    # Extract the temperature of the non linear experiments
-    a0x = create_array( pdba[f'T_S'])
-    a0y = create_array( pdba[f'P_S']) 
-    
-    b0x = create_array( pdbb[f'T_S'])
-    b0y = create_array( pdbb[f'P_S']) 
-    
-    c0x = create_array( pdbc[f'T_S'])
-    c0y = create_array( pdbc[f'P_S']) 
-    
-
-    
-    for i in range(6424):
-        ax0.plot(a0x[i,:],a0y[i,:],c='firebrick',alpha=0.01)
-        ax1.plot(b0x[i,:],c0y[i,:],c='cadetblue',alpha=0.01)
-        ax2.plot(c0x[i,:],c0y[i,:],c='olive',alpha=0.01)
-        print(i)
-
-
-    
-
-    
-    ax0.scatter(petro_db.T,petro_db.P,c='b',s=5.0,marker='x')
-
-
-    
-    # Homogeneise the layout of the figure. 
-    
-    ax0 = modify_axes(ax0,label_x=[r'T [$^{\circ}$C]','y'],lim_x=[0,1100],lim_y=[0,4],label_y=[r'P [GPa]','y'],ticks_x=[0.0,250,500,750,1000], ticks_y=[0,1,2,3,4],letter='[a]')
-    
-    
-    
-    
-    ax1 = modify_axes(ax1,lim_y=[0,4],lim_x=[0,1100], ticks_y=[0,1,2,3,4],letter='[b]')
-    ax2 = modify_axes(ax2,lim_y=[0,4],lim_x=[0,1100],ticks_y=[0,1,2,3,4],letter='[c]')
-    
-
-    # Custom legend entries
-    legend_elements = [
-        Line2D([0], [0], marker='o', color='firebrick',
-               linestyle='None', markersize=8,
-               label='Shear Heating Wet Qtz'),
-
-        Line2D([0], [0], marker='o', color='cadetblue',
-               linestyle='None', markersize=8,
-               label='No Shear Heating'),
-
-        Line2D([0], [0], marker='o', color='olive',
-               linestyle='None', markersize=8,
-               label='Constant shear heating '),
-    ]
-
-    fig.legend(
-        handles=legend_elements,
-        loc='upper center',
-        bbox_to_anchor=(0.5, 0.98),
-        ncol=3,
-        frameon=True,
-        prop={
-        'size': _TEXTFONTSIZE_,
-        'weight': 'demibold'
-    }
-    )
-
-
-    
-    fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent = TRANSPARENT)
