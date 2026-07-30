@@ -8,6 +8,7 @@
 #SBATCH --output=out2/Sensitivity_%A_%a.txt
 #SBATCH --error=err2/Sensitivity_%A_%a.txt
 
+#SBATCH --exclude=node052
 module purge
 module load python/3.13.0
 module load spack/0.23

@@ -35,7 +35,7 @@ def main():
 
     print("Merging partial data files...")
 
-    aux_path =Path(__file__).resolve().parent
+    aux_path = Path(__file__).resolve().parent
 
     sh = 'yes'
     if sh == 'no':
@@ -43,8 +43,8 @@ def main():
     else:
         partials = [3,4,5]
     data_table_0, surface_data_0, slab_2D_0 = wrapper_merging_h5(aux_path, partial=partials[0], plate=plate, recreate=False,sh=sh)
-    data_table_1, _, slab_2D_1 = wrapper_merging_h5(aux_path, partial=partials[1], plate=plate, recreate=False,sh=sh)
-    data_table_2, _, slab_2D_2 = wrapper_merging_h5(aux_path, partial=partials[2], plate=plate, recreate=False,sh=sh)
+    data_table_1, surface_data_1, slab_2D_1 = wrapper_merging_h5(aux_path, partial=partials[1], plate=plate, recreate=False,sh=sh)
+    data_table_2, surface_data_2, slab_2D_2 = wrapper_merging_h5(aux_path, partial=partials[2], plate=plate, recreate=False,sh=sh)
 
     slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
     
@@ -53,7 +53,12 @@ def main():
     
     path2save = aux_path / f'Result_shear_heating_{sh}'
     path2save.mkdir(exist_ok=True)
+    
+    
     plot_slab_variances(slab_2D, path2save = path2save, number_figure=3)
+    
+    plot_heat_flux(path2save,surface_data_0,data_table, 4)
+
 
     print(f'Saving picture into {path2save}...')
         

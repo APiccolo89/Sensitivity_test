@@ -1,5 +1,6 @@
 import h5py
 import numpy as np
+import warnings
 import os
 r_grid = 800
 def get_nested_attr(obj, path):
@@ -42,7 +43,7 @@ class Test:
         
         return Zi  
     
-    def _interpolate_data_slab(self,Data_field):
+    def _interpolate_data_slab(self,Data_field,ts=0,steady_state=True):
         """ Interpolate the data on a regular grid for visualisation
         Args:
             Data_field (str): field to be interpolated
@@ -63,7 +64,11 @@ class Test:
         # Extrac the field data 
         values =get_nested_attr(self.Data_raw, Data_field)
         
-        Zi = griddata(self.MeshData.X, values, (Xi, Yi), method='linear')
+        if steady_state:        
+        
+            Zi = griddata(self.MeshData.X, values, (Xi, Yi), method='linear')
+        else:
+            Zi = griddata(self.MeshData.X, values[:,ts], (Xi, Yi), method='linear')
         
         Zi[self.MeshData.ar_s==False] = np.nan
 
@@ -108,7 +113,7 @@ class Data_Raw():
         
         self.SteadyState = Data_experiment(f,num,ts=False)
         
-#        self.TimeDependent = Data_experiment(f,num,ts=True)
+        self.TimeDependent = Data_experiment(f,num,ts=True)
         
 class Data_experiment():
     '''
@@ -149,14 +154,14 @@ class Data_experiment():
         if ts == True: 
             # Rather necessary as the h5 file was not created in reasonable way 
             # Direct to the time dependent file
-            if os.path.exists('%s/TimeDependent.h5'%f):
+            if os.path.exists('%s/time_dependent.h5'%f):
                 print("The file exists.")
             else:
                 print("The file does not exist. Either the time dependent simulation was not run or the path is incorrect.")
                 self.NoTD = True
                 return None 
             
-            fl = h5py.File('%s/TimeDependent.h5'%f, 'r')
+            fl = h5py.File('%s/time_dependent.h5'%f, 'r')
             field = 'Function/Temperature  [degC]'
             times = list(fl[field].keys())
             time_list = [float(s.replace("_", ".")) for s in times]
@@ -183,7 +188,6 @@ class Data_experiment():
         self.rho     = np.zeros([num,TS],dtype=float) 
         self.k       = np.zeros([num,TS],dtype=float) 
         self.Cp      = np.zeros([num,TS],dtype=float)
-        self.T_Ad    = np.zeros([num,TS],dtype=float) 
             
         
         self.extract_data(f,ts)
@@ -195,67 +199,66 @@ class Data_experiment():
         
         if ts == True: 
             # Direct to the time dependent file
-            fl = h5py.File('%s/TimeDependent.h5'%f, 'r')
-            for it, time in enumerate(self.times):
-                field_temp = '/Function/Temperature  [degC]/%s'%time
-                field_pres = '/Function/Pressure  [GPa]/%s'%time
-                field_litpres = '/Function/Lit Pres  [GPa]/%s'%time
-                field_v   = '/Function/Velocity  [cm/yr]/%s'%time
-                field_q   = '/Function/q  [W/m2]/%s'%time
-                
-                self.Temp[:,it]    = np.array(fl[field_temp]).flatten()
-                self.Pres[:,it]    = np.array(fl[field_pres]).flatten()
-                self.LitPres[:,it] = np.array(fl[field_litpres]).flatten()
-                
-                v                 = np.array(fl[field_v])
-                self.vx[:,it]     = v[:,0]
-                self.vy[:,it]     = v[:,1]
-                
-                qS               = np.array(fl[field_q])
-                self.qx[:,it]    = qS[:,0]
-                self.qy[:,it]    = qS[:,1]
-                
-            fl.close()
+            with h5py.File('%s/time_dependent.h5'%f, 'r') as fl:
+                for it, time in enumerate(self.times):
+                    field_temp = '/Function/Temperature  [degC]/%s'%time
+                    field_pres = '/Function/Pressure  [GPa]/%s'%time
+                    field_litpres = '/Function/Lit Pres  [GPa]/%s'%time
+                    field_v   = '/Function/Velocity  [cm/yr]/%s'%time
+
+                    self.Temp[:,it]    = np.array(fl[field_temp]).flatten()
+                    self.Pres[:,it]    = np.array(fl[field_pres]).flatten()
+                    self.LitPres[:,it] = np.array(fl[field_litpres]).flatten()
+
+                    v                 = np.array(fl[field_v])
+                    self.vx[:,it]     = v[:,0]
+                    self.vy[:,it]     = v[:,1]
+
         else:
-            # Direct to the steady state file 
-            f = '%s/Steady_state.h5'%f
+            f1 = ''
+            try: 
+                f1 = '%s/Steady_state.h5'%f
+                fl = h5py.File(f1, 'r')
+                fl.close()
+                proceed = True 
+            except: 
+                string = f'Steady state solution does not exist in {f}. Either has not be run or there is a problem with the path'
+                warnings.warn(string)
+                proceed = False
 
-            # Extract mesh geometry 
-            fl = h5py.File(f, 'r')
+            if proceed: 
+                with h5py.File(f1,'r') as fl:
+                    self.Temp               = np.array(fl['/Function/Temperature  [degC]/0']).flatten()
+
+                    self.Pres               = np.array(fl['/Function/Pressure  [GPa]/0']).flatten()
+
+                    self.LitPres            = np.array(fl['/Function/Lit Pres  [GPa]/0']).flatten()
+
+                    v                       =  np.array(fl['Function/Velocity  [cm/yr]/0'])
+
+                    self.vx                 = v[:,0]
+
+                    self.vy                 = v[:,1]
+
+                    qS = np.array(fl['Function/Heat flux [W/m2]/0'])
+
+                    self.qx = qS[:,0]
+
+                    self.qy = qS[:,1]
+
+                    self.Cp = np.array(fl['/Function/Cp  [J/kg]/0']).flatten()
+
+                    self.k  = np.array(fl['/Function/k  [W/m/K]/0']).flatten()
+
+                    self.rho = np.array(fl['/Function/Density  [kg/m3]/0']).flatten()
+
+                    self.eta = np.array(fl['/Function/Viscosity  [Pa.s]/0']).flatten()
+
+                    self.alpha = np.array(fl['/Function/alpha  [1/K]/0']).flatten()
+
+                    self.kappa = np.array(fl['/Function/kappa  [m2/s]/0']).flatten()
 
 
-            self.Temp               = np.array(fl['/Function/Temperature  [degC]/0']).flatten()
-
-            self.Pres               = np.array(fl['/Function/Pressure  [GPa]/0']).flatten()
-
-            self.LitPres            = np.array(fl['/Function/Lit Pres  [GPa]/0']).flatten()
-
-            v                       =  np.array(fl['Function/Velocity  [cm/yr]/0'])
-
-            self.vx                 = v[:,0]
-
-            self.vy                 = v[:,1]
-
-            qS = np.array(fl['Function/Heat flux [W/m2]/0'])
-
-            self.qx = qS[:,0]
-
-            self.qy = qS[:,1]
-            
-            self.Cp = np.array(fl['/Function/Cp  [J/kg]/0']).flatten()
-            
-            self.k  = np.array(fl['/Function/k  [W/m/K]/0']).flatten()
-            
-            self.rho = np.array(fl['/Function/Density  [kg/m3]/0']).flatten()
-            
-            self.eta = np.array(fl['/Function/Viscosity  [Pa.s]/0']).flatten()
-            
-            self.alpha = np.array(fl['/Function/alpha  [1/K]/0']).flatten()
-            
-            self.kappa = np.array(fl['/Function/kappa  [m2/s]/0']).flatten()
-            
-
-            fl.close()
         
 class MeshData(): 
     def __init__(self,f:str):
@@ -264,18 +267,30 @@ class MeshData():
         Args:
             f (str): path to the test 
         """
-        
+        f1 = ''
+        try:
+            # Direct to the steady state file 
+            f1 = '%s/Steady_state.h5'%f
 
-        
-        # Direct to the steady state file 
-        f = '%s/Steady_state.h5'%f
-        
-        # Extract mesh geometry 
-        fl = h5py.File(f, 'r')
+            # Extract mesh geometry 
+            fl = h5py.File(f1, 'r')
+            fl.close()
+        except: 
 
-        X                        = np.array(fl['/Mesh/mesh/geometry'])
-    
-        ar_point = np.array(fl['Function/MeshTAG/0']) 
+            warnings.warn("Steady-state solution has not been performed. The time-dependent solution will be opened.",
+             UserWarning)               
+            try: 
+                f1 = '%s/time_dependent.h5'%f
+                fl = h5py.File(f1, 'r')
+                fl.close()
+            except: 
+                raise ValueError('Both steady state and time dependent solution have not been run. Check the paths')
+
+            
+        with h5py.File(f1,'r') as fl: 
+            X  = np.array(fl['/Mesh/mesh/geometry'])
+
+            ar_point = np.array(fl['Function/MeshTAG/0']) 
         
         ind = np.where(ar_point!=0.0)
         
@@ -298,10 +313,7 @@ class MeshData():
         self.ind_topSlab  = (self.mesh_tag==8.0)| (self.mesh_tag==9.0)
     
         self.ind_Oceanic  = (self.mesh_tag==10.0)
-
-        fl.close()
-
-    
+    # ---     
     def create_polygon_slab(self): 
 
         def extract_coordinates(mesh_tag:list)->np.ndarray:
@@ -354,10 +366,8 @@ class MeshData():
         
         ar =  scontains_xy(polygon,self.Xi,self.Yi)        
         
-        
-       
         return polygon, ar
-    
+    # --- 
     def create_polygon(self):
         
         x_min = np.min(self.X[:,0])
