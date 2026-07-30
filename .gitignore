@@ -48,3 +48,12 @@ Result_shear_heating_yes/*
 Result_shear_heating_no/*
 Result_shear_heating_yes/Figure_0.png
 Result_shear_heating_yes/Figure_1.png
+Sensitivity3_TD/Sensitivity_case0_3/time_dependent.xdmf
+submission_scripts/submit_stoned4.sh
+Sensitivity_td_h5_files_100/Failed_tests.jsonl
+out0_td/*
+err0_td/*
+
+submission_scripts/*
+Sensitivity100_TD/Sensitivity_case0_100/time_dependent.xdmf
+.vscode/launch.json
