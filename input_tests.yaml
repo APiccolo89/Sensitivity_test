@@ -14,7 +14,7 @@ Input:
     relax: 0.9
     g: 9.81
     eta_max: 1.0e26
-    time_max: 2.0  # Myr
+    time_max: 10.0  # Myr
     steady_state: 1
     decoupling_ctrl: 1
     model_shear: "SelfConsistent" # [Constant,SelfConsistent,NoShear]
@@ -22,6 +22,7 @@ Input:
     adiabatic_heating: 0
     stokes_solver_type : "Direct"
     energy_solver_type : "Direct"
+    iterative_solver_tol : 1e-9
     pressure_dependency: 0
 
   Shear_Heating: 
