@@ -1,26 +1,22 @@
 {
   "version": "0.2.0",
   "configurations": [
-  
     
 
-
-
-
-  
 
     {
       "name": "Sensitivity Test - case 0",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/Sensitivity_tests.py",
+      "program": "${workspaceFolder}/Sensitivity_tests_time_dep.py",
       "args": [
         "--case_index", "0",
         "--k", "-3.1",
-        "--id_db", "3",
-        "--id_batch", "3",
+        "--id_db", "100",
+        "--id_batch", "0",
         "--option_shear_heating", "True",
-        "--option_viscosity_weak_zone", "Dislocation_Law"],
+        "--option_viscosity_weak_zone", "Dislocation_Law",
+        "--steady_state","1"],
       "console": "integratedTerminal"
     }
   ]
