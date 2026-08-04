@@ -63,12 +63,16 @@ class Test:
         
         # Extrac the field data 
         values =get_nested_attr(self.Data_raw, Data_field)
-        
+        if steady_state:
+            X = self.MeshData.X
+        else: 
+            X = self.MeshData.X_td
         if steady_state:        
         
-            Zi = griddata(self.MeshData.X, values, (Xi, Yi), method='linear')
+            Zi = griddata(X, values, (Xi, Yi), method='linear')
         else:
-            Zi = griddata(self.MeshData.X, values[:,ts], (Xi, Yi), method='linear')
+            val = values[:,ts].copy()
+            Zi = griddata(X, val, (Xi, Yi), method='linear')
         
         Zi[self.MeshData.ar_s==False] = np.nan
 
@@ -278,12 +282,19 @@ class MeshData():
         except: 
 
             warnings.warn("Steady-state solution has not been performed. The time-dependent solution will be opened.",
-             UserWarning)               
-            try: 
-                f1 = '%s/time_dependent.h5'%f
-                fl = h5py.File(f1, 'r')
-                fl.close()
-            except: 
+             UserWarning)      
+            flag_SS = True         
+        
+        try: 
+            fa = '%s/time_dependent.h5'%f
+            fa = h5py.File(fa, 'r')
+            X_td  = np.array(fa['/Mesh/mesh/geometry'])
+
+            self.X_td                   = X_td
+
+            fa.close()
+        except: 
+            if flag_SS:
                 raise ValueError('Both steady state and time dependent solution have not been run. Check the paths')
 
             

@@ -292,7 +292,6 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 option_thermal = int(f[f'{i}/option_thermal'][()])
                 max_dpth150 = extract_max_depth(f, i, '150')
                 max_dpth300 = extract_max_depth(f, i, '300')
-                max_dpth350 = extract_max_depth(f, i, '350')
                 max_dpth400 = extract_max_depth(f, i, '400')
                 max_dpth450 = extract_max_depth(f, i, '450')
                 max_dpth500 = extract_max_depth(f, i, '500')
