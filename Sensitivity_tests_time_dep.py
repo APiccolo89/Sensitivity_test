@@ -91,7 +91,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
     )
     return args_test
 
-#-------------------------------------------------------------------------------
+# ---
 @timing_function
 def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[str,str]:
     from stonedfenicsx.config.input_parser import parse_input
@@ -111,8 +111,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
         inp.ctrl.it_max = 50
 
     else: 
-        inp.ctrl.tol = 1e-3
-        inp.ctrl.it_max = 5
+        inp.ctrl.tol = 1e-2
+        inp.ctrl.it_max = 10
 
     
     if args.option_shear_heating:
@@ -258,7 +258,7 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     stoned_fenicsx(inp, Ph)
     
     return tuple([inp.ctrl_io.path_test,inp.ctrl_io.test_name])
-#-------------------------------------------------------------------------------
+# ---
 @timing_function
 def main():
     

@@ -24,6 +24,9 @@ Input:
     energy_solver_type : "Direct"
     iterative_solver_tol : 1e-9
     pressure_dependency: 0
+    CFL : 0.8
+    initial_guess : 0 
+
 
   Shear_Heating: 
     shear_heating_disl_phi: 5.0 
@@ -34,6 +37,9 @@ Input:
     test_name: "Output"
     sname: "Output"
     path_test: "../Results"
+    ts_time : "time"
+    ts_out : 10 
+    dt_out : 0.5
 
   # Scaling parameters [in SI unit meter, Pa, Pas, K]!!
   scaling:

@@ -57,3 +57,5 @@ err0_td/*
 submission_scripts/*
 Sensitivity100_TD/Sensitivity_case0_100/time_dependent.xdmf
 .vscode/launch.json
+Sensitivity0/*
+*.txt
