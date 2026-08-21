@@ -4,93 +4,93 @@ import scipy.stats
 import numpy as np
 import matplotlib.pyplot as plt
 
-vc_arr = [3.0, 15.0]
-Tp_arr = [1350.0, 1425.0]
-k_arr = [0]
-age_arr = [30, 100.0]
 
-
-lbounds = [age_arr[0],  vc_arr[0], Tp_arr[0]]
-hbounds = [age_arr[1],  vc_arr[1], Tp_arr[1]]
-
-
-n = 300
-
-sampler = scipy.stats.qmc.LatinHypercube(d=3)
-sample = sampler.random(n=n)
-scaled_sample = scipy.stats.qmc.scale(sample, lbounds, hbounds)
-
-# Non linear cases 
-
-random_cases = np.linspace(0, (n)-1, num= n, dtype=int)
+# Small script to create time dependent cases
 
 
 
-rows = []
-case_id = 0
-
-for index_random, k in itertools.product(random_cases, k_arr):
-    if k == -10.0:
-        option_thermal = 1
-        k = 0.0
-    else:
-        option_thermal = 0
-
-    rows.append({
-        "case_id": case_id,
-        "age": scaled_sample[index_random, 0],
-        "vc": scaled_sample[index_random, 1],
-        "Tp": scaled_sample[index_random, 2],
-        "k": k,
-        "option_thermal": option_thermal,
-    })
-    case_id += 1
+def plots(array_exp):
     
 
+    fig = plt.figure(figsize=(10, 6))
+    plt.scatter(array_exp[:, 0], array_exp[:, 1], alpha=0.5)
+    plt.xlabel('Age (Myr)')
+    plt.ylabel('Convergence Velocity (cm/yr)')
+    plt.title('Latin Hypercube Sampling of Age vs Convergence Velocity')
+    plt.grid()
+    plt.show()
+    plt.savefig('age_vs_vc_latin_hypercube.png')
 
-with open("cases_Sensitivity_td.csv", "w", newline="") as f:
-    writer = csv.DictWriter(
-        f,
-        fieldnames=[
-            "case_id",
-            "age",
-            "vc",
-            "Tp",
-            "k",
-            "option_thermal",
-        ],
-    )
-    writer.writeheader()
-    writer.writerows(rows)
-
-print(f"Wrote {len(rows)} cases to cases_Sensitivity.csv")
+    thermal_parameter = array_exp[:,0] * array_exp[:,1] * (1/1e5 * 1e6) * np.sin(np.radians(45))
 
 
-fig = plt.figure(figsize=(10, 6))
-plt.scatter(scaled_sample[:, 0], scaled_sample[:, 1], alpha=0.5)
-plt.xlabel('Age (Myr)')
-plt.ylabel('Convergence Velocity (cm/yr)')
-plt.title('Latin Hypercube Sampling of Age vs Convergence Velocity')
-plt.grid()
-plt.show()
-plt.savefig('age_vs_vc_latin_hypercube.png')
 
-thermal_parameter = scaled_sample[:,0] * scaled_sample[:,1] * (1/1e5 * 1e6) * np.sin(np.radians(45))
+    fig = plt.figure(figsize=(10, 6))
+    plt.scatter(thermal_parameter, array_exp[:, 0], alpha=0.5)
+    plt.xlabel('Thermal Parameter (Myr * cm/yr)')
+    plt.ylabel('Age (Myr)')
+    plt.title('Latin Hypercube Sampling of Thermal Parameter vs Age')
+    plt.grid()
+    plt.show()
+    plt.savefig('thermal_parameter_vs_age_latin_hypercube.png')  
 
-fig = plt.figure(figsize=(10, 6))
-plt.scatter(thermal_parameter, scaled_sample[:, 2], alpha=0.5)
-plt.xlabel('Thermal Parameter (Myr * cm/yr)')
-plt.ylabel('Tp (°C)')
-plt.title('Latin Hypercube Sampling of Thermal Parameter vs Tp')
-plt.grid()
-plt.show()
-plt.savefig('thermal_parameter_vs_Tp_latin_hypercube.png')  
 
-fig = plt.figure(figsize=(10, 6))
-plt.scatter(thermal_parameter, scaled_sample[:, 0], alpha=0.5)
-plt.xlabel('Thermal Parameter (Myr * cm/yr)')
-plt.ylabel('Age (Myr)')
-plt.title('Latin Hypercube Sampling of Thermal Parameter vs Age')
-plt.grid()
-plt.show()
-plt.savefig('thermal_parameter_vs_age_latin_hypercube.png')  
+
+def main(vc_arr:list[float] = [3.0, 15.0], age_arr:list[float] = [30, 100.0])->None: 
+    """
+    Simple script: Time dependent problem are not suitable for massive generation of data. 
+    The only strategy would be using ROM modelling - topic that I am not expert. 
+    
+    """
+
+    vc = np.linspace(vc_arr[0],vc_arr[1],num=10)
+    age = np.linspace(age_arr[0],age_arr[1],num=10)
+
+    array_exp = np.zeros([100,2],dtype=float)
+
+    vc_, age_ = np.meshgrid(vc,age)
+    a = vc_.flatten()
+    b = age_.flatten()
+    len_array = len(age)*len(vc)
+
+    for i in range(len_array):
+        array_exp[i,0] = a[i]
+        array_exp[i,1] = b[i]
+
+
+    rows = []
+    case_id = 0
+
+    for  i in range(len_array):
+
+        rows.append({
+            "case_id": case_id,
+            "age": array_exp[i, 0],
+            "vc": array_exp[i, 1],
+            "Tp": 1350.0,
+            "k": 0,
+            "option_thermal": 0,
+        })
+        case_id += 1
+
+
+
+    with open("cases_Sensitivity_td.csv", "w", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "case_id",
+                "age",
+                "vc",
+                "Tp",
+                "k",
+                "option_thermal",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"Wrote {len(rows)} cases to cases_Sensitivity.csv")
+    
+# main function -> future introducing arguments
+main()

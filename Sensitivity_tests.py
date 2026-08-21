@@ -106,8 +106,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     # controls
     inp.ctrl.decoupling_ctrl = 1
     inp.ctrl.steady_state = 1
-    inp.ctrl.tol = 5e-5
-    inp.ctrl.it_max = 30
+    inp.ctrl.tol = 5e-4
+    inp.ctrl.it_max = 50
     if args.option_shear_heating:
         inp.ctrl.model_shear = 'SelfConsistent'
     else: 

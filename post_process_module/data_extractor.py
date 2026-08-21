@@ -272,7 +272,7 @@ class MeshData():
             f (str): path to the test 
         """
         f1 = ''
-        flag_SS = True
+        flag_SS = False
         try:
             # Direct to the steady state file 
             f1 = '%s/Steady_state.h5'%f

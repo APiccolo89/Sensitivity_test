@@ -107,7 +107,7 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.ctrl.decoupling_ctrl = 1
     inp.ctrl.steady_state = args.steady_state
     if args.steady_state == 1: 
-        inp.ctrl.tol = 1e-4
+        inp.ctrl.tol = 5e-3
         inp.ctrl.it_max = 50
 
     else: 

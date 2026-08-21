@@ -11,10 +11,10 @@ Input:
   NumericalControls:
     it_max: 40
     tol: 5e-5
-    relax: 0.9
+    relax: 1.0
     g: 9.81
-    eta_max: 1.0e26
-    time_max: 10.0  # Myr
+    eta_max: 1.0e25
+    time_max: 30.0  # Myr
     steady_state: 1
     decoupling_ctrl: 1
     model_shear: "SelfConsistent" # [Constant,SelfConsistent,NoShear]
@@ -37,8 +37,8 @@ Input:
     test_name: "Output"
     sname: "Output"
     path_test: "../Results"
-    ts_time : "time"
-    ts_out : 10 
+    ts_time : "step"
+    ts_out : 20 
     dt_out : 0.5
 
   # Scaling parameters [in SI unit meter, Pa, Pas, K]!!
@@ -62,7 +62,7 @@ Input:
     self_consistent_flag: 1
     right_boundary : 'Continental'  # Oceanic 
     right_age: 50.0
-    recalculate : 0 # Option to compute on the fly the boundary -> useful if user wants to change thermal properties. 
+    recalculate : 1 # Option to compute on the fly the boundary -> useful if user wants to change thermal properties. 
 
   kinematic_boundary_condition:
     v_s : [5.0,0.0]
