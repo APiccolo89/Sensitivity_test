@@ -54,8 +54,8 @@ def main(vc_arr:list[float] = [3.0, 15.0], age_arr:list[float] = [30, 100.0])->N
     len_array = len(age)*len(vc)
 
     for i in range(len_array):
-        array_exp[i,0] = a[i]
-        array_exp[i,1] = b[i]
+        array_exp[i,0] = b[i]
+        array_exp[i,1] = a[i]
 
 
     rows = []

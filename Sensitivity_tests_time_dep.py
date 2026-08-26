@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pandas as pd
 from post_process_module.post_process_data import save_test_data, timing_function, save_test_data_td
 import shutil
-
+from mpi4py import MPI
 
 # Global flag to decide wether or not to remove the results -> debug reason. 
 DEBUG = False
@@ -140,6 +140,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.g_input.ns_depth = 50
     inp.g_input.transition = 10
     inp.g_input.slab_type = 'CustomRibe'
+    inp.g_input.resolution_normal= 7.0
+    inp.g_input.resolution_refine= 1.0 
     
     if args.option_thermal == 1: 
         alpha_nameC = 'Oceanic_crust'
@@ -275,7 +277,7 @@ def main():
 
     args_cli = parser.parse_args()
     
-    arguments = parse_the_argument(args_cli,pathtotable=f"{os.path.dirname(os.path.realpath(__file__))}/cases_Sensitivity.csv") 
+    arguments = parse_the_argument(args_cli,pathtotable=f"{os.path.dirname(os.path.realpath(__file__))}/cases_Sensitivity_td.csv") 
 
 
     print(f"Running case {arguments.case_index}")
@@ -293,7 +295,11 @@ def main():
  
     print(f"Test completed for case {arguments.case_index}. Results saved in {pathtest}")
     
-    if arguments.steady_state == 0: 
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    
+    if arguments.steady_state == 0 and rank == 0: 
         save_test_data_td(name_suite='Sensitivity_td',pathtotest=pathtest,arguments=arguments)
     else: 
         save_test_data(name_suite='Sensitivity_td',pathtotest=pathtest,arguments=arguments)

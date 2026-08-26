@@ -245,11 +245,10 @@ def find_real_ell_z(isotherm:float, ell:NDArray, z: NDArray,temp:NDArray)->tuple
 #---------------------------------------------------------------------------------
 def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFrame,namedtuple,namedtuple]:
     def extract_max_depth(f:h5py.File, case_key:str, isotherm:str)->tuple[float,float]:
-        x = f[f'{case_key}/x_{isotherm}'][:]
-        y = f[f'{case_key}/y_{isotherm}'][:]
-        ind = np.where(min(y) == y)[0][0]
-        x_min = x[ind]
-        return np.asarray([min(y),x_min])
+        x = f[f'{case_key}/x_{isotherm}'][()]
+        y = f[f'{case_key}/y_{isotherm}'][()]
+
+        return y,x
     
  
 

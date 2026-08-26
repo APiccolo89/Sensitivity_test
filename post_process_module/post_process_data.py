@@ -504,7 +504,7 @@ def create_arrays(Temp:np.ndarray)->tuple[np.ndarray,np.ndarray]:
 
 
 @timing_function
-def save_test_data_td(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
+def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
 
     print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
     

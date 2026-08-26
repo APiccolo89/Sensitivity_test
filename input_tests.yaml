@@ -24,8 +24,8 @@ Input:
     energy_solver_type : "Direct"
     iterative_solver_tol : 1e-9
     pressure_dependency: 0
-    CFL : 0.8
-    initial_guess : 0 
+    CFL : 4.0
+    initial_guess : 1 
 
 
   Shear_Heating: 

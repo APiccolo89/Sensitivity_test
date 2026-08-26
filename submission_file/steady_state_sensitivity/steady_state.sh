@@ -71,7 +71,7 @@ fi
 echo " Conductivity is \${k}, shear heating is \${shear_heating}" 
 echo " If k is less than 0, the models are no-linear"
 
-for case_index in \$(seq \${worker_id} 100 6999); do
+for case_index in \$(seq \${worker_id} 100 99); do
     export XDG_CACHE_HOME=/mnt/scratch/wlnw570/fenics_cache/\${SLURM_JOB_ID}_\${SLURM_ARRAY_TASK_ID}_\${case_index}
     mkdir -p "\$XDG_CACHE_HOME"
 
