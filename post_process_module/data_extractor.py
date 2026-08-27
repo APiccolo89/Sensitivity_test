@@ -9,11 +9,11 @@ def get_nested_attr(obj, path):
     return obj
 
 class Test:
-    def __init__(self,path_2_test:str):
+    def __init__(self,path_2_test:str,td:bool=False):
         self.meta_data = None
         self.path_2_test = path_2_test 
-        self.MeshData = MeshData(self.path_2_test)
-        self.Data_raw = Data_Raw(self.path_2_test,num=len(self.MeshData.X[:,0]))
+        self.MeshData = MeshData(self.path_2_test,td)
+        self.Data_raw = Data_Raw(self.path_2_test,num=len(self.MeshData.X[:,0]),td=td)
         
     def _interpolate_data(self,Data_field):
         """ Interpolate the data on a regular grid for visualisation
@@ -63,10 +63,8 @@ class Test:
         
         # Extrac the field data 
         values =get_nested_attr(self.Data_raw, Data_field)
-        if steady_state:
-            X = self.MeshData.X
-        else: 
-            X = self.MeshData.X_td
+        X = self.MeshData.X
+
         if steady_state:        
         
             Zi = griddata(X, values, (Xi, Yi), method='linear')
@@ -105,7 +103,7 @@ class Test:
         
         return Zi  
 class Data_Raw():
-    def __init__(self,f:str,num:int):
+    def __init__(self,f:str,num:int,td:bool=False):
         """ Extract the data from the h5 file. 
 
         Args:
@@ -115,9 +113,10 @@ class Data_Raw():
         import h5py
         import numpy as np
         
-        self.SteadyState = Data_experiment(f,num,ts=False)
-        
-        self.TimeDependent = Data_experiment(f,num,ts=True)
+        if not td:
+            self.SteadyState = Data_experiment(f,num,ts=False)
+        else:
+            self.TimeDependent = Data_experiment(f,num,ts=True)
         
 class Data_experiment():
     '''
@@ -265,39 +264,16 @@ class Data_experiment():
 
         
 class MeshData(): 
-    def __init__(self,f:str):
+    def __init__(self,f:str,td:bool=False):
         """ Extract the mesh data from the h5 file. Produce the visualisation grid and the polygon 
 
         Args:
             f (str): path to the test 
         """
-        f1 = ''
-        flag_SS = False
-        try:
-            # Direct to the steady state file 
+        if td: 
+            f1 = '%s/time_dependent.h5'%f
+        else:
             f1 = '%s/Steady_state.h5'%f
-
-            # Extract mesh geometry 
-            fl = h5py.File(f1, 'r')
-            fl.close()
-        except: 
-
-            warnings.warn("Steady-state solution has not been performed. The time-dependent solution will be opened.",
-             UserWarning)      
-            flag_SS = True         
-        
-        try: 
-            fa = '%s/time_dependent.h5'%f
-            fa = h5py.File(fa, 'r')
-            X_td  = np.array(fa['/Mesh/mesh/geometry'])
-
-            self.X_td                   = X_td
-
-            fa.close()
-        except: 
-            if flag_SS:
-                raise ValueError('Both steady state and time dependent solution have not been run. Check the paths')
-
             
         with h5py.File(f1,'r') as fl: 
             X  = np.array(fl['/Mesh/mesh/geometry'])

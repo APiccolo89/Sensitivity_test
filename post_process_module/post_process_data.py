@@ -202,10 +202,12 @@ def extract_slab_oceanic_surface_Temperature(T: Test,steady_state=True,ts=0)->tu
     
     return cd_s,cd_o, T_S, T_O, P_S, P_O
 # ---
-def extract_heat_flux(T: Test)->tuple[np.ndarray, np.ndarray]:
+def extract_heat_flux(T: Test,steady_state:bool=False,ts:int=0)->tuple[np.ndarray, np.ndarray]:
     
-    q = T.Data_raw.SteadyState.qy
-
+    if not steady_state: 
+        q = T.Data_raw.TimeDependent.qy[:,ts]
+    else: 
+        q = T.Data_raw.SteadyState.qy
 
     x = T.MeshData.X[:,0]
     y = T.MeshData.X[:,1]
@@ -256,7 +258,7 @@ def extract_relevant_data_td(path:str,args:argparse.Namespace)->namedtuple:
     
     
     
-    T = Test(path_2_test=path)
+    T = Test(path_2_test=path,td=True)
     x_150 = np.zeros([len(T.Data_raw.TimeDependent.time_list)])
     y_150 = np.zeros([len(T.Data_raw.TimeDependent.time_list)])
     x_350 = np.zeros([len(T.Data_raw.TimeDependent.time_list)])
@@ -284,7 +286,7 @@ def extract_relevant_data_td(path:str,args:argparse.Namespace)->namedtuple:
         
         d, tau_val[i,:] = extract_shearzone_data(a,c,args)
         tau_slab.append(d)
-        x_top, e = extract_heat_flux(T)
+        x_top, e = extract_heat_flux(T,steady_state=False,ts=i)
         heat_flux.append(e)
 
     T_S = np.asarray(T_S).T

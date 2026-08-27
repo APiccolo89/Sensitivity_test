@@ -103,6 +103,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     path_input = f"{path_general}/input_tests.yaml"
 
     inp,Ph = parse_input(path_input)
+    inp.ctrl.time_max = 0.05
+
     # controls
     inp.ctrl.decoupling_ctrl = 1
     inp.ctrl.steady_state = args.steady_state
@@ -140,8 +142,8 @@ def perform_test(args:argparse.Namespace = None, plate:str = 'Tonga')-> tuple[st
     inp.g_input.ns_depth = 50
     inp.g_input.transition = 10
     inp.g_input.slab_type = 'CustomRibe'
-    inp.g_input.resolution_normal= 7.0
-    inp.g_input.resolution_refine= 1.0 
+    inp.g_input.resolution_normal= 10.0
+    inp.g_input.resolution_refine= 1.5 
     
     if args.option_thermal == 1: 
         alpha_nameC = 'Oceanic_crust'
