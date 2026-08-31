@@ -26,7 +26,7 @@ Input:
     pressure_dependency: 0
     CFL : 4.0
     time_ini_guess : 0.2
-    initial_guess : "Steady_State" 
+    initial_guess : "Thermal_Diffusion" 
 
 
   Shear_Heating: 
@@ -209,7 +209,7 @@ Input:
   geometry:
     x: [0.0, 660.0] # Coordinate of X
     y: [-600.0, 0.0] # Coordinate of Y
-    redo_mesh : True
+    redo_mesh : False
     van_keken: False
     sub_constant_flag : False
     slab_tk: 130.0 # Slab Thickness

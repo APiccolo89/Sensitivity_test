@@ -13,6 +13,7 @@ import json
 import fcntl
 from datetime import datetime
 from pathlib import Path, PurePath
+from stonedfenicsx.stoned_fenicsx import git_info
 # ---
 # ---
 
@@ -46,7 +47,7 @@ def save_namedtuple_fields(group, data, aliases=None, skip_fields=None):
 def write_case_log(log_path, case_index, id_batch, success, path_h5):
     record = {
         "case_index": int(case_index),
-        "id_batch": int(id_batch),
+        "id_batch": (id_batch),
         "success": bool(success),
         "path_h5": str(path_h5),
     }
@@ -111,7 +112,7 @@ def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndar
     
     temp_slab = temp_slab + 273.15 
     pres_slab = pres_slab * 1e9
-    A = read_rheology(tag,1)
+    A = read_rheology('Wet_Quartzite_2001_Dislocation_creep',1)
     water = (np.exp(- (A.eh2o+A.vh2o*pres_slab)/(8.314 * temp_slab))/np.exp(- (A.eh2o+A.vh2o*1e5)/(8.314 * 298.15)))
     
     cds = A.b * np.exp(-(A.e + pres_slab * A.v)/(8.314 * temp_slab)) * water **(A.r)
@@ -137,19 +138,9 @@ def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argpar
     
     vel = args.vc*1e-2/365.25/60/60/24
     eps = 0.5 * (vel *  1 /500) 
-    if args.option_shear_heating:
-        if args.shear_heating == 'Parametrised':
-            bdisl = args.eps_ref/args.tau_ref**(args.n_ref)
-            tau_min = args.tau_min
-            tau_v = bdisl**(-1/args.n_ref)*eps**(1/args.n_ref)
-            pres_crit = tau_v/np.sin(np.radians(args.phi))/1e9
-            p_norm = (pres_slab-pres_crit)/pres_crit
-            tau_viscous = tau_min + (tau_v-tau_min)*np.exp(-5.0*p_norm)
-
-        else: 
-            tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,args.shear_heating)   
-
-        tau_fr = pres_slab*1e9*np.sin(np.radians(args.phi))
+    if args.shear_heating:
+        tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,args.shear_heating)   
+        tau_fr = pres_slab*1e9*np.sin(np.radians(5.0))
         tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)/1e6
     else: 
         tau_eff = pres_slab*0.0
@@ -581,6 +572,92 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Name
         test_successful = False
         
     write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
+    
+    print('===================================================================================================================')
+# ---
+
+@timing_function
+def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
+
+    print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
+    
+    main_dir = Path(__file__).resolve().parents[1]
+    path2save = main_dir / f"{name_suite}_h5_files_{arguments.case}"
+    
+    if not os.path.isdir(path2save):
+        os.mkdir(path2save)
+
+    print(f"Test data will be saved in {path2save}")
+    
+    save_grid = True    
+    # Paths
+    name_test = PurePath(pathtotest).name
+    real_test = pathtotest
+    info_stoned = git_info()
+    print(f"Extracting relevant data for case {arguments.case_index} and saving to Data_Base.h5")
+    print(f"name_test: {name_test}")
+    test_successful = test_success(real_test,steadystate=False)
+    if test_successful:
+        list_data = extract_relevant_data_td(path=f'{real_test}',args=arguments)
+        
+        print(f"  Print Meta_data for case {arguments.case_index} and {name_test}")
+        for key, value in vars(arguments).items():
+            print(f"  - {key}: {value}")    
+       
+        print(f"Case {arguments.case_index}: {name_test} ")
+    
+
+
+        with h5py.File(f'{path2save}/Data_Base_{arguments.id_batch}.h5', 'a') as f:
+            print('  - Saving data to Data_Base.h5')
+            print(f"{path2save}/Data_Base_{arguments.id_batch}.h5 ")
+            if save_grid:
+                if "Xi" not in f:
+                    f.create_dataset("Xi", data=list_data.Xi)
+
+                if "Yi" not in f:
+                    f.create_dataset("Yi", data=list_data.Yi)
+
+                if "Xi" in f and "Yi" in f:
+                    save_grid = False
+            
+            if "stoned_info" not in f: 
+                f.create_group("stoned_info")
+                for k,v in info_stoned.items():
+                    f.create_dataset(f"stoned_info/{k}",data = v) 
+
+            if name_test in f:
+                print(f"Overwriting existing case group: {name_test}")
+                flag_welford = False 
+                del f[name_test]
+            else: 
+                flag_welford = True
+            grp = f.create_group(name_test)
+            
+            for key, value in vars(arguments).items():
+                if isinstance(value, str):
+                    grp.create_dataset(
+                        key,
+                        data=value,
+                        dtype=h5py.string_dtype(encoding="utf-8"),
+                    )
+                elif key == 'mat_prop':
+                    pass
+                else:
+                    grp.create_dataset(key, data=value)
+
+            save_namedtuple_fields(
+                grp,
+                list_data,
+                aliases={"tau_slab": "tau_shear"},
+                skip_fields={"Xi", "Yi"},
+            )
+            del list_data 
+            gc.collect()
+    else: 
+        test_successful = False
+        
+    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.case, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.case}.h5')
     
     print('===================================================================================================================')
 # ---

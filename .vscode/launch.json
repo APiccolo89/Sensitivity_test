@@ -23,14 +23,12 @@
       "name": "Sensitivity Test - case 0",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/Sensitivity_tests_time_dep.py",
+      "program": "${workspaceFolder}/Sensitivity_tests_time_dep_exp.py",
       "args": [
         "--case_index", "0",
-        "--k", "-3.1",
-        "--id_db", "100",
+        "--case", "debug",
         "--id_batch", "1",
-        "--option_shear_heating", "True",
-        "--option_viscosity_weak_zone", "Dislocation_Law",
+        "--name_suite", "debug",
        "--steady_state","0"],
       "console": "integratedTerminal"
     }
