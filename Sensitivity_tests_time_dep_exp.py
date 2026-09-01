@@ -413,7 +413,7 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
     return tuple([inp.ctrl_io.path_test,inp.ctrl_io.test_name])
 # ---
 @timing_function
-def main():
+def configure_run_save():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug-defaults", action="store_true")
