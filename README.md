@@ -25,22 +25,20 @@ generate_case_sensitivity_steady_state.py
 ### Steady state Sensitivity
 Steady state sensitivity case are run such that 7000 random test can be generated and run on the fly. Steady state runs cover:
 
-```
-``python
+```python
     vc_arr:list[float]=[3.0, 15.0] # convergence velocity
     Tp_arr:list[float]=[1350.0, 1425.0] # potential temperature in celsius degree
     age_arr:list[float]=[30.0,100.0] # age in Myr
-``
 ```
+
 The generation of the single experiments cases is carried out with ``scipy.stats.qmc.LatinHypercube`` library, and 
 
-```
-``python 
+```python 
     sampler = scipy.stats.qmc.LatinHypercube(d=3)
     sample = sampler.random(n=n)
     scaled_sample = scipy.stats.qmc.scale(sample, lbounds, hbounds)
-``
 ```
+
 This generates a random ensemble of data. The resultant array of experiment is, then, saved as a csv table that will be read by the python scripts that run the numerical experiment. 
 
 ### Time state Sensitivity
@@ -51,8 +49,8 @@ Time dependent run 100 cases (the potential temperature is dropped as main param
 
 In the time dependent cases, there is no need to run thousands of cases as they are computational expensive. The generation of the cases are a simply linear combination of two arrays: velocity of convergence and age. 
 
-```
-``python
+
+```python
     vc = np.linspace(vc_arr[0],vc_arr[1],num=10) # generate array with vc
     age = np.linspace(age_arr[0],age_arr[1],num=10) # generate array with age
 
@@ -67,7 +65,6 @@ In the time dependent cases, there is no need to run thousands of cases as they 
         array_exp[i,0] = b[i]
         array_exp[i,1] = a[i]
 
-``
 ```
 
 
