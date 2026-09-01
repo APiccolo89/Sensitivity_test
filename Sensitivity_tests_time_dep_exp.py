@@ -17,8 +17,6 @@ from post_process_module.post_process_data import (
     timing_function,
 )
 
-_DEBUG_ = False
-
 """
 ---
 This is a small script that runs the time-dependent sensitivity tests.
@@ -196,7 +194,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
     # Extract case: 
     dict_case = create_case_dictionary()
     
-    if _DEBUG_:
+    if args.case == 'debug':
         case_index = 0 
         case_sim = dict_case['debug']
         mat_prop = choose_material_properties(case_sim['k'])
@@ -291,6 +289,12 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
     path_general = os.path.dirname(os.path.realpath(__file__))
     
     path_input = f"{path_general}/input_tests.yaml"
+    
+    path_general = os.path.join(path_general,"test_folder")
+    
+    if not os.path.exists(path_general):
+        os.makedirs(path_general)
+    
 
     inp,Ph = parse_input(path_input)
     if args.case == 'debug':
@@ -432,11 +436,12 @@ def main():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
-    
-    if arguments.steady_state == 0 and rank == 0: 
-        save_test_data_td_alt(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
-    else: 
-        save_test_data(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
+    if rank == 0:
+        print(f"Rank {rank} is saving the test data for case {arguments.case_index}")
+        if arguments.steady_state == 0: 
+            save_test_data_td_alt(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
+        else: 
+            save_test_data(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
 
     
     #remove the tests folder 

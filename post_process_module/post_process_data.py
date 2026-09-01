@@ -582,11 +582,9 @@ def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:argparse.
     print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir / f"{name_suite}_h5_files_{arguments.case}"
+    path2save = main_dir /'h5_outputs' /f"{name_suite}_h5_files_{arguments.case}"
+    path2save.mkdir(parents=True, exist_ok=True)
     
-    if not os.path.isdir(path2save):
-        os.mkdir(path2save)
-
     print(f"Test data will be saved in {path2save}")
     
     save_grid = True    
