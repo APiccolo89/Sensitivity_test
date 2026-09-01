@@ -9,9 +9,17 @@ This routine has been used to produce the sensitivity analysis of (name of the m
 
 ---
 The work flow is the following: 
-1. Run the number of the cases using an array of processor
-2. Each run is saving the output of the test in the test_folder/{case}/test_case_num(x)
-3. After storing the relevant data the test is automatically removed for saving the memory. 
+1. Define the single experiments cases using one of the two scripts
+2. Run the experiments using a bash submission script that requires at least an array job of 100 processor. 
+3. Post porcess the output with one of the script.
+3a. Merge the h5 files in one file (per each group)
+3b. Post process the data using pandas routine 
+3c. Generate pictures. 
+
+The step 1. generates a csv table with the single experiment cases
+The step 2. run this cases for the six group of the numerical experiments designed for the current project. The step 2 produces n h5files with a reduced database storing the relevant output. 
+The step 3. post-process, analyse and generate. 
+
 ---
 ## Generation single experiments cases
 ---
@@ -88,5 +96,7 @@ bash submission_file/run_script.sh --case k3nsh --np 1 --steady_state 1 --name_s
 - **name_suite**: name of the batches of experiment that the user wants to run. 
 
 The bash script can parse the argument, and instruct correctly the python configuration script. 
+There are two bash scripts: one for the time-dependent sensitivity study and one for the time-dependent sensitivity study. 
 
 --- 
+## Post Process script 
