@@ -74,8 +74,6 @@ In the time dependent cases, there is no need to run thousands of cases as they 
         array_exp[i,1] = a[i]
 
 ```
-
-
 ---
 ## Bash script: 
 The bash scripts are stored in submission_file. To run: 
