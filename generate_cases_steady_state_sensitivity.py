@@ -63,7 +63,7 @@ def main(n:int = 7000
     for index_random, k in itertools.product(random_cases, [0]):
 
         rows.append({
-            "case_id": case_id,
+            "case_index": case_id,
             "age": scaled_sample[index_random, 0],
             "vc": scaled_sample[index_random, 1],
             "Tp": scaled_sample[index_random, 2],
@@ -77,7 +77,7 @@ def main(n:int = 7000
         writer = csv.DictWriter(
             f,
             fieldnames=[
-                "case_id",
+                "case_index",
                 "age",
                 "vc",
                 "Tp"

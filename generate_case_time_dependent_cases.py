@@ -64,7 +64,7 @@ def main(vc_arr:list[float] = [3.0, 15.0], age_arr:list[float] = [30, 100.0])->N
     for  i in range(len_array):
 
         rows.append({
-            "case_id": case_id,
+            "case_index": case_id,
             "age": array_exp[i, 0],
             "vc": array_exp[i, 1],
             "Tp": 1350.0,
@@ -77,7 +77,7 @@ def main(vc_arr:list[float] = [3.0, 15.0], age_arr:list[float] = [30, 100.0])->N
         writer = csv.DictWriter(
             f,
             fieldnames=[
-                "case_id",
+                "case_index",
                 "age",
                 "vc",
                 "Tp"

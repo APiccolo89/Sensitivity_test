@@ -5,6 +5,8 @@ import shutil
 import sys
 import time
 import traceback
+from dataclasses import asdict, astuple, fields
+from importlib.resources import files
 from types import SimpleNamespace
 
 import numpy as np
@@ -12,6 +14,7 @@ import pandas as pd
 from mpi4py import MPI
 from numpy.typing import NDArray
 
+import post_process_module.global_var as _GVARIABLES_
 from post_process_module.post_process_data import (
     save_test_data,
     save_test_data_td_alt,
@@ -56,6 +59,8 @@ I liked.
 After running the test, the script saves the results in a folder, in a number of h5 files that will be
 merged by other scripts.
 """
+
+
 # -- Flag dictionary 
 dict_td =  {'1':'SS',
          '0':'TD'}
@@ -73,7 +78,7 @@ def change_geometry(plate:str,args:SimpleNamespace,inp)->None:
         with open(f"{os.path.dirname(os.path.realpath(__file__))}/real_plate_configuration/geometric_input_real_plate.yml", "r") as f:
             dict_geom = yaml.safe_load(f)
         
-        if plate not in dict_geom.keys():
+        if plate not in dict_geom:
             raise ValueError(f"Plate {plate} not found in the dictionary. Available plates are: {list(dict_geom.keys())}")
         
         geom = dict_geom[plate]
@@ -82,10 +87,56 @@ def change_geometry(plate:str,args:SimpleNamespace,inp)->None:
         inp.g_input.lc = geom['lc']
         inp.g_input.ns_depth = geom['ns_depth']
         inp.g_input.lab_d = geom['lab_d']
-        inp.g_input.decoupling = args.decoupling if hasattr(args,'decoupling') else geom['decoupling']
 
+def define_material_properties(Ph,args):
+    # Fixed rheology of the mantle. Usually the difference with rheologies and thermal field are minimal.                     
+    Ph.wedge_mantle.name_diffusion                    = _GVARIABLES_._NAME_DIFFUSION_CREEP_
+    Ph.wedge_mantle.name_dislocation                  = _GVARIABLES_._NAME_DISLOCATION_CREEP_
+    # Modify the phase with the new data: 
+    for i in fields(Ph):
+        if i.name in ['shear_heating_disl_law','shear_heating_disl_phi','shear_heating_disl_tau_min']:
+            continue
+        phase = getattr(Ph, i.name)
+        
+        if i.name in ['subducting_plate_mantle','wedge_mantle','overriding_mantle']:
+            mat_prop = args['mat_prop']['mantle']
+        elif i.name in ['oceanic_crust']:
+            mat_prop = args['mat_prop']['oceanic_crust']
+        elif i.name in ['overriding_upper_crust']:
+            mat_prop = args['mat_prop']['upper_crust']
+        elif i.name in ['overriding_lower_crust']:
+            mat_prop = args['mat_prop']['lower_crust']
+        else: 
+            raise ValueError(f'Phase {i.name} not recognized')
+        
+        phase.rho0                   = mat_prop['rho0']
+        phase.name_capacity          = mat_prop['capacity']
+        phase.name_conductivity      = mat_prop['conductivity']
+        phase.name_alpha             = mat_prop['alpha']
+        phase.name_density           = mat_prop['density']
+        phase.radiative_conductivity = mat_prop['radiative']
+        phase.radiogenic_heat        = mat_prop['radiogenic']
+        phase.cp                     = mat_prop['cp']
+        phase.alpha0                 = mat_prop['alpha0']
+        phase.k                      = mat_prop['k']
     
+    for i in fields(Ph):
+        if i.name in ['shear_heating_disl_law','shear_heating_disl_phi','shear_heating_disl_tau_min']:
+            continue
+        phase = getattr(Ph, i.name)
+        print(f'Phase {i.name   } properties:')
+        print(f'       .rho0 = {phase.rho0}')
+        print(f'       .name_capacity = {phase.name_capacity}')
+        print(f'       .name_conductivity = {phase.name_conductivity}')
+        print(f'       .name_alpha = {phase.name_alpha}')
+        print(f'       .name_density = {phase.name_density}')
+        print(f'       .radiative_conductivity = {phase.radiative_conductivity}')
+        print(f'       .radiogenic_heat = {phase.radiogenic_heat}')
+        print(f'       .k = {phase.k}')
+        print(f'       .cp = {phase.cp}')
+        print(f'       .alpha0 = {phase.alpha0}')
     
+ 
     
 # ---
 def choose_material_properties(k:float)->dict:
@@ -206,7 +257,7 @@ def print_meta_data_id_db(key_from_submission:str,cases:NDArray)->str:
     
     
 # Global flag to decide wether or not to remove the results -> debug reason. 
-def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace:
+def parse_the_argument(args:argparse.Namespace,pathtotable:str)->dict:
     """_summary_
 
     Args:
@@ -215,7 +266,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
 
 
     Returns:
-        SimpleNamespace: updated argument namespace with the group parameters and material properties
+        dict: updated argument dictionary with the group parameters and material properties
     """
 
 
@@ -249,20 +300,23 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
 
 
     cases = pd.read_csv(pathtotable)
+    cases_columns = cases.columns
+    args_test = {}
+    args_test = {m:None for m in cases_columns}
     
     row = cases.iloc[case_index]
     
-    args_test = SimpleNamespace(
-        case_index = case_index,
-        id_batch = args.id_batch,
-        group = args.group,
-        shear_heating=shear_heating,
-        vc=float(row["vc"]),
-        age=float(row["age"]),
-        Tp=float(row["Tp"]),
-        mat_prop = mat_prop,
-        steady_state=args.steady_state,
-    )
+    for m in args_test:
+        args_test[m] = row[m]
+        
+    args_test['mat_prop'] = mat_prop
+    args_test['shear_heating'] = shear_heating
+    args_test['steady_state'] = steady_state
+    if args.plate_real != 'None':
+        args_test['plate_real'] = args.plate_real    
+    args_test['group'] = args.group
+    args_test['id_batch'] = args.id_batch 
+    
     return args_test
 # --- function "wrap" 
 
@@ -312,7 +366,7 @@ def wrap_stoned(inp, Ph):
         raise ValueError('Failed attempt') from last_error
 # ---
 @timing_function
-def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str,str]:
+def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     """Configuration script of StonedFEniCSx for the time-dependent sensitivity tests. The script reads the input data from a .csv table and creates the input data for StonedFEniCSx. The script also creates the material properties dictionary and assigns it to the phases. The script also creates the input data for StonedFEniCSx and runs the simulation. The results are saved in a folder, in a number of h5 files that will be merged by other scripts.  
 
     Args:
@@ -340,15 +394,15 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
     # Parse the blue print of the test
     inp,Ph = parse_input(path_input)
     # If you are debugging, use group debug
-    if args.group == 'debug':
+    if args['group'] == 'debug':
         inp.ctrl.time_max = 0.05
 
     # controls 
     # Assume that the decoupling is always active
     inp.ctrl.decoupling_ctrl = 1
     # Choose the mode of stonedFEniCSx
-    inp.ctrl.steady_state = args.steady_state
-    if args.steady_state == 1: 
+    inp.ctrl.steady_state = args['steady_state']
+    if args['steady_state'] == 1: 
         inp.ctrl.tol = 5e-3
         inp.ctrl.it_max = 50
     else: 
@@ -356,7 +410,7 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
         inp.ctrl.it_max = 10
 
     # Choose the shear heating mode
-    if args.shear_heating:
+    if args['shear_heating']:
         inp.ctrl.model_shear = 'SelfConsistent'
     else: 
         inp.ctrl.model_shear = 'NoShear'
@@ -365,93 +419,38 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
     # Create input data - Input is a class populated by default dataset
     # A flag that generate the geometry of the benchmark
     # The input path for saving the results
-    inp.ctrl_tbc.slab_age                           = args.age
-    inp.ctrl_tbc.temp_max                           = args.Tp
+    inp.ctrl_tbc.slab_age                           = args['age']
+    inp.ctrl_tbc.temp_max                           = args['Tp']
     # Velocity of slab 
-    inp.ctrl_ky.v_s                                 = np.array([args.vc,0],dtype=np.float64)
+    inp.ctrl_ky.v_s                                 = np.array([args['vc'],0],dtype=np.float64)
 
     # Geometrical input
     inp.g_input.cr                                   = 40.0   # Overriding crust 
     inp.g_input.lc                                   = 0.5   # relative amount of lower crust
     inp.g_input.ocr                                  = 6.0  # Crustal thickness
-    inp.g_input.decoupling                           = 80  # Lithospheric mantle depth 
+    inp.g_input.decoupling                           = args.get('decoupling', _GVARIABLES_._DECOUPLING_)  # Lithospheric mantle depth 
     inp.g_input.lab_d                                = inp.g_input.decoupling  # depth of the lab 
-    inp.g_input.decoupling                           = 80 # decoupling depth
     inp.g_input.ns_depth                             = 50 # depth of the noslip boundary condition
     inp.g_input.transition                           = 10 # transition delta depth -> the distance at which the transition from uncoupled and coupled flow happens 
     inp.g_input.slab_type                            = 'CustomRibe' # type of slab geometry
     inp.g_input.resolution_normal                    = 10.0 # Resolution normal 
     inp.g_input.resolution_refine                    = 1.5 # resolution around the slab top surface and the oceanic crust within the slab. 
 
-    if args.shear_heating:
-        Ph.shear_heating_disl_law                    = 'Wet_Quartzite_2001_Dislocation_creep'
+    if args.get('plate_real') != None:
+        change_geometry(plate=args['plate_real'],args=args,inp=inp)
+        inp.g_input.slab_type                            = 'FromFile' # type of slab geometry
+        inp.g_input.sub_path = str(files("stonedfenicsx") / "examples" / f"{args['plate_real']}_slab.pz")
+
+    if args['shear_heating']:
+        Ph.shear_heating_disl_law                    = args.get('shear_heating_law', _GVARIABLES_._SHEAR_HEATING_LAW)
+        Ph.shear_heating_disl_phi                    = args.get('phi', _GVARIABLES_._PHI_)
     
-    Ph.shear_heating_disl_phi                        = 5.0
-    # Fixed rheology of the mantle. Usually the difference with rheologies and thermal field are minimal.     
-    name_diffusion = 'VK_Diffusion_creep'
-    name_dislocation = 'VK_Dislocation_creep'                 
-
-    # Modify the phase with the new data: 
-    Ph.subducting_plate_mantle.rho0                   = args.mat_prop['mantle']['rho0']
-    Ph.subducting_plate_mantle.name_capacity          = args.mat_prop['mantle']['capacity']
-    Ph.subducting_plate_mantle.name_conductivity      = args.mat_prop['mantle']['conductivity']
-    Ph.subducting_plate_mantle.name_alpha             = args.mat_prop['mantle']['alpha']
-    Ph.subducting_plate_mantle.name_density           = args.mat_prop['mantle']['density']
-    Ph.subducting_plate_mantle.radiative_conductivity = args.mat_prop['mantle']['radiative']
-    Ph.subducting_plate_mantle.radiogenic_heat        = args.mat_prop['mantle']['radiogenic']
-    Ph.subducting_plate_mantle.k                      = args.mat_prop['mantle']['k']
-
-
-    Ph.oceanic_crust.rho0                             = args.mat_prop['oceanic_crust']['rho0']
-    Ph.oceanic_crust.name_capacity                    = args.mat_prop['oceanic_crust']['capacity']
-    Ph.oceanic_crust.name_conductivity                = args.mat_prop['oceanic_crust']['conductivity']
-    Ph.oceanic_crust.name_alpha                       = args.mat_prop['oceanic_crust']['alpha']
-    Ph.oceanic_crust.name_density                     = args.mat_prop['oceanic_crust']['density']
-    Ph.oceanic_crust.radiative_conductivity           = args.mat_prop['oceanic_crust']['radiative']
-    Ph.oceanic_crust.radiogenic_heat                  = args.mat_prop['oceanic_crust']['radiogenic']
-    Ph.oceanic_crust.k                                = args.mat_prop['oceanic_crust']['k']
-
-    Ph.wedge_mantle.name_diffusion                    = name_diffusion
-    Ph.wedge_mantle.name_dislocation                  = name_dislocation
-    Ph.wedge_mantle.rho0                              = args.mat_prop['mantle']['rho0']
-    Ph.wedge_mantle.name_capacity                     = args.mat_prop['mantle']['capacity']
-    Ph.wedge_mantle.name_conductivity                 = args.mat_prop['mantle']['conductivity']
-    Ph.wedge_mantle.name_alpha                        = args.mat_prop['mantle']['alpha']
-    Ph.wedge_mantle.name_density                      = args.mat_prop['mantle']['density']
-    Ph.wedge_mantle.radiative_conductivity            = args.mat_prop['mantle']['radiative']
-    Ph.wedge_mantle.radiogenic_heat                   = args.mat_prop['mantle']['radiogenic']
-    Ph.wedge_mantle.k                                 = args.mat_prop['mantle']['k']
-
-    Ph.overriding_mantle.rho0                         = args.mat_prop['mantle']['rho0']
-    Ph.overriding_mantle.name_capacity                = args.mat_prop['mantle']['capacity']
-    Ph.overriding_mantle.name_conductivity            = args.mat_prop['mantle']['conductivity']
-    Ph.overriding_mantle.name_alpha                   = args.mat_prop['mantle']['alpha']
-    Ph.overriding_mantle.name_density                 = args.mat_prop['mantle']['density']
-    Ph.overriding_mantle.radiative_conductivity       = args.mat_prop['mantle']['radiative']
-    Ph.overriding_mantle.radiogenic_heat              = args.mat_prop['mantle']['radiogenic']
-    Ph.overriding_mantle.k                            = args.mat_prop['mantle']['k']
-
-    Ph.overriding_upper_crust.rho0                    = args.mat_prop['upper_crust']['rho0']
-    Ph.overriding_upper_crust.name_capacity           = args.mat_prop['upper_crust']['capacity']
-    Ph.overriding_upper_crust.name_conductivity       = args.mat_prop['upper_crust']['conductivity']
-    Ph.overriding_upper_crust.name_alpha              = args.mat_prop['upper_crust']['alpha']
-    Ph.overriding_upper_crust.name_density            = args.mat_prop['upper_crust']['density']
-    Ph.overriding_upper_crust.radiative_conductivity  = args.mat_prop['upper_crust']['radiative']
-    Ph.overriding_upper_crust.radiogenic_heat         = args.mat_prop['upper_crust']['radiogenic']
-    Ph.overriding_upper_crust.k                       = args.mat_prop['upper_crust']['k']
-
-    Ph.overriding_lower_crust.rho0                    = args.mat_prop['lower_crust']['rho0']
-    Ph.overriding_lower_crust.name_capacity           = args.mat_prop['lower_crust']['capacity']
-    Ph.overriding_lower_crust.name_conductivity       = args.mat_prop['lower_crust']['conductivity']
-    Ph.overriding_lower_crust.name_alpha              = args.mat_prop['lower_crust']['alpha']
-    Ph.overriding_lower_crust.name_density            = args.mat_prop['lower_crust']['density']
-    Ph.overriding_lower_crust.radiative_conductivity  = args.mat_prop['lower_crust']['radiative']
-    Ph.overriding_lower_crust.radiogenic_heat         = args.mat_prop['lower_crust']['radiogenic']
-    Ph.overriding_lower_crust.k                       = args.mat_prop['lower_crust']['k']
-
+    define_material_properties(Ph,args)
+    
     # Path to save the results
-    inp.ctrl_io.path_save                             = os.path.join(path_general,f"{name_suite}_{args.group}_{dict_td[f'{args.steady_state}']}")
-    inp.ctrl_io.test_name                             = f'{name_suite}_case{args.case_index}_{args.group}'
+    
+    inp.ctrl_io.path_save = os.path.join(path_general, f"{name_suite}_{args['group']}_{dict_td[str(args['steady_state'])]}")
+    inp.ctrl_io.test_name = f"{name_suite}_case{args['case_index']}_{args['group']}_{dict_td[str(args['steady_state'])]}"
 
     # Run the test
     wrap_stoned(inp, Ph)
@@ -470,6 +469,7 @@ def configure_run_save():
     parser.add_argument("--name_csv",type=str,default="cases_Sensitivity_td.csv",help="Name of the .csv table that contains the cases to run. This is a string that corresponds to the name of the .csv table.")
     parser.add_argument("--remove_results", type=int, default=1, help="Flag to remove the results after the test is completed. 1 = remove, 0 = keep")
     parser.add_argument("--plate_real", type=str, default='None', help="Name of the plate to use for the real geometry (only the basic one stored in StonedFEniCSx is available). If None, the default geometry is used.")
+    parser.add_argument("--shear_heating_law", type=str, default='NotDefined', help="Name of the shear heating law to use. If None, the default law is used.")
 
 
     args_cli = parser.parse_args()
@@ -480,23 +480,21 @@ def configure_run_save():
         
     pathtest,_ = perform_test(args=arguments,name_suite= name_suite)
  
-    print(f"Test completed for group {arguments.case_index}. Results saved in {pathtest}")
+    print(f"Test completed for group {arguments['case_index']}. Results saved in {pathtest}")
     
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
     if rank == 0:
-        print(f"Rank {rank} is saving the test data for group {arguments.case_index}")
-        if arguments.steady_state == 0: 
+        print(f"Rank {rank} is saving the test data for group {arguments['group']}")
+        if arguments['steady_state'] == 0: 
             save_test_data_td_alt(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
         else: 
             save_test_data(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
-
-    
-    #remove the tests folder 
-    if args_cli.remove_results == 1 and arguments.case_index !=0:
-        shutil.rmtree(os.path.join(pathtest))    
-        print(f"Removed {os.path.join(pathtest)} for group {arguments.case_index}")
+        #remove the tests folder 
+        if args_cli.remove_results == 1 and arguments.case_index !=0:
+            shutil.rmtree(os.path.join(pathtest))    
+            print(f"Removed {os.path.join(pathtest)} for group {arguments.case_index}")
     
     print(f"Finished group {arguments.case_index}")
 # ---
