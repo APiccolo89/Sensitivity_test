@@ -2,7 +2,7 @@
 <p align="center">
   <img src="Result_shear_heating_yes/Figure_3.png" alt="Slab 2D plot" width="600">
   <br>
-  <em>Figure 0 Average difference of slab temperature. [a]: Difference between non-linear test group and the group of experiment with k=3.1. [b]: Difference between non-linear test group and the group of experiment with k=5.0.</em>
+  <em>Figure 0 — Average difference of slab temperature. [a]: Difference between non-linear test group and the group of experiment with k=3.1. [b]: Difference between non-linear test group and the group of experiment with k=5.0.</em>
 </p>
 
 
