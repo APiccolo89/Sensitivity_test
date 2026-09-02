@@ -97,7 +97,6 @@ def choose_material_properties(k:float)->dict:
             phase_properties[m]['capacity'] = 'Constant'
             phase_properties[m]['density'] = 'Constant'
             phase_properties[m]['conductivity'] = 'Constant'
-            phase_properties[m]['radiogenic'] = 0.0 
             phase_properties[m]['radiative'] = 0 
         
         phase_properties['mantle']['k'] = k  
@@ -196,11 +195,11 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
     
     if args.group == 'debug':
         case_index = 0 
-        case_sim = dict_case['debug']
-        mat_prop = choose_material_properties(case_sim['k'])
+        group_sim = dict_case['debug']
+        mat_prop = choose_material_properties(group_sim['k'])
         steady_state = 1 
         name_suite = 'debug' 
-        shear_heating = case_sim['shear_heating']
+        shear_heating = group_sim['shear_heating']
     else:
         
         required = ["case_index", "group", "id_batch"]
@@ -209,15 +208,15 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
             raise ValueError(f"missing required arguments: {', '.join('--' + m for m in missing)}")
 
         case_index = args.case_index
-        case_sim = dict_case[args.group]
+        group_sim = dict_case[args.group]
         
-        print(print_meta_data_id_db(args.group,case_sim))
+        print(print_meta_data_id_db(args.group,group_sim))
         
-        mat_prop = choose_material_properties(case_sim['k'])
+        mat_prop = choose_material_properties(group_sim['k'])
         
         steady_state = args.steady_state
         name_suite = args.name_suite 
-        shear_heating = case_sim['shear_heating']
+        shear_heating = group_sim['shear_heating']
 
 
     cases = pd.read_csv(pathtotable)

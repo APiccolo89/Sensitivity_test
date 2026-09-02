@@ -1,4 +1,12 @@
 # Sensitivity test
+<p align="center">
+  <img src="Result_shear_heating_yes/Figure_3.png" alt="Slab surface temperature, case" width="600">
+  <br>
+  <em>Figure 0 Average difference of slab temperature. [a]: Difference between non-linear test group and the group of experiment with k=3.1. [b]: Difference between non-linear test group and the group of experiment with k=5.0.</em>
+</p>
+
+
+
 ---
 This routine has been used to produce the sensitivity analysis of (name of the manuscript). Everything is set up to reproduce these experiments; as such, the scripts have several hardcoded values. However, the workflow that is described here can be translated to use the code for other purposes.
 
@@ -37,6 +45,75 @@ Step 2 runs these cases for the six groups of numerical experiments designed for
 Step 3 post-processes, analyses and generates figures and the databases.
 
 In the following readme.md, I try to spell out the workflow in a such way that the main insights can be exploitable by other researcher to use both StonedFEniCSx, and also for reproducing the results, and make me write a long errata in the manuscript that I am writing. Feel free to crunch my self-esteem and improve it.  
+
+---
+## Quick start: 
+
+The user needs to install **StonedFEniCSx** (follow the guide here:['https://apiccolo89.github.io/StonedFenicsx/installation.html'](InstallationSTONED)).
+
+After the installation, the user needs to copy the repository: 
+
+```bash
+    git clone https://github.com/APiccolo89/Sensitivity_test.git
+```
+Then, for running the suite of experiments: 
+```bash 
+    python generate_case_steady_state.py
+```
+or 
+```bash 
+    python generate_case_steady_state_td.py
+```
+These commands will produce either `cases_Sensitivity_td.csv` or `cases_Sensitivity.csv`
+
+### General 
+
+
+To run the sensitivity analysis, the user needs to use the bash script in `submission_file/steady_state/steady_state_sensitivity.sh`
+
+It must run from the main folder of the repository: 
+```bash
+    bash /submission_file/steady_state/steady_state_sensitivity.sh --group k3nsh --np 1 --name_suite Sensitivity --steady_state 1
+```
+The command above will run the number of experiment, using the data associated with the group `k3nsh` with 1 processor and with the steady state mode of **StonedFEniCSx**. The data will be saved using the `name_suite`.
+After a run of a single group of experiments the output layout will be: 
+
+```
+    Sensitivity_tests_main folder/
+      ├──h5_outputs/
+        ├──{`name_suite`}_{`group`}_h5_files/
+            ├──Data_Base_{id_batch}.h5
+      ├──test_folder/
+         ├──{`name_suite`}_{`group`}_{`flagSS`}
+            ├──{`name_suite`}_case{case_index}_{`group`}
+```    
+
+where `case_index` is the actual case number (i.e., row of the .csv table), `flagSS` is a flag that identify the mode of the code (`SS`=Steady State, `TD`=Time Dependent). `id_batch` is the processor responsible for the portion of the test. 
+
+:important: Important: **StonedFEniCSx** requires always an input.yml file. To guarantee the reproducibility of the results do not modify!
+
+In `h5_output`, the reduced database of the results is stored. Each sub-folder represent each group. Inside the ``{`name_suite`}_{`group`}_h5_files`` there are small h5_files that contains the relevant information for that group of simulation. 
+
+In `test_folder` there are the real output of **StonedFEniCSx** divided into group and suite folder. The output of the single test are removed. However, the user can modify the python script to keep all the output. 
+
+### Post processing script
+
+After all the run are performed, the user can use the post-processing script by indicating the name of the suite and two tags:
+
+```bash
+
+python Test_plot.py --name_suite Sensitivity --type sh
+
+```
+`type` is signalling if the analysis is for the tests featuring shear heating or not. The `Test_plot.py` merges the `.h5` databases in one database and produces three picture (the one of the manuscript):
+
+<p align="center">
+  <img src="Result_shear_heating_yes/Figure_0.png" alt="Slab surface temperature, case" width="600">
+  <br>
+  <em>Figure 1 — Slab surface temperature and key isotherm data along the slab surface. [a]: Non linear cases P-T condition along slab surface (blue dots high pressure and low temperature rocks database). [b]: Difference of temperature between non-linear case and linear case with k=3.1. [c]: Seismogenetic length in all the experiment.[d]: Error measure between linear cases and non-linear cases. [d]: Depth of the characteristic isotherm .</em>
+</p>
+
+
 
 ---
 ## Generation of the single experiment cases
