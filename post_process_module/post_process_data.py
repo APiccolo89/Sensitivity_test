@@ -386,7 +386,7 @@ def extract_relevant_data(path:str,args:dict)->list:
     return list_data
 # ---
 @timing_function
-def save_test_data(name_suite:str = 'Sensitivity' ,arguments:dict| None, pathtotest:tuple[str,str] = None)->None:
+def save_test_data(name_suite:str = 'Sensitivity' ,arguments:dict| None=None, pathtotest:tuple[str,str] = None)->None:
 
     print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
     
@@ -531,7 +531,7 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:dict = None, 
     
 
 
-        with h5py.File(f'{path2save}/Data_Base_{arguments['id_batch']}.h5', 'a') as f:
+        with h5py.File(f"{path2save}/Data_Base_{arguments['id_batch']}.h5", 'a') as f:
             print('  - Saving data to Data_Base.h5')
             print(f"{path2save}/Data_Base_{arguments['id_batch']}.h5 ")
             if save_grid:
@@ -577,7 +577,7 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:dict = None, 
     else: 
         test_successful = False
         
-    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments['case_index'], id_batch=arguments['id_batch'], success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments['id_batch']}.h5')
+    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments['case_index'], id_batch=arguments['id_batch'], success=test_successful, path_h5=f"{path2save}/Data_Base_{arguments['id_batch']}.h5")
     
     print('===================================================================================================================')
 # ---
@@ -612,7 +612,7 @@ def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:dict = No
     
 
 
-        with h5py.File(f'{path2save}/Data_Base_{arguments['id_batch']}.h5', 'a') as f:
+        with h5py.File(f"{path2save}/Data_Base_{arguments['id_batch']}.h5", 'a') as f:
             print('  - Saving data to Data_Base.h5')
             print(f"{path2save}/Data_Base_{arguments['id_batch']}.h5 ")
             if save_grid:
