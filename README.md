@@ -179,173 +179,174 @@ bash submission_file/run_script.sh --case k3nsh --np 1 --steady_state 1 --name_s
 The bash script parses the arguments and correctly instructs the python configuration script.
 There are two bash scripts: one for the steady-state sensitivity study and one for the time-dependent sensitivity study.
 ```bash
-#!/bin/bash
-#from https://keestalkstech.com/named-arguments-in-a-bash-script/ 
-declare case="" name_suite="" steady_state="" np=""
-declare -ar required_argument=(case name_suite steady_state np)
-declare cases_sim=(k3nsh k5nsh nlnsh k3sh k5sh nlsh)
-# Error
-die() {
-    # error message
-    printf "Script failed: %s\n" "$1" >&2
-    exit 1
-}
-# Parse the argument of the bash script
-check_argument_bash(){
-    # Loop over the allowed declared required arguments. Check if the 
-    # value is within the set, otherwise, throw an error. 
-    
-    
-    local parameter=$1
-    local is_par 
+    #!/bin/bash
+    #from https://keestalkstech.com/named-arguments-in-a-bash-script/ 
+    declare group="" name_suite="" steady_state="" np=""
+    declare MODE=""
+    declare -ar required_argument=(group name_suite steady_state np)
+    declare cases_sim=(k3nsh k5nsh nlnsh k3sh k5sh nlsh)
 
-    for is_par in "${required_argument[@]}"; do
-        if [[ $parameter == "$is_par" ]]; then
-           declare -p -- "$parameter" &>/dev/null
-            return 
-        fi
-    done
+    die() {
+        # error message
+        printf "Script failed: %s\n" "$1" >&2
+        exit 1
+    }
 
-    return 1
-}
-# Throw an error in case the wrong group is given 
-check_argument_case(){
-    # Loop over the allowed declared required arguments. Check if the 
-    # value is within the set, otherwise, throw an error. 
-    
-    
-    local case=$1
-    local is_case 
-    
+    check_argument_bash(){
+        # Loop over the allowed declared required arguments. Check if the 
+        # value is within the set, otherwise, throw an error. 
 
-    for is_case in "${cases_sim[@]}"; do
-        if [[ $case == "$is_case" ]]; then
+
+        local parameter=$1
+        local is_par 
+
+        for is_par in "${required_argument[@]}"; do
+            if [[ $parameter == "$is_par" ]]; then
+               declare -p -- "$parameter" &>/dev/null
+                return 
+            fi
+        done
+
+        return 1
+    }
+
+    check_argument_case(){
+        # Loop over the allowed declared required arguments. Check if the 
+        # value is within the set, otherwise, throw an error. 
+
+
+        local group=$1
+        local is_case 
+
+
+        for is_case in "${cases_sim[@]}"; do
+            if [[ $group == "$is_case" ]]; then
+                return
+            fi
+        done
+        die "${group} is not a valid group. valid group are: k3nsh k5nsh nlnsh k3sh k5sh nlsh"
+    }
+
+    check_steady_state(){
+        # Loop over the allowed declared required arguments. Check if the 
+        # value is within the set, otherwise, throw an error. 
+
+
+        local ss=$1
+    
+        if [[ $ss == "1" ]]; then  
+            printf "Simulations are steady state" 
+            return
+        elif [[ $ss == "0" ]]; then 
+            printf "Simulations are time dependent" 
             return
         fi
-    done
-    die "${case} is not a valid case. valid case are: k3nsh k5nsh nlnsh k3sh k5sh nlsh"
-}
 
-check_steady_state(){
-    # Loop over the allowed declared required arguments. Check if the 
-    # value is within the set, otherwise, throw an error. 
-    
-    
-    local ss=$1
- 
-    if [[ $ss == "1" ]]; then  
-        printf "Simulations are steady state" 
-        return
-    elif [[ $ss == "0" ]]; then 
-        printf "Simulations are time dependent" 
-        return
+        die "${ss} is not a valid steady_state flag: steady_state flag must be 1 or 0"
+    }
+
+    # Translation for mere mortals: 
+    # $# -> total arguments -> check $1-$2 -> then remove the first 2 and do the same operation till $# is zero 
+    # check the total number of arguments and kill immediately if it is odd
+    if [ $(($#%2)) != 0 ]; then
+        die "The number of arguments i.e. (--x a --y b) is odd."  
     fi
-    
-    die "${ss} is not a valid steady_state flag: steady_state flag must be 1 or 0"
-}
+    # Check 
+    while [ $# -gt 0 ]; do
+        if [[ $1 == "--"* ]]; then
 
-# Translation for mere mortals: 
-# $# -> total arguments -> check $1-$2 -> then remove the first 2 and do the same operation till $# is zero 
-# check the total number of arguments and kill immediately if it is odd
-if [ $(($#%2)) != 0 ]; then
-    die "The number of arguments i.e. (--x a --y b) is odd."  
-fi
-# Check 
-while [ $# -gt 0 ]; do
-    if [[ $1 == "--"* ]]; then
-     
-        if ! check_argument_bash "${1#--}"; then
-            die "There is a problem: ${1} seems to not be a parameter"
+            if ! check_argument_bash "${1#--}"; then
+                die "There is a problem: ${1} seems to not be a parameter"
+            fi 
+
+            if (( $# < 2 )) || [[ $2 == "--"* ]]; then
+                die "Missing value for ${1}"
+            fi 
+
+            printf -v "${1#--}" "%s" "$2" # equivalent to say $name=$value Store 
+            shift 2
+        else 
+
+            die "Well... unexpected arguments: ${1}"
+
         fi 
+    done
 
-        if (( $# < 2 )) || [[ $2 == "--"* ]]; then
-            die "Missing value for ${1}"
-        fi 
-        
-        printf -v "${1#--}" "%s" "$2" # equivalent to say $name=$value Store 
-        shift 2
-    else 
+    echo "group: ${group}, name_suite: ${name_suite}, steady_state: ${steady_state}, np: ${np}"
 
-        die "Well... unexpected arguments: ${1}"
-
-    fi 
-done
-
-echo "case: ${case}, name_suite: ${name_suite}, steady_state: ${steady_state}, np: ${np}"
-
-# Source - https://stackoverflow.com/a/246128
-# Posted by dogbane, modified by community. See post 'Timeline' for change history
-# Retrieved 2026-08-16, License - CC BY-SA 4.0
-
-pwd=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-echo "Path is ${pwd}"
+    if [[ $steady_state == "1" ]]; then  
+        MODE="SS"
+    elif [[ $steady_state == "0" ]]; then 
+        MODE="TD"
+    fi
 
 
-echo $"id main db: ${case}" 
-bash "${pwd}/remove_file_output.sh" "${case}"
+    # Source - https://stackoverflow.com/a/246128
+    # Posted by dogbane, modified by community. See post 'Timeline' for change history
+    # Retrieved 2026-08-16, License - CC BY-SA 4.0
+
+    pwd=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+    echo "Path is ${pwd}"
 
 
-sbatch << EOT
-#!/bin/bash
-#SBATCH --job-name=Sensitivity_no_shear_heating
-#SBATCH --array=0-99%100
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=${np}
-#SBATCH --time=30:00:00
-#SBATCH --mem=10G
-#SBATCH --output=output_bash/out_${case}/SS_%A_%a.txt
-#SBATCH --error=output_bash/err_${case}/SS_%A_%a.txt
-
-#Print the case (group)
-echo $"id main db: ${case}"
-# Print the number of processor
-echo $"number of processor: ${np}"
-
-# Remove module
-module purge
-# Load module
-module load python/3.13.0
-module load spack/0.23
-
-unset LD_PRELOAD
-export LD_LIBRARY_PATH="/mnt/scratch/wlnw570/libs/glu:\$LD_LIBRARY_PATH"
-# Load the module for spack 
-spack load py-fenics-dolfinx
-spack load py-h5py
-spack load py-numpy
-spack load py-petsc4py@3.22.1
-source /users/wlnw570/stoned_fenicsx_env/bin/activate
-PYTHON=/users/wlnw570/stoned_fenicsx_env/bin/python
-
-worker_id=\${SLURM_ARRAY_TASK_ID}
-id_batch=\${worker_id}
-#id_batch == worker number
-echo "Worker ID = \${worker_id}"
-echo "HDF5 batch ID = \${id_batch}"
-# number of worker (i.e. number of processor)
-n_workers=100
-# number of the case: for obviously using this number must be equal to the number of experiment
-n_cases=100
-
-# Loop over the case e.g. from 0, jump every 100 till the maximum allowed -> This is more valid for the steady state case
-for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
-    # -> Problem with the caching information of FEniCSx 
-    export XDG_CACHE_HOME=/mnt/scratch/wlnw570/fenics_cache/\${SLURM_JOB_ID}_\${SLURM_ARRAY_TASK_ID}_\${case_index}
-    mkdir -p "\$XDG_CACHE_HOME"
-
-    # Run the script with argument
-    mpirun -n ${np} "\$PYTHON" -u Sensitivity_tests_time_dep_exp.py \
-        --case_index \${case_index} \ # Case index
-        --case ${case} \ # Group
-        --name_suite ${name_suite}\ #Name of suite
-        --id_batch \$id_batch \ #worker number
-        --steady_state ${steady_state}\# steady state flag
+    echo $"id main db: ${group}" 
+    bash "${pwd}/remove_file_output.sh" "${group}_${MODE}"
 
 
-    rm -rf "\$XDG_CACHE_HOME"
-done
-EOT
+    sbatch << EOT
+    #!/bin/bash
+    #SBATCH --job-name=Sensitivity_no_shear_heating
+    #SBATCH --array=0-99%100
+    #SBATCH --ntasks=1
+    #SBATCH --cpus-per-task=${np}
+    #SBATCH --time=30:00:00
+    #SBATCH --mem=10G
+    #SBATCH --output=output_bash/out_${group}_${MODE}/${MODE}_%A_%a.txt
+    #SBATCH --error=output_bash/err_${group}_${MODE}/${MODE}_%A_%a.txt
 
+    echo $"id main db: ${group}"
+    echo $"number of processor: ${np}"
+
+    module purge
+    module load python/3.13.0
+    module load spack/0.23
+
+    unset LD_PRELOAD
+    export LD_LIBRARY_PATH="/mnt/scratch/wlnw570/libs/glu:\$LD_LIBRARY_PATH"
+
+    spack load py-fenics-dolfinx
+    spack load py-h5py
+    spack load py-numpy
+    spack load py-petsc4py@3.22.1
+    source /users/wlnw570/stoned_fenicsx_env/bin/activate
+    PYTHON=/users/wlnw570/stoned_fenicsx_env/bin/python
+
+    worker_id=\${SLURM_ARRAY_TASK_ID}
+    id_batch=\${worker_id}
+
+    echo "Worker ID = \${worker_id}"
+    echo "HDF5 batch ID = \${id_batch}"
+
+    n_workers=100
+    n_cases=7000
+
+
+    for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
+        export XDG_CACHE_HOME=/mnt/scratch/wlnw570/fenics_cache/\${SLURM_JOB_ID}_\${SLURM_ARRAY_TASK_ID}_\${case_index}
+        mkdir -p "\$XDG_CACHE_HOME"
+
+        mpirun -n ${np} "\$PYTHON" -u script_run_stoned.py \
+            --case_index \${case_index} \
+            --group ${group} \
+            --name_suite ${name_suite}\
+            --id_batch \$id_batch \
+            --steady_state ${steady_state}\
+            --name_csv cases_Sensitivity.csv\
+
+
+        rm -rf "\$XDG_CACHE_HOME"
+    done
+    EOT
 ```
 :warning: **Warning:** The script has been designed to comply the specification of Aire [Aire HPC](https://arc.leeds.ac.uk/knowledge-centre/resources/aire/). It was necessary to use spack, instead of miniforge. At the moment, it should have been corrected, however the bash script has been kept in its original form. If an user, reviewer, unicorn wants to use it, they should use in accordance of their HPC. 
 
@@ -699,3 +700,16 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
 
 still working on it
 
+
+## Real cases
+## Mexico 
+
+## Japan
+
+## Chile
+
+## Tonga
+
+### Usage of AI 
+
+AI (claude/chatgpt) have been used mostly to look for specific functionality of the code and to correct my grammar. I am fully responsible for the crime against nature that I devised for this project.  

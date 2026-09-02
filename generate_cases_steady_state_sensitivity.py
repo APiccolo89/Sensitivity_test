@@ -61,19 +61,13 @@ def main(n:int = 7000
     case_id = 0
 
     for index_random, k in itertools.product(random_cases, [0]):
-        if k == -10.0:
-            option_thermal = 1
-            k = 0.0
-        else:
-            option_thermal = 0
 
         rows.append({
             "case_id": case_id,
             "age": scaled_sample[index_random, 0],
             "vc": scaled_sample[index_random, 1],
             "Tp": scaled_sample[index_random, 2],
-            "k": k,
-            "option_thermal": option_thermal,
+
         })
         case_id += 1
 
@@ -86,9 +80,7 @@ def main(n:int = 7000
                 "case_id",
                 "age",
                 "vc",
-                "Tp",
-                "k",
-                "option_thermal",
+                "Tp"
             ],
         )
         writer.writeheader()

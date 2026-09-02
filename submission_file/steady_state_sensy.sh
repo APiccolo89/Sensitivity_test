@@ -1,7 +1,8 @@
 #!/bin/bash
 #from https://keestalkstech.com/named-arguments-in-a-bash-script/ 
-declare case="" name_suite="" steady_state="" np=""
-declare -ar required_argument=(case name_suite steady_state np)
+declare group="" name_suite="" steady_state="" np=""
+declare MODE=""
+declare -ar required_argument=(group name_suite steady_state np)
 declare cases_sim=(k3nsh k5nsh nlnsh k3sh k5sh nlsh)
 
 die() {
@@ -9,6 +10,7 @@ die() {
     printf "Script failed: %s\n" "$1" >&2
     exit 1
 }
+
 check_argument_bash(){
     # Loop over the allowed declared required arguments. Check if the 
     # value is within the set, otherwise, throw an error. 
@@ -32,16 +34,16 @@ check_argument_case(){
     # value is within the set, otherwise, throw an error. 
     
     
-    local case=$1
+    local group=$1
     local is_case 
     
 
     for is_case in "${cases_sim[@]}"; do
-        if [[ $case == "$is_case" ]]; then
+        if [[ $group == "$is_case" ]]; then
             return
         fi
     done
-    die "${case} is not a valid case. valid case are: k3nsh k5nsh nlnsh k3sh k5sh nlsh"
+    die "${group} is not a valid group. valid group are: k3nsh k5nsh nlnsh k3sh k5sh nlsh"
 }
 
 check_steady_state(){
@@ -89,7 +91,14 @@ while [ $# -gt 0 ]; do
     fi 
 done
 
-echo "case: ${case}, name_suite: ${name_suite}, steady_state: ${steady_state}, np: ${np}"
+echo "group: ${group}, name_suite: ${name_suite}, steady_state: ${steady_state}, np: ${np}"
+
+if [[ $steady_state == "1" ]]; then  
+    MODE="SS"
+elif [[ $steady_state == "0" ]]; then 
+    MODE="TD"
+fi
+
 
 # Source - https://stackoverflow.com/a/246128
 # Posted by dogbane, modified by community. See post 'Timeline' for change history
@@ -99,8 +108,8 @@ pwd=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 echo "Path is ${pwd}"
 
 
-echo $"id main db: ${case}" 
-bash "${pwd}/remove_file_output.sh" "${case}"
+echo $"id main db: ${group}" 
+bash "${pwd}/remove_file_output.sh" "${group}_${MODE}"
 
 
 sbatch << EOT
@@ -111,10 +120,10 @@ sbatch << EOT
 #SBATCH --cpus-per-task=${np}
 #SBATCH --time=30:00:00
 #SBATCH --mem=10G
-#SBATCH --output=output_bash/out_${case}/SS_%A_%a.txt
-#SBATCH --error=output_bash/err_${case}/SS_%A_%a.txt
+#SBATCH --output=output_bash/out_${group}_${MODE}/${MODE}_%A_%a.txt
+#SBATCH --error=output_bash/err_${group}_${MODE}/${MODE}_%A_%a.txt
 
-echo $"id main db: ${case}"
+echo $"id main db: ${group}"
 echo $"number of processor: ${np}"
 
 module purge
@@ -138,19 +147,20 @@ echo "Worker ID = \${worker_id}"
 echo "HDF5 batch ID = \${id_batch}"
 
 n_workers=100
-n_cases=100
+n_cases=7000
 
 
 for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
     export XDG_CACHE_HOME=/mnt/scratch/wlnw570/fenics_cache/\${SLURM_JOB_ID}_\${SLURM_ARRAY_TASK_ID}_\${case_index}
     mkdir -p "\$XDG_CACHE_HOME"
 
-    mpirun -n ${np} "\$PYTHON" -u Sensitivity_tests_time_dep_exp.py \
+    mpirun -n ${np} "\$PYTHON" -u script_run_stoned.py \
         --case_index \${case_index} \
-        --case ${case} \
+        --group ${group} \
         --name_suite ${name_suite}\
         --id_batch \$id_batch \
         --steady_state ${steady_state}\
+        --name_csv cases_Sensitivity.csv\
 
 
     rm -rf "\$XDG_CACHE_HOME"

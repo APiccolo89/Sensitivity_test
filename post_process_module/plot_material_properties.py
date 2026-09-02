@@ -1,26 +1,27 @@
-import h5py
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import os
-from matplotlib.collections import LineCollection
-from matplotlib import cm, colors
 import gc
-from collections import namedtuple
-from numba import njit
+import os
 import time as timing
 import tracemalloc
-import cmcrameri
+from collections import namedtuple
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
+
+import cmcrameri
+import h5py
+import matplotlib.axes as mpl_axes
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import cm, colors
+from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
+from matplotlib.ticker import FormatStrFormatter
+from numba import njit
+from scipy.integrate import quad
+from stonedfenicsx.config.input_parser import parse_input
 from stonedfenicsx.config.phase_db import compute_thermal_properties
 from stonedfenicsx.config.simulation_config import configure_simulation
-from stonedfenicsx.config.input_parser import parse_input
-import matplotlib.axes as mpl_axes
-from matplotlib.ticker import FormatStrFormatter
-from matplotlib.lines import Line2D
-from dataclasses import dataclass
-from typing import Optional
-from scipy.integrate import quad
 
 # Conversion pt - cm 
 _PT_CM_ = 0.035

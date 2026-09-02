@@ -71,7 +71,7 @@ def timing_function(fun):
         elif dt > 3600.0:
             m, s = divmod(dt, 60)
             h, m = divmod(m, 60)
-            print(f".  {fun.__name__} took {dt/3600:.2f} hr, {m:.2f} min and {s:.2f} sec")
+            print(f".  {fun.__name__} took {h:.2f} hr, {m:.2f} min and {s:.2f} sec")
         else:
             print(f".  {fun.__name__} took {dt:.2f} sec")
         return result
@@ -93,10 +93,7 @@ def test_success(name_test: str,steadystate=True):
     else: 
         file = f'{name_test}/time_dependent.h5'
     
-    if os.path.isfile(file)==False:
-        return False
-    else:
-        return True
+    return os.path.isfile(file) != False
 # ---
 def extract_slab_surface(T:Test,steady_state=True,ts=0)->np.ndarray:
     if steady_state:
@@ -108,7 +105,7 @@ def extract_slab_surface(T:Test,steady_state=True,ts=0)->np.ndarray:
 
 def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndarray,tag:str)->np.ndarray:
 
-    from stonedfenicsx.config.phase_db import read_rheology 
+    from stonedfenicsx.config.phase_db import read_rheology
     
     temp_slab = temp_slab + 273.15 
     pres_slab = pres_slab * 1e9
@@ -193,7 +190,7 @@ def extract_slab_oceanic_surface_Temperature(T: Test,steady_state=True,ts=0)->tu
     
     return cd_s,cd_o, T_S, T_O, P_S, P_O
 # ---
-def extract_heat_flux(T: Test,steady_state:bool=False,ts:int=0)->tuple[np.ndarray, np.ndarray]:
+def extract_heat_flux(T: Test,steady_state:bool=True,ts:int=0)->tuple[np.ndarray, np.ndarray]:
     
     if not steady_state: 
         q = T.Data_raw.TimeDependent.qy[:,ts]
@@ -390,10 +387,11 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
     print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir / f"{name_suite}_h5_files_{arguments.id_db}"
+    path2save = main_dir / "Output_h5_files" / f"{name_suite}_h5_files_{arguments.group}"
+
+    path2save.mkdir(parents=True, exist_ok=True)
     
-    if not os.path.isdir(path2save):
-        os.mkdir(path2save)
+
 
     print(f"Test data will be saved in {path2save}")
     
@@ -442,6 +440,8 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
                         data=value,
                         dtype=h5py.string_dtype(encoding="utf-8"),
                     )
+                elif key == 'mat_prop':
+                    pass
                 else:
                     grp.create_dataset(key, data=value)
 
@@ -475,7 +475,7 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
     else: 
         test_successful = False
         
-    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
+    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_batch, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.id_batch}.h5')
     
     print('===================================================================================================================')
 # ---
@@ -502,10 +502,8 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Name
     print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir / f"{name_suite}_h5_files_{arguments.id_db}"
-    
-    if not os.path.isdir(path2save):
-        os.mkdir(path2save)
+    path2save = main_dir /'h5_outputs' /f"{name_suite}_h5_files_{arguments.group}"
+    path2save.mkdir(parents=True, exist_ok=True)
 
     print(f"Test data will be saved in {path2save}")
     
@@ -557,6 +555,8 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Name
                         data=value,
                         dtype=h5py.string_dtype(encoding="utf-8"),
                     )
+                elif key == 'mat_prop':
+                    pass
                 else:
                     grp.create_dataset(key, data=value)
 
@@ -582,7 +582,7 @@ def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:argparse.
     print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir /'h5_outputs' /f"{name_suite}_h5_files_{arguments.case}"
+    path2save = main_dir /'h5_outputs' /f"{name_suite}_h5_files_{arguments.group}"
     path2save.mkdir(parents=True, exist_ok=True)
     
     print(f"Test data will be saved in {path2save}")
@@ -655,7 +655,7 @@ def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:argparse.
     else: 
         test_successful = False
         
-    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.case, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.case}.h5')
+    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.group, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.id_batch}.h5')
     
     print('===================================================================================================================')
 # ---

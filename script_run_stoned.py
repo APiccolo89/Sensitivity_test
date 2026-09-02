@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import time
+import traceback
 from types import SimpleNamespace
 
 import numpy as np
@@ -55,10 +56,38 @@ I liked.
 After running the test, the script saves the results in a folder, in a number of h5 files that will be
 merged by other scripts.
 """
-# -- 
+# -- Flag dictionary 
 dict_td =  {'1':'SS',
          '0':'TD'}
-# -- 
+# --- 
+def change_geometry(plate:str,args:SimpleNamespace,inp)->None:
+    """Change the geometry of the input data according to the plate name. The plate name is a string that corresponds to the key of the dictionary. The dictionary is defined in the file geometric_input_real_plate.yml. The function reads the dictionary and changes the geometry of the input data according to the plate name.
+
+    Args:
+        plate (str): Name of the plate to use for the real geometry (only the basic one stored in StonedFEniCSx is available). If None, the default geometry is used.
+        inp (SimpleNamespace): Input data of StonedFEniCSx
+    """
+    
+    if plate != 'None':
+        import yaml
+        with open(f"{os.path.dirname(os.path.realpath(__file__))}/real_plate_configuration/geometric_input_real_plate.yml", "r") as f:
+            dict_geom = yaml.safe_load(f)
+        
+        if plate not in dict_geom.keys():
+            raise ValueError(f"Plate {plate} not found in the dictionary. Available plates are: {list(dict_geom.keys())}")
+        
+        geom = dict_geom[plate]
+        inp.g_input.slab_tk = geom['slab_tk']
+        inp.g_input.cr = geom['cr']
+        inp.g_input.lc = geom['lc']
+        inp.g_input.ns_depth = geom['ns_depth']
+        inp.g_input.lab_d = geom['lab_d']
+        inp.g_input.decoupling = args.decoupling if hasattr(args,'decoupling') else geom['decoupling']
+
+    
+    
+    
+# ---
 def choose_material_properties(k:float)->dict:
     
     materials  = ("mantle", "oceanic_crust", "upper_crust","lower_crust")
@@ -238,7 +267,20 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->SimpleNamespace
 # --- function "wrap" 
 
 def wrap_stoned(inp, Ph):
+    """A fake wrap. 
+
+    Args:
+        inp (_type_): input configuration data
+        Ph (_type_): phase data base
+
+    Raises:
+        ValueError: failed attempt
     
+    This is a quick hack solution. In the original plan, I would have been able to configure a no-race condition
+    for the mesh generation and cache generation for the thermal properties. In practice, I was not able to find a proper solution. 
+    This should be possible, but, I am not willing to spend a few hours in this task. So, here you are the quick and dirty solution. 
+    TO DO: Reintegrate the h5 file routine for the thermal properties and create a control called: caching. 
+    """
     
     
     from stonedfenicsx.stoned_fenicsx import stoned_fenicsx
@@ -257,6 +299,10 @@ def wrap_stoned(inp, Ph):
             success = 1
         except Exception as e:
             last_error = e
+            with open(f"{inp.ctrl_io.path_test}/log_case_test{attempt}.log", "w") as f:
+                traceback.print_exc(file=f)
+                print(f"failed on attempt {attempt}", file=f)
+                        
             time.sleep(20)      # seconds, float allowed
             attempt = attempt + 1
             print(f'Test failed at {attempt} with error: {e}')
@@ -264,8 +310,6 @@ def wrap_stoned(inp, Ph):
             
     if success==0: 
         raise ValueError('Failed attempt') from last_error
-
-
 # ---
 @timing_function
 def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str,str]:
@@ -281,26 +325,28 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
     Returns:
         tuple[str,str]: general path of the tests and name of the test
     """
+    # To configure the simulation, the code must ALWAYS read the input.yml file. This is a template file that contains the default values of the input data. The code will then modify the values of the input data according to the arguments passed to the script.
     from stonedfenicsx.config.input_parser import parse_input
-    from stonedfenicsx.config.numerical_control import dict_shear_modes
-    from stonedfenicsx.stoned_fenicsx import stoned_fenicsx
-
+    # Find the path of the file
     path_general = os.path.dirname(os.path.realpath(__file__))
-    
+    # Read the input file
     path_input = f"{path_general}/input_tests.yaml"
-    
+    # Set the general path for the tests
     path_general = os.path.join(path_general,"test_folder")
-    
+    # Create the test folder if does not exist
     if not os.path.exists(path_general):
         os.makedirs(path_general)
     
-
+    # Parse the blue print of the test
     inp,Ph = parse_input(path_input)
+    # If you are debugging, use group debug
     if args.group == 'debug':
         inp.ctrl.time_max = 0.05
 
-    # controls
+    # controls 
+    # Assume that the decoupling is always active
     inp.ctrl.decoupling_ctrl = 1
+    # Choose the mode of stonedFEniCSx
     inp.ctrl.steady_state = args.steady_state
     if args.steady_state == 1: 
         inp.ctrl.tol = 5e-3
@@ -309,7 +355,7 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
         inp.ctrl.tol = 1e-2
         inp.ctrl.it_max = 10
 
-    
+    # Choose the shear heating mode
     if args.shear_heating:
         inp.ctrl.model_shear = 'SelfConsistent'
     else: 
@@ -331,17 +377,17 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
     inp.g_input.decoupling                           = 80  # Lithospheric mantle depth 
     inp.g_input.lab_d                                = inp.g_input.decoupling  # depth of the lab 
     inp.g_input.decoupling                           = 80 # decoupling depth
-    inp.g_input.ns_depth                             = 50
-    inp.g_input.transition                           = 10
-    inp.g_input.slab_type                            = 'CustomRibe'
-    inp.g_input.resolution_normal                    = 10.0
-    inp.g_input.resolution_refine                    = 1.5 
+    inp.g_input.ns_depth                             = 50 # depth of the noslip boundary condition
+    inp.g_input.transition                           = 10 # transition delta depth -> the distance at which the transition from uncoupled and coupled flow happens 
+    inp.g_input.slab_type                            = 'CustomRibe' # type of slab geometry
+    inp.g_input.resolution_normal                    = 10.0 # Resolution normal 
+    inp.g_input.resolution_refine                    = 1.5 # resolution around the slab top surface and the oceanic crust within the slab. 
 
     if args.shear_heating:
         Ph.shear_heating_disl_law                    = 'Wet_Quartzite_2001_Dislocation_creep'
     
     Ph.shear_heating_disl_phi                        = 5.0
-        
+    # Fixed rheology of the mantle. Usually the difference with rheologies and thermal field are minimal.     
     name_diffusion = 'VK_Diffusion_creep'
     name_dislocation = 'VK_Dislocation_creep'                 
 
@@ -403,30 +449,34 @@ def perform_test(args:SimpleNamespace|None,name_suite:str = 'debug')-> tuple[str
     Ph.overriding_lower_crust.radiogenic_heat         = args.mat_prop['lower_crust']['radiogenic']
     Ph.overriding_lower_crust.k                       = args.mat_prop['lower_crust']['k']
 
-
+    # Path to save the results
     inp.ctrl_io.path_save                             = os.path.join(path_general,f"{name_suite}_{args.group}_{dict_td[f'{args.steady_state}']}")
     inp.ctrl_io.test_name                             = f'{name_suite}_case{args.case_index}_{args.group}'
 
+    # Run the test
     wrap_stoned(inp, Ph)
     
-    return tuple([inp.ctrl_io.path_test,inp.ctrl_io.test_name])
+    return inp.ctrl_io.path_test,inp.ctrl_io.test_name
 # ---
 @timing_function
 def configure_run_save():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--debug-defaults", action="store_true")
-    parser.add_argument("--case_index", type=int)
-    parser.add_argument("--group", type=str)
-    parser.add_argument("--id_batch", type=int)
-    parser.add_argument("--name_suite",type=str)
-    parser.add_argument("--steady_state",type=int,default=1)
+    parser.add_argument("--case_index", type=int,help="Index of the case to run. This is an integer that corresponds to the row of the .csv table.")
+    parser.add_argument("--group", type=str,help="Group to which the case belongs.")
+    parser.add_argument("--id_batch", type=int,help="Id of the batch. This is the processor id. It always assume an array job.")
+    parser.add_argument("--name_suite",type=str, help="Name of the test suite. This is a string that corresponds to the name of the test suite.")
+    parser.add_argument("--steady_state",type=int,default=1,help="Flag to run the test in steady-state or time-dependent mode. 1 = steady-state, 0 = time-dependent")
+    parser.add_argument("--name_csv",type=str,default="cases_Sensitivity_td.csv",help="Name of the .csv table that contains the cases to run. This is a string that corresponds to the name of the .csv table.")
+    parser.add_argument("--remove_results", type=int, default=1, help="Flag to remove the results after the test is completed. 1 = remove, 0 = keep")
+    parser.add_argument("--plate_real", type=str, default='None', help="Name of the plate to use for the real geometry (only the basic one stored in StonedFEniCSx is available). If None, the default geometry is used.")
+
 
     args_cli = parser.parse_args()
     
     name_suite = args_cli.name_suite
     
-    arguments = parse_the_argument(args_cli,pathtotable=f"{os.path.dirname(os.path.realpath(__file__))}/cases_Sensitivity_td.csv") 
+    arguments = parse_the_argument(args_cli,pathtotable=f"{os.path.dirname(os.path.realpath(__file__))}/{args_cli.name_csv}") 
         
     pathtest,_ = perform_test(args=arguments,name_suite= name_suite)
  
@@ -444,13 +494,13 @@ def configure_run_save():
 
     
     #remove the tests folder 
-    if arguments.case_index !=0:
+    if args_cli.remove_results == 1 and arguments.case_index !=0:
         shutil.rmtree(os.path.join(pathtest))    
         print(f"Removed {os.path.join(pathtest)} for group {arguments.case_index}")
     
     print(f"Finished group {arguments.case_index}")
-#---------------------------------------------------------------------------------    
+# ---
 
 if __name__ == "__main__":
-    main()
+    configure_run_save()
     

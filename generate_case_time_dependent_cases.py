@@ -68,8 +68,6 @@ def main(vc_arr:list[float] = [3.0, 15.0], age_arr:list[float] = [30, 100.0])->N
             "age": array_exp[i, 0],
             "vc": array_exp[i, 1],
             "Tp": 1350.0,
-            "k": 0,
-            "option_thermal": 0,
         })
         case_id += 1
 
@@ -82,9 +80,7 @@ def main(vc_arr:list[float] = [3.0, 15.0], age_arr:list[float] = [30, 100.0])->N
                 "case_id",
                 "age",
                 "vc",
-                "Tp",
-                "k",
-                "option_thermal",
+                "Tp"
             ],
         )
         writer.writeheader()

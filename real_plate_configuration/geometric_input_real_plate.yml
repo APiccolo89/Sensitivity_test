@@ -1,0 +1,40 @@
+  Mexico:
+    slab_tk: 130.0 # Slab Thickness
+    cr: 45.0 # Overriding Crust {if lc==0.0 -> only overriding upper crust}
+    ocr: 7.0 # Oceanic crust
+    lc: 0.6
+    ns_depth: 45.0
+    lab_d: 100.0
+    decoupling: 80.0
+  #Place holders 
+  
+  Japan:
+    slab_tk: 130.0 # Slab Thickness
+    cr: 30.0 # Overriding Crust {if lc==0.0 -> only overriding upper crust}
+    ocr: 7.0 # Oceanic crust
+    lc: 0.3
+    resolution_normal: 3.0
+    resolution_refine: 1.5 
+    ns_depth: 50.0
+    lab_d: 100.0
+    decoupling: 80.0
+  Chile:
+    slab_tk: 130.0 # Slab Thickness
+    cr: 30.0 # Overriding Crust {if lc==0.0 -> only overriding upper crust}
+    ocr: 7.0 # Oceanic crust
+    lc: 0.3
+    resolution_normal: 3.0
+    resolution_refine: 1.5 
+    ns_depth: 50.0
+    lab_d: 100.0
+    decoupling: 80.0
+  Tonga:
+    slab_tk: 130.0 # Slab Thickness
+    cr: 30.0 # Overriding Crust {if lc==0.0 -> only overriding upper crust}
+    ocr: 7.0 # Oceanic crust
+    lc: 0.3
+    resolution_normal: 3.0
+    resolution_refine: 1.5 
+    ns_depth: 50.0
+    lab_d: 100.0
+    decoupling: 80.0
