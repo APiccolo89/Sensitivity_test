@@ -313,9 +313,12 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->dict:
     args_test['shear_heating'] = shear_heating
     args_test['steady_state'] = steady_state
     if args.plate_real != 'None':
-        args_test['plate_real'] = args.plate_real    
+        args_test['plate_real'] = args.plate_real
+    if args.shear_heating_law != 'NotDefined':
+        args_test['shear_heating_law'] = args.shear_heating_law
     args_test['group'] = args.group
     args_test['id_batch'] = args.id_batch 
+    args_test['case_index'] = args.case_index
     
     return args_test
 # --- function "wrap" 
@@ -492,11 +495,11 @@ def configure_run_save():
         else: 
             save_test_data(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
         #remove the tests folder 
-        if args_cli.remove_results == 1 and arguments.case_index !=0:
+        if args_cli.remove_results == 1 and arguments['case_index'] !=0:
             shutil.rmtree(os.path.join(pathtest))    
-            print(f"Removed {os.path.join(pathtest)} for group {arguments.case_index}")
+            print(f"Removed {os.path.join(pathtest)} for group {arguments['case_index']}")
     
-    print(f"Finished group {arguments.case_index}")
+    print(f"Finished group {arguments['case_index']}")
 # ---
 
 if __name__ == "__main__":
