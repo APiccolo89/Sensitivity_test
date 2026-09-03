@@ -117,6 +117,7 @@ sbatch << EOT
 #SBATCH --job-name=Sensitivity_no_shear_heating
 #SBATCH --array=0-99%100
 #SBATCH --ntasks=1
+#SBATCH --exclude=node052
 #SBATCH --cpus-per-task=${np}
 #SBATCH --time=30:00:00
 #SBATCH --mem=10G
