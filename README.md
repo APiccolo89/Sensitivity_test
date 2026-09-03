@@ -86,15 +86,20 @@ After a run of a single group of experiments the output layout will be:
       ├──test_folder/
          ├──{`name_suite`}_{`group`}_{`flagSS`}
             ├──{`name_suite`}_case{case_index}_{`group`}
+      ├──output_bash/
+            ├──out_{'group'}_{'flagSS'}
 ```    
 
 where `case_index` is the actual case number (i.e., row of the .csv table), `flagSS` is a flag that identify the mode of the code (`SS`=Steady State, `TD`=Time Dependent). `id_batch` is the processor responsible for the portion of the test. 
 
-:important: Important: **StonedFEniCSx** requires always an input.yml file. To guarantee the reproducibility of the results do not modify!
 
 In `h5_output`, the reduced database of the results is stored. Each sub-folder represent each group. Inside the ``{`name_suite`}_{`group`}_h5_files`` there are small h5_files that contains the relevant information for that group of simulation. 
 
 In `test_folder` there are the real output of **StonedFEniCSx** divided into group and suite folder. The output of the single test are removed. However, the user can modify the python script to keep all the output. 
+
+> **Important:**  **StonedFEniCSx** requires always an input.yml file. 
+
+:warning: **Warning:** : If the user wants to reproduce the results of the manuscript, he should not modify input_tests.yml. All the main required modification are done by the configuration python scripts. 
 
 ### Post processing script
 
