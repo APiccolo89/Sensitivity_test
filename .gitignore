@@ -60,4 +60,7 @@ Sensitivity100_TD/Sensitivity_case0_100/time_dependent.xdmf
 Sensitivity0/*
 *.txt
 time_dependent.xdmf
-Output_h5_files/steady_s_sensitivity_h5_files_k3nsh/Failed_tests.jsonl
+Output_h5_files/*
+Output_h5_files/*
+Failed_tests.*
+Failed_tests.jsonl
