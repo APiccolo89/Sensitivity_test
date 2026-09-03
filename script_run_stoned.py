@@ -7,6 +7,7 @@ import time
 import traceback
 from dataclasses import asdict, astuple, fields
 from importlib.resources import files
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -323,7 +324,7 @@ def parse_the_argument(args:argparse.Namespace,pathtotable:str)->dict:
     return args_test
 # --- function "wrap" 
 
-def wrap_stoned(inp, Ph):
+def wrap_stoned(inp, Ph, arguments:dict)->tuple:
     """A fake wrap. 
 
     Args:
@@ -340,8 +341,11 @@ def wrap_stoned(inp, Ph):
     """
     
     
+    import copy
+
     from stonedfenicsx.stoned_fenicsx import stoned_fenicsx
-        # Initialise the input
+
+    # Initialise the input
     attempt = 0 
     success = 0
     last_error = None
@@ -349,24 +353,46 @@ def wrap_stoned(inp, Ph):
     # I need to solve the issue of the cache. In the future I will split the problem of mesh and cache generation, before the actual run
     # Or find a proper way to cleanly use race conditions. Meanwhile, this quick fix seems robust. 
     
+    
+    
+    RETRYABLE_EXCEPTIONS = (RuntimeError, TimeoutError, OSError)
+
+    
     while attempt < 3 and success == 0:
+        # Copy the classes otherwise it crashes
+        A = copy.deepcopy(inp)
+        B = copy.deepcopy(Ph)
         try:
-            stoned_fenicsx(inp, Ph)
+            stoned_fenicsx(A, B)
             print(f'Test was a success at {attempt}')
             success = 1
-        except Exception as e:
+            # Copy the post processed classes
+            inp = copy.deepcopy(A)
+            Ph  = copy.deepcopy(B)
+        except RETRYABLE_EXCEPTIONS as e:
+            # ok, understood. This method is not safe guarding the test path, this create a few issue, and error I patch 
+            # it. The reason that I am doing it is the following: it is not only for lazyness. I want to use the same version
+            # of the code for this paper. If i start aiming the perfection, I will enter in an never ending loop that produce 
+            # a wonderful code, that will not have any paper attached. 
             last_error = e
-            with open(f"{inp.ctrl_io.path_test}/log_case_test{attempt}.log", "w") as f:
+            
+            main_dir = Path(__file__).resolve().parents[0]
+            path2save = main_dir / "error_log" / f"{arguments['group']}"
+            path2save.mkdir(parents=True, exist_ok=True)
+            
+            with open(f"{path2save}/{A.ctrl_io.test_name}_a_{attempt}.log", "w") as f:
                 traceback.print_exc(file=f)
                 print(f"failed on attempt {attempt}", file=f)
                         
             time.sleep(20)      # seconds, float allowed
             attempt = attempt + 1
             print(f'Test failed at {attempt} with error: {e}')
-
-            
+        del A,B
+    
     if success==0: 
         raise ValueError('Failed attempt') from last_error
+
+    return inp,Ph
 # ---
 @timing_function
 def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
@@ -456,7 +482,7 @@ def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     inp.ctrl_io.test_name = f"{name_suite}_case{args['case_index']}_{args['group']}_{dict_td[str(args['steady_state'])]}"
 
     # Run the test
-    wrap_stoned(inp, Ph)
+    inp,Ph = wrap_stoned(inp=inp, Ph=Ph,arguments=args)
     
     return inp.ctrl_io.path_test,inp.ctrl_io.test_name
 # ---

@@ -65,3 +65,5 @@ Output_h5_files/*
 Failed_tests.*
 Failed_tests.jsonl
 log_case_test*
+Output_h5_files/steady_s_sensitivity_h5_files_k5nsh/Failed_tests.jsonl
+Output_h5_files/steady_s_sensitivity_h5_files_k5nsh/Failed_tests.jsonl
