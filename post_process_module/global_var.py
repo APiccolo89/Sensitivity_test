@@ -7,3 +7,5 @@ _NAME_DIFFUSION_CREEP_ = 'VK_Diffusion_creep'
 _NAME_DISLOCATION_CREEP_ = 'VK_Dislocation_creep'
 _K_ = 273.15
 _PA_ = 1e9 
+dict_td =  {'1':'SS',
+         '0':'TD'}

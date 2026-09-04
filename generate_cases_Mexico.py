@@ -69,7 +69,8 @@ def main(n:int = 10000
             "age": scaled_sample[index_random, 0],
             "vc": scaled_sample[index_random, 1],
             "Tp": scaled_sample[index_random, 2],
-            "phi":scaled_sample[index_random,3]
+            "phi":scaled_sample[index_random,3],
+            "decoupling":scaled_sample[index_random,4],
 
         })
         case_id += 1

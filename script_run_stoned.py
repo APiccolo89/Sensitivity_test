@@ -61,10 +61,6 @@ After running the test, the script saves the results in a folder, in a number of
 merged by other scripts.
 """
 
-
-# -- Flag dictionary 
-dict_td =  {'1':'SS',
-         '0':'TD'}
 # --- 
 def change_geometry(plate:str,args:SimpleNamespace,inp)->None:
     """Change the geometry of the input data according to the plate name. The plate name is a string that corresponds to the key of the dictionary. The dictionary is defined in the file geometric_input_real_plate.yml. The function reads the dictionary and changes the geometry of the input data according to the plate name.
@@ -157,8 +153,8 @@ def choose_material_properties(k:float)->dict:
     
     # k 
     phase_properties['upper_crust']['k'] = 2.5
-    phase_properties['lower_crust']['k'] = 1.5
-    phase_properties['oceanic_crust']['k'] = 1.5
+    phase_properties['lower_crust']['k'] = 2.5
+    phase_properties['oceanic_crust']['k'] = 2.5
     # cp & alpha
     for m in materials:
         phase_properties[m]['cp'] = 1250.0 
@@ -354,10 +350,6 @@ def wrap_stoned(inp, Ph, arguments:dict)->tuple:
     # Or find a proper way to cleanly use race conditions. Meanwhile, this quick fix seems robust. 
     
     
-    
-    RETRYABLE_EXCEPTIONS = (RuntimeError, TimeoutError, OSError)
-
-    
     while attempt < 3 and success == 0:
         # Copy the classes otherwise it crashes
         A = copy.deepcopy(inp)
@@ -369,7 +361,7 @@ def wrap_stoned(inp, Ph, arguments:dict)->tuple:
             # Copy the post processed classes
             inp = copy.deepcopy(A)
             Ph  = copy.deepcopy(B)
-        except RETRYABLE_EXCEPTIONS as e:
+        except Exception as e:
             # ok, understood. This method is not safe guarding the test path, this create a few issue, and error I patch 
             # it. The reason that I am doing it is the following: it is not only for lazyness. I want to use the same version
             # of the code for this paper. If i start aiming the perfection, I will enter in an never ending loop that produce 
@@ -458,6 +450,7 @@ def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     inp.g_input.lc                                   = 0.5   # relative amount of lower crust
     inp.g_input.ocr                                  = 6.0  # Crustal thickness
     inp.g_input.decoupling                           = args.get('decoupling', _GVARIABLES_._DECOUPLING_)  # Lithospheric mantle depth 
+    inp.g_input.redo_mesh                            = [args.get('decoupling', _GVARIABLES_._DECOUPLING_) == _GVARIABLES_._DECOUPLING_]
     inp.g_input.lab_d                                = inp.g_input.decoupling  # depth of the lab 
     inp.g_input.ns_depth                             = 50 # depth of the noslip boundary condition
     inp.g_input.transition                           = 10 # transition delta depth -> the distance at which the transition from uncoupled and coupled flow happens 
@@ -468,7 +461,7 @@ def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     if args.get('plate_real') != None:
         change_geometry(plate=args['plate_real'],args=args,inp=inp)
         inp.g_input.slab_type                            = 'FromFile' # type of slab geometry
-        inp.g_input.sub_path = str(files("stonedfenicsx") / "examples" / f"{args['plate_real']}_slab.pz")
+        inp.g_input.sub_path = str(files('stonedfenicsx').resolve().parents[0] / "examples" / "data" /f"{args['plate_real']}_slab.pz")
 
     if args['shear_heating']:
         Ph.shear_heating_disl_law                    = args.get('shear_heating_law', _GVARIABLES_._SHEAR_HEATING_LAW)
@@ -478,8 +471,8 @@ def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     
     # Path to save the results
     
-    inp.ctrl_io.path_save = os.path.join(path_general, f"{name_suite}_{args['group']}_{dict_td[str(args['steady_state'])]}")
-    inp.ctrl_io.test_name = f"{name_suite}_case{args['case_index']}_{args['group']}_{dict_td[str(args['steady_state'])]}"
+    inp.ctrl_io.path_save = os.path.join(path_general, f"{name_suite}_{args['group']}_{_GVARIABLES_.dict_td[str(args['steady_state'])]}")
+    inp.ctrl_io.test_name = f"{name_suite}_case{args['case_index']}_{args['group']}_{_GVARIABLES_.dict_td[str(args['steady_state'])]}"
 
     # Run the test
     inp,Ph = wrap_stoned(inp=inp, Ph=Ph,arguments=args)

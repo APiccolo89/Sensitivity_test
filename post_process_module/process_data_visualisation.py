@@ -14,6 +14,14 @@ import tracemalloc
 import cmcrameri
 from dataclasses import dataclass
 from numpy.typing import NDArray
+from pathlib import Path
+
+dict_partial = {'nlsh':0,
+                'k3sh':3.1,
+                'k5sh':5.0,
+                'k3nsh':3.1,
+                'k5nsh':5.0,
+                'nlnsh':0}
 
 @dataclass(slots=True)
 class SlabPlot2D:
@@ -28,7 +36,6 @@ class CoordinateSurface:
     x_heat_flux:np.ndarray[np.float32]
     z_slab:np.ndarray[np.float32]
     z_ocean:np.ndarray[np.float32]
-
 
 
 @njit
@@ -109,8 +116,8 @@ def interpolate_surfaces_slab(v:np.ndarray,x_or:np.ndarray)->tuple[np.ndarray,np
 
     return nv_interp, x_new 
     
-def merge_data_base(list_of_partial_files, plate,partial,recreate=True,sh=''):
-    output_file = f"Data_Base_{plate}_def_{partial}_{sh}.h5"
+def merge_data_base(name_suite,list_of_partial_files, plate,partial,recreate=True):
+    output_file = f'{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5'
     i = 0 
     
     if recreate and os.path.exists(output_file):
@@ -243,7 +250,7 @@ def find_real_ell_z(isotherm:float, ell:NDArray, z: NDArray,temp:NDArray)->tuple
     
     return ell_p,z_p
 #---------------------------------------------------------------------------------
-def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFrame,namedtuple,namedtuple]:
+def create_data_frame(data_table:pd.DataFrame, hdf5_file:str,partial,dict_column)->tuple[pd.DataFrame,namedtuple,namedtuple]:
     def extract_max_depth(f:h5py.File, case_key:str, isotherm:str)->tuple[float,float]:
         x = f[f'{case_key}/x_{isotherm}'][()]
         y = f[f'{case_key}/y_{isotherm}'][()]
@@ -258,7 +265,6 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
     Args:
         data_table (pd.DataFrame): initial data table
         hdf5_file (str): path to the h5file
-'tau_shear_mean','tau_shear_std','tau_shear_median','tau_shear_min','tau_shear_max'
     Returns:
         Data Frame with all the information, named tuple with the coordinate system of the surface, name tuple with the 2D averages of the slab
     """
@@ -283,12 +289,7 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
             else:
                 
                 case_id = i
-                k = float(f[f'{i}/k'][()])
-                vc = float(f[f'{i}/vc'][()])
-                Tp = float(f[f'{i}/Tp'][()])
-                age = float(f[f'{i}/age'][()])
-                thermal_parameter = age * vc * (1/1e5 * 1e6)* np.sin(np.radians(45.0))
-                option_thermal = int(f[f'{i}/option_thermal'][()])
+                option_thermal = 1 if partial[0] == 'nl' else 0                
                 max_dpth150 = extract_max_depth(f, i, '150')
                 max_dpth300 = extract_max_depth(f, i, '300')
                 max_dpth400 = extract_max_depth(f, i, '400')
@@ -311,17 +312,6 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 d_seismic_450 = slab_surf_450[1]
                 d_seismic_150 = slab_surf_150[1]
 
-                
-                #slab_c_150 = find_distance_isotherm(max_dpth150,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_300 = find_distance_isotherm(max_dpth300,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_350 = find_distance_isotherm(max_dpth350,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_400 = find_distance_isotherm(max_dpth400,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_450 = find_distance_isotherm(max_dpth450,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_500 = find_distance_isotherm(max_dpth500,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_550 = find_distance_isotherm(max_dpth550,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_600 = find_distance_isotherm(max_dpth600,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_700 = find_distance_isotherm(max_dpth700,np.array(f[f'{i}/X_S']),ell)
-                #slab_c_800 = find_distance_isotherm(max_dpth800,np.array(f[f'{i}/X_S']),ell)
 
                 # prepare the surface for being integrated into the database
                 
@@ -333,18 +323,13 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                 temp_s,z_slab_n = interpolate_surfaces_slab(np.array(f[f'{i}/T_S'][:]),z_slab)
                 pres_s,_ = interpolate_surfaces_slab(np.array(f[f'{i}/P_S'][:]),z_slab)
                 temp_o,z_ocean_n = interpolate_surfaces_slab(np.array(f[f'{i}/T_O'][:]),z_ocean)
-                pres_o = interpolate_surfaces_slab(np.array(f[f'{i}/P_O'][:]),z_ocean)
+                pres_o, _  = interpolate_surfaces_slab(np.array(f[f'{i}/P_O'][:]),z_ocean)
                 tau_surf, _ = interpolate_surfaces_slab(np.array(f[f'{i}/tau_shear']),z_slab)
                 heat_f,x_heat_n = interpolate_surfaces_slab(np.array(f[f'{i}/heat_flux'][:]),x_heat)
                 temp_s_dc = np.interp(-80.0,z_slab_n,temp_s)
                 pres_s_dc = np.interp(-80.0,z_slab_n,pres_s)
-                rows.append({
+                dict_data_base = {
                     "case_id": case_id,
-                    "k": k,
-                    "age": age,
-                    "vc": vc,
-                    "Tp": Tp,
-                    "thermal_parameter": thermal_parameter,
                     "option_thermal": option_thermal,
                     "max_dpth150": max_dpth150,
                     "max_dpth300": max_dpth300,
@@ -373,7 +358,16 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
                     'tau_min' :f[f'{i}/tau_shear_min'][()],
                     'tau_std':f[f'{i}/tau_shear_max'][()],
                     'tau_srf':tau_surf
-                })        
+                }
+                for m in dict_column:
+                    if m == 'case_index':
+                        continue 
+                    dict_data_base[m] = f[f'{i}/{m}'][()]
+                
+                dict_data_base['thermal_parameter'] = dict_data_base['age'] * dict_data_base['vc'] * (1/1e5 * 1e6)* np.sin(np.radians(45.0))
+                dict_data_base['k'] = dict_partial[partial[0]]
+                
+                rows.append(dict_data_base)        
         slab_plot2D =  SlabPlot2D(temp_mean_2d=f['global_mean'][:],
                                   temp_var_2d=f['global_var'][:],
                                   temp_std_2d=np.sqrt(f['global_var'][:]),
@@ -386,53 +380,82 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str)->tuple[pd.DataFram
     
     return data_table, coordinate_surfaces, slab_plot2D
 #----------------------- ------------------------------------------------------------------------------------------ ------------------ #
-def wrapper_merging_h5(aux_path:str, partial:int, plate:str,sh='' ,recreate=False):
+def wrapper_merging_h5(aux_path:str
+                       , partial:tuple
+                       , name_suite:str
+                       , csv:str=''
+                       , recreate:bool=False
+                       , n_workers:int=100
+                        )->tuple[pd.DataFrame,CoordinateSurface,SlabPlot2D]:
+    """Function that merges and post process the data coming from the small h5 files
 
-    if recreate or os.path.isfile(f'Data_Base_{plate}_def_{partial}_{sh}.h5')==False:
-        aux_path = os.path.join(aux_path, f'Sensitivity_h5_files_{partial}')
+    Args:
+        aux_path (str): path to the main Output_h5_files
+        partial (tuple): [group name, steady state flag]
+        name_suite (str): name of the suite
+        csv (str): name of the auxilary csv list table where all the data are stored. 
+        recreate (bool, optional): Just force the recreate. Defaults to False.
+        n_workers (int, optional): The number of processor used in the array job. Defaults to 100.
+
+    Returns:
+        tuple[pd.DataFrame,CoordinateSurface,SlabPlot2D]: data frame containing all the post-processed data, 
+                                                          coordinate system for plotting 1D profile and 2D plot
+                                                          slab 2D meshes to visualise them
+    """
+    
+    name_merged_file = f'{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5'
+    aux_path2 = aux_path / f'{name_suite}_h5_files_{partial[0]}_{partial[1]}'
+
+    path2csv = Path(__file__).resolve().parents[1] / csv
+    if recreate or os.path.isfile(name_merged_file)==False:
         list_partial_files = []
-        for i in range(100):
-            list_partial_files.append(f'{aux_path}/Data_Base_{i}.h5')
+        for i in range(n_workers):
+            list_partial_files.append(f'{aux_path2}/Data_Base_{i}.h5')
     
-        print(merge_data_base(list_partial_files, plate, partial, recreate=recreate,sh=sh))
+        print(merge_data_base(name_suite,list_partial_files, name_suite, partial, recreate=recreate))
     else: 
-        print('Data Base is already there, and there is no need to force its recreation')
+        print('Data Base is already there, and the flag to recreate has not been set')
     
-    data_table = pd.DataFrame({
-        "case_id": [],
-        "k": [],
-        "age": [],
-        "vc": [],
-        "Tp": [],
-        "option_thermal": [],
-        'max_dpth150': [],
-        'max_dpth300': [],
-        'max_dpth450': [],
-        'max_dpth500': [],
-        'max_dpth600': [],
-        'max_dpth700': [],
-        'max_dpth800': [],
-        "d_seismic_ell" : [],
-        "d_seismic_dpth": [],
-        "d_seismic_150": [],
-        "slab_surf_150":[],
-        "slab_surf_450":[],
-        "slab_surf_600":[],
-        'tau_mean':[],
-        'tau_max' :[],
-        'tau_min' :[],
-        'tau_std':[],
-        'Tau_s' : [],
-        'T_S':[],
-        'P_S':[],
-        'T_O':[],
-        'P_O':[],
-        'Q':[],
-        'T_s_dc':[],
-        'P_s_dc':[],
-    })
     
-    data_table, coordinate_system, slab_2D = create_data_frame(data_table,   f'Data_Base_{plate}_def_{partial}_{sh}.h5')
+    cases = pd.read_csv(path2csv)
+    cases_columns = cases.columns
+    args_column = {m:[] for m in cases_columns if m != 'case_index'}
+    keys = [
+    "option_thermal",
+    "max_dpth150",
+    "max_dpth300",
+    "max_dpth450",
+    "max_dpth500",
+    "max_dpth600",
+    "max_dpth700",
+    "max_dpth800",
+    "d_seismic_ell",
+    "d_seismic_dpth",
+    "d_seismic_150",
+    "slab_surf_150",
+    "slab_surf_450",
+    "slab_surf_600",
+    "tau_mean",
+    "tau_max",
+    "tau_min",
+    "tau_std",
+    "Tau_s",
+    "T_S",
+    "P_S",
+    "T_O",
+    "P_O",
+    "Q",
+    "T_s_dc",
+    "P_s_dc",
+    ]   
+    args_test = args_column.copy()
+    for i in keys: 
+        args_test[i] = []
+        
+    
+    data_table = pd.DataFrame(args_test)
+    
+    data_table, coordinate_system, slab_2D = create_data_frame(data_table,  name_merged_file,partial,args_column)
     
     return data_table, coordinate_system, slab_2D 
     

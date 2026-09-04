@@ -1,6 +1,6 @@
 # Sensitivity test
 <p align="center">
-  <img src="Result_shear_heating_yes/Figure_3.png" alt="Slab 2D plot" width="600">
+  <img src="Result_shear_heating_sh/Figure_3.png" alt="Slab 2D plot" width="600">
   <br>
   <em>Figure 0 — Average difference of slab temperature. [a]: Difference between non-linear test group and the group of experiment with k=3.1. [b]: Difference between non-linear test group and the group of experiment with k=5.0.</em>
 </p>
@@ -22,7 +22,32 @@ The experiments can be divided into 6 groups, and per each group there is a numb
 |*k5sh*   | yes  | 5.0|  
 |*nlsh*  | yes  | non-linear|
 
+The name of the group, in practice, represents the combination of thermal model (`k3`, `k5`, `nl`) and a flag that indicates wheter or not the shear heating is activated. The post-processing routines generate plots as a function of the **shear heating** flag (`sh` or `nsh`). This guarantee that the comparison are made only for tests sharing the same physics. 
 
+:warning: **Warning:** : **StonedFEniCSx** is still developing, the core functionality, and the relative numeric part will be remain the same, it may be the case that a few details on the input/output can change. In the zenodo repositary, the user will find the version of the code that have been used for this work. 
+
+The routine presented are: 
+```
+Sensitivity_Test/
+    ├── figure_additional/
+        ├── slab_surface.py
+        ├── plot_material_property.py
+    ├── post_process_module/
+        ├── data_extractor.py
+        ├── figure_plot.py
+        ├── global_var.py 
+        ├── post_process_data.py
+        ├── post_process_data_visualization.py
+    ├── generation_cases_script/
+        ├── generate_cases_Mexico.py
+        ├── generate_cases_Sensitivity.py
+        ├── generate_cases_time_dependent.py
+    ├── real_configuration_plate/ 
+        ├── geometric_input_real_plate.yml
+    ├── script_run_stoned.py
+    ├── sensitivity_steady_state_figure_plot.py
+
+```
 
 ---
 
@@ -68,7 +93,6 @@ These commands will produce either `cases_Sensitivity_td.csv` or `cases_Sensitiv
 
 ### General 
 
-
 To run the sensitivity analysis, the user needs to use the bash script in `submission_file/steady_state/steady_state_sensitivity.sh`
 
 It must run from the main folder of the repository: 
@@ -79,14 +103,14 @@ The command above will run the number of experiment, using the data associated w
 After a run of a single group of experiments the output layout will be: 
 
 ```
-    Sensitivity_tests_main folder/
-      ├──h5_outputs/
+    Sensitivity_tests/
+      ├── h5_outputs/
         ├──{`name_suite`}_{`group`}_h5_files/
             ├──Data_Base_{id_batch}.h5
-      ├──test_folder/
+      ├── test_folder/
          ├──{`name_suite`}_{`group`}_{`flagSS`}
             ├──{`name_suite`}_case{case_index}_{`group`}
-      ├──output_bash/
+      ├── output_bash/
             ├──out_{'group'}_{'flagSS'}
 ```    
 
@@ -107,7 +131,7 @@ After all the run are performed, the user can use the post-processing script by 
 
 ```bash
 
-python Test_plot.py --name_suite Sensitivity --type sh
+python sensitivity_steady_state_figure_plot.py --name_suite Sensitivity --type sh
 
 ```
 `type` is signalling if the analysis is for the tests featuring shear heating or not. The `Test_plot.py` merges the `.h5` databases in one database and produces three picture (the one of the manuscript):

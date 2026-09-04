@@ -112,7 +112,7 @@ echo $"id main db: ${group}"
 bash "${pwd}/remove_file_output.sh" "${group}_${MODE}"
 
 
-sbatch << EOT
+jid=$(sbatch --parsable << EOT
 #!/bin/bash
 #SBATCH --job-name=Sensitivity_no_shear_heating
 #SBATCH --array=0-99%100
@@ -150,7 +150,6 @@ echo "HDF5 batch ID = \${id_batch}"
 n_workers=100
 n_cases=7000
 
-
 for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
     export XDG_CACHE_HOME=/mnt/scratch/wlnw570/fenics_cache/\${SLURM_JOB_ID}_\${SLURM_ARRAY_TASK_ID}_\${case_index}
     mkdir -p "\$XDG_CACHE_HOME"
@@ -162,8 +161,11 @@ for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
         --id_batch \$id_batch \
         --steady_state ${steady_state}\
         --name_csv cases_Sensitivity.csv\
+        --plate_real Mexico
 
 
     rm -rf "\$XDG_CACHE_HOME"
 done
 EOT
+)
+echo "job_id:${jid} name_suite:${name_suite}, group:${group}, mode:${MODE}" >> log_bash_run.txt
