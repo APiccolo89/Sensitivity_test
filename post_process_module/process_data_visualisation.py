@@ -406,7 +406,7 @@ def wrapper_merging_h5(aux_path:str
     name_merged_file = f'{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5'
     aux_path2 = aux_path / f'{name_suite}_h5_files_{partial[0]}_{partial[1]}'
 
-    path2csv = Path(__file__).resolve().parents[1] / csv
+    path2csv = Path(__file__).resolve().parents[1] / 'generation_cases' /csv
     if recreate or os.path.isfile(name_merged_file)==False:
         list_partial_files = []
         for i in range(n_workers):

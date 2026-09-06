@@ -1,11 +1,13 @@
   Mexico:
-    slab_tk: 130.0 # Slab Thickness
+    slab_tk: 75.0 # Slab Thickness
     cr: 45.0 # Overriding Crust {if lc==0.0 -> only overriding upper crust}
     ocr: 7.0 # Oceanic crust
     lc: 0.6
-    ns_depth: 45.0
+    ns_depth: 50.0
     lab_d: 100.0
     decoupling: 80.0
+    transition: 5.0
+    resolution_refine: 1.5
   #Place holders 
   
   Japan:

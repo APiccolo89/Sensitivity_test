@@ -100,7 +100,7 @@ def check_parsed_arguments(args)->None:
         s0 = (f'error_1: not all the group has been executed. missing suites: {suite_wrong!r}/n')
         raise ErrorParsing(s0, 3)
     
-    csv_path = aux_path / args.csv
+    csv_path = aux_path / 'generation_cases' /args.csv
     if not csv_path.is_file():
         s0 = f'The csv file listed is not existing. Actual value {args.csv!r}'
         raise ErrorParsing(s0,4)
@@ -165,7 +165,7 @@ def plot_sensitivity_study_steady_state():
     data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
 
     
-    path2save = aux_path / f'Result_shear_heating_{args.sh}'
+    path2save = aux_path / f'Result_shear_heating_{args.sh}_{args.name_suite}'
     
     path2save.mkdir(exist_ok=True)
     
@@ -185,7 +185,7 @@ def plot_sensitivity_study_steady_state():
     print(f'Saving picture into {path2save}...')
         
 
-    plot_slab_versus_thermalpar(path2save=path2save,pdb=data_table,figure_number=1)
+    #plot_slab_versus_thermalpar(path2save=path2save,pdb=data_table,figure_number=1)
 
 
 if __name__ == '__main__':

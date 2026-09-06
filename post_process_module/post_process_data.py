@@ -391,7 +391,8 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:dict| None=None, pa
     print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir / "Output_h5_files" / f"{name_suite}_h5_files_{arguments['group']}_{arguments[_GVARIABLES_.dict_td['steady_state']]}"
+    SSTD = _GVARIABLES_.dict_td[str(arguments['steady_state'])]
+    path2save = main_dir / "Output_h5_files" / f"{name_suite}_h5_files_{arguments['group']}_{SSTD}"
 
     path2save.mkdir(parents=True, exist_ok=True)
     

@@ -161,6 +161,7 @@ for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
         --id_batch \$id_batch \
         --steady_state ${steady_state}\
         --name_csv cases_Sensitivity_mexico.csv\
+        --plate_real Mexico\
 
 
     rm -rf "\$XDG_CACHE_HOME"

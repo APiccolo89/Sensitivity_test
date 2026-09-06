@@ -1,16 +1,19 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
+
+
         {
       "name": "TestPlot",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/Test_plot.py",
+      "program": "${workspaceFolder}/sensitivity_steady_state_figure_plot.py",
       "args": [
         "--sh","sh",
-        "--name_suite","steady_s_sensitivity",
+        "--name_suite","Mexico",
         "--steady_state","1",
-        "--csv","cases_Sensitivity.csv"
+        "--csv","cases_Sensitivity_mexico.csv"
       ],
       "console": "integratedTerminal"
     },

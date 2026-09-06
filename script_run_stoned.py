@@ -84,6 +84,8 @@ def change_geometry(plate:str,args:SimpleNamespace,inp)->None:
         inp.g_input.lc = geom['lc']
         inp.g_input.ns_depth = geom['ns_depth']
         inp.g_input.lab_d = geom['lab_d']
+        inp.g_input.resolution_refine = geom['resolution_refine']
+        inp.g_input.transition = geom['transition']
 
 def define_material_properties(Ph,args):
     # Fixed rheology of the mantle. Usually the difference with rheologies and thermal field are minimal.                     
@@ -223,9 +225,11 @@ def create_case_dictionary()->dict:
     dict_case = {'k3nsh':make_case(3.1,False),
                  'k5nsh':make_case(5.0,False),
                  'nlnsh':make_case(-1.0,False),
+                 'nlcnsh':make_case(-2.0,False),
                  'k3sh':make_case(3.1,True),
                  'k5sh':make_case(5.0,True),
                  'nlsh':make_case(-1.0,True),
+                 'nlclsh':make_case(-2.0,True),
                  'debug':make_case(-1.0,True)}
     return dict_case
 # --- 
@@ -355,6 +359,9 @@ def wrap_stoned(inp, Ph, arguments:dict)->tuple:
         A = copy.deepcopy(inp)
         B = copy.deepcopy(Ph)
         try:
+            print(f'Slab type is : {A.g_input.slab_type}')
+            if A.g_input.slab_type == 'FromFile':
+                print(f'Slab type is : {A.g_input.sub_path}')
             stoned_fenicsx(A, B)
             print(f'Test was a success at {attempt}')
             success = 1
@@ -424,8 +431,9 @@ def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     # Choose the mode of stonedFEniCSx
     inp.ctrl.steady_state = args['steady_state']
     if args['steady_state'] == 1: 
-        inp.ctrl.tol = 5e-3
+        inp.ctrl.tol = 1e-6
         inp.ctrl.it_max = 50
+        inp.ctrl.tol_dtemp = 1e-2
     else: 
         inp.ctrl.tol = 1e-2
         inp.ctrl.it_max = 10
@@ -450,7 +458,7 @@ def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     inp.g_input.lc                                   = 0.5   # relative amount of lower crust
     inp.g_input.ocr                                  = 6.0  # Crustal thickness
     inp.g_input.decoupling                           = args.get('decoupling', _GVARIABLES_._DECOUPLING_)  # Lithospheric mantle depth 
-    inp.g_input.redo_mesh                            = [args.get('decoupling', _GVARIABLES_._DECOUPLING_) == _GVARIABLES_._DECOUPLING_]
+    inp.g_input.redo_mesh                            = [args.get('decoupling', _GVARIABLES_._DECOUPLING_) != _GVARIABLES_._DECOUPLING_]
     inp.g_input.lab_d                                = inp.g_input.decoupling  # depth of the lab 
     inp.g_input.ns_depth                             = 50 # depth of the noslip boundary condition
     inp.g_input.transition                           = 10 # transition delta depth -> the distance at which the transition from uncoupled and coupled flow happens 
@@ -498,7 +506,9 @@ def configure_run_save():
     
     name_suite = args_cli.name_suite
     
-    arguments = parse_the_argument(args_cli,pathtotable=f"{os.path.dirname(os.path.realpath(__file__))}/{args_cli.name_csv}") 
+    path2table = Path(__file__).resolve().parents[0] / 'generation_cases'/ args_cli.name_csv
+    
+    arguments = parse_the_argument(args_cli,pathtotable=path2table) 
         
     pathtest,_ = perform_test(args=arguments,name_suite= name_suite)
  
@@ -514,10 +524,10 @@ def configure_run_save():
         else: 
             save_test_data(name_suite=name_suite,pathtotest=pathtest,arguments=arguments)
         #remove the tests folder 
-        if args_cli.remove_results == 1 and arguments['case_index'] !=0:
-            shutil.rmtree(os.path.join(pathtest))    
-            print(f"Removed {os.path.join(pathtest)} for group {arguments['case_index']}")
     
+    print(f'Removing path test {pathtest}')
+    shutil.rmtree(Path(pathtest))  
+    print(f'Removed pathtest {pathtest}')  
     print(f"Finished group {arguments['case_index']}")
 # ---
 

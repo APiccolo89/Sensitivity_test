@@ -1,4 +1,5 @@
 # Sensitivity test
+
 <p align="center">
   <img src="Result_shear_heating_sh/Figure_3.png" alt="Slab 2D plot" width="600">
   <br>
@@ -137,7 +138,7 @@ python sensitivity_steady_state_figure_plot.py --name_suite Sensitivity --type s
 `type` is signalling if the analysis is for the tests featuring shear heating or not. The `Test_plot.py` merges the `.h5` databases in one database and produces three picture (the one of the manuscript):
 
 <p align="center">
-  <img src="Result_shear_heating_yes/Figure_0.png" alt="Slab surface temperature, case" width="600">
+  <img src="Result_shear_heating_sh/Figure_0.png" alt="Slab surface temperature, case" width="600">
   <br>
   <em>Figure 1 — Slab surface temperature and key isotherm data along the slab surface. [a]: Non linear cases P-T condition along slab surface (blue dots high pressure and low temperature rocks database). [b]: Difference of temperature between non-linear case and linear case with k=3.1. [c]: Seismogenetic length in all the experiment.[d]: Error measure between linear cases and non-linear cases. [d]: Depth of the characteristic isotherm .</em>
 </p>

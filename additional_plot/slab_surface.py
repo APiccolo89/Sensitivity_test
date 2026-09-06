@@ -17,14 +17,14 @@ _LABELFONTSIZE_ = 1.0/_PT_CM_
 _TEXTFONTSIZE_ = 0.65/_PT_CM_
 
 def modify_axes(ax: mpl_axes = None,
-                label_x: Optional[list] = ['n', 'n'],
-                lim_x: Optional[list] = None,
-                lim_y: Optional[list] = None,
-                label_y: Optional[list] = ['n', 'n'],
-                ticks_x: Optional[list] = None,
-                ticks_y: Optional[list] = None,
-                precision: Optional[str] = None,
-                letter:Optional[str]='[a]') -> mpl_axes:
+                label_x: list | None = ['n', 'n'],
+                lim_x: list | None = None,
+                lim_y: list | None = None,
+                label_y: list | None = ['n', 'n'],
+                ticks_x: list | None = None,
+                ticks_y: list | None = None,
+                precision: list | None = None,
+                letter:str='[a]') -> mpl_axes:
     """Function that modifies the axes.
     Args:
         ax (mpl_axes, optional): current axis. Defaults to None.
