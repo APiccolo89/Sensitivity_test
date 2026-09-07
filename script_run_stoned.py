@@ -374,14 +374,6 @@ def wrap_stoned(inp, Ph, arguments:dict)->tuple:
             # of the code for this paper. If i start aiming the perfection, I will enter in an never ending loop that produce 
             # a wonderful code, that will not have any paper attached. 
             last_error = e
-            
-            main_dir = Path(__file__).resolve().parents[0]
-            path2save = main_dir / "error_log" / f"{arguments['group']}"
-            path2save.mkdir(parents=True, exist_ok=True)
-            
-            with open(f"{path2save}/{A.ctrl_io.test_name}_a_{attempt}.log", "w") as f:
-                traceback.print_exc(file=f)
-                print(f"failed on attempt {attempt}", file=f)
                         
             time.sleep(20)      # seconds, float allowed
             attempt = attempt + 1
