@@ -4,6 +4,17 @@
     
 
 
+
+
+
+
+
+
+
+
+    
+
+
         {
       "name": "TestPlot",
       "type": "debugpy",
@@ -13,7 +24,8 @@
         "--sh","sh",
         "--name_suite","Mexico",
         "--steady_state","1",
-        "--csv","cases_Sensitivity_mexico.csv"
+        "--csv","cases_Sensitivity_mexico.csv",
+        "--function_plot","real"
       ],
       "console": "integratedTerminal"
     },

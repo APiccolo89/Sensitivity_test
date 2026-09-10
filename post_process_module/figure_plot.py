@@ -776,107 +776,6 @@ def plot_distance_to_isotherms(path2save:str, DB:pd.DataFrame, scale=False, name
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)
     # Extract data    
 # ---
-def plot_distance_isotherm_seismic(path2save:str, pdb:pd.DataFrame, figure_number:int =0):
-    name_plot = f'Figure_{figure_number}.png'
-    
-    def plot_histogram(ax ,k3, k5, nl,bins):
-        import scipy.stats as stats
-
-
-        kde1 = stats.gaussian_kde(k3)
-        kde2 = stats.gaussian_kde(k5)
-        if nl is not None:
-            kde3 = stats.gaussian_kde(nl)
-        k3_fit = kde1(bins)
-        k5_fit = kde2(bins)
-        if nl is not None:
-            nl_fit = kde3(bins)
-        else:
-            nl_fit = 0.0
-
-        k3_fit = k3_fit 
-        k5_fit = k5_fit 
-        
-        nl_fit = nl_fit
-        
-        LN_3 = k3_fit
-        LN_5 = k5_fit
-        LN_NL = nl_fit
-
-        ax.hist(k5,bins, alpha=0.1, color='olive',density=True)
-        ax.hist(k3,bins,alpha=0.1, color='cadetblue',density=True)
-        if nl is not None:
-            ax.hist(nl,bins,alpha=0.1, color='firebrick',density=True)
-
-        ax.plot(bins,LN_3,color='cadetblue', linewidth=1.2)
-        ax.plot(bins,LN_5,color='olive', linewidth=1.2)
-        if nl is not None:
-            ax.plot(bins,LN_NL,color='firebrick', linewidth=1.2)
-
-        max_fit = []
-        
-        return ax,max_fit    
-
-
-    def extract_data(a:pd.DataFrame,b:pd.DataFrame,c:pd.DataFrame,isotherms:int,scale=False):
-        # Select couple of experiments from k3/k5 and NL
-        
-        a = a[f'max_dpth{isotherms}']
-        b = b[f'max_dpth{isotherms}']
-        c = c[f'max_dpth{isotherms}']
-
-        
-
-        return a,b,c
-        
-        
-        
-    keys = ["Tp", "age", "vc"]
-    
-    k3, k5, knl = create_common_data_set(pdb = pdb)
-
-    
-
-    d_150_k3, d_150_k5, d_150_nl = extract_data(k3,k5,knl, 150)
-    d_450_k3, d_450_k5, d_450_nl = extract_data(k3,k5,knl, 450)
-
-    diff_k3 = np.abs((d_450_k3 - d_150_k3))
-    diff_k5 = np.abs((d_450_k5 - d_150_k5))
-    diff_nl = np.abs((d_450_nl - d_150_nl))
-    diff_k3 = diff_k3-diff_nl
-    diff_k5 = diff_k5-diff_nl
-
-    fig = plt.figure(figsize=(10, 6))
-    bx = 0.1
-    by = 0.1
-    sx = 0.25
-    dx = 0.08
-    sy = 0.35
-    dy = 0.1 
-    ax1 = fig.add_axes([bx,by,sx,sy])
-    ax2 = fig.add_axes([bx+dx+sx,by,sx,sy])
-    ax4 = fig.add_axes([bx,by+sy+dy,sx,sy])
-    ax5 = fig.add_axes([bx+dx+sx,by+sy+dy,sx,sy])
-    bin_dimensional = np.linspace(np.min([np.min(diff_k3), diff_k5.min()]), np.max([diff_k3.max(), diff_k5.max()]), 50)
-    bin_dimensionless = np.linspace(np.min([diff_k3/diff_nl.min(), diff_k5/diff_nl.min()]), np.max([diff_k3/diff_nl.max(), diff_k5/diff_nl.max()]), 50)
-    
-    
-    ax1,_  = plot_histogram(ax1, diff_k3, diff_k5, None, bins=np.linspace(np.min([np.min(diff_k3), diff_k5.min()]), np.max([diff_k3.max(), diff_k5.max()]), 50))
-    ax2,_  = plot_histogram(ax2, diff_k3/diff_NL, diff_k5/diff_NL, None, bins=np.linspace(np.min([diff_k3/diff_nl.min(), diff_k5/diff_nl.min()]), np.max([diff_k3/diff_nl.max(), diff_k5/diff_nl.max()]), 50))
-    ax4.scatter(k3_common['thermal_parameter']/1000,diff_k3, c='cadetblue', marker='d', s=0.1, label='k=3.0')
-    ax4.scatter(k5_common['thermal_parameter']/1000,diff_k5, c='olive', marker='d', s=0.1, label='k=5.0')
-    ax5.scatter(k3_common['thermal_parameter']/1000,diff_k3/diff_nl, c='cadetblue', marker='d', s=0.1, label='k=3.0')  
-    ax5.scatter(k5_common['thermal_parameter']/1000,diff_k5/diff_nl, c='olive', marker='d', s=0.1, label='k=5.0')
-
-    
-    ax4 = modify_axes(ax4, label_x=r'$\gamma$ [1000 km]', label_y=r'$\Delta xi [km]$', lim_x=[0.0, 1.0], lim_y=[0.0, 1.0], isotherms=300)
-    ax5 = modify_axes(ax5, label_x=r'$\gamma$ [1000 km]', label_y=r'$\Delta xi*$ [ ]', lim_x=[0.0, 1.0], lim_y=[0.0, 1.0], isotherms=500)
-
-    ax1 = modify_axes(ax1, label_x=r'$\Delta \xi [km]$', label_y=r'f []', lim_x=[0.0, 1.0], lim_y=None, isotherms=300)
-    ax2 = modify_axes(ax2, label_x=r'$\Delta \xi*$ [ ]', label_y=None, lim_x=[0.0, 1.0], lim_y=None, isotherms=500)
-    fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)
-    # Extract data             
-# ---
 def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:int=0):
     
     name_plot = f'Figure_{figure_number}.png'
@@ -1050,5 +949,244 @@ def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:
     )
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
+def extract_max_dpth(db:pd.DataFrame,isotherms:int)->np.ndarray:
+    buf0 = np.zeros(len(db[f'max_dpth{isotherms}']),dtype=float)
+    for i in range(len(db[f'max_dpth{isotherms}'])):
+        bufb =  db.iloc[i]
+        buf0[i] = (bufb[f'max_dpth{isotherms}'][0])
+    return buf0 
 
 
+def box_plot_thermal_model(path2save: str, pdb: pd.DataFrame,figure_number:int=0)->None:
+    import seaborn as sns
+    name_plot = f'Figure_{figure_number}.png'
+
+    # Create common dataset 
+    k3, k5, knl = create_common_data_set(pdb = pdb)
+    # Compute the seismogenic length 
+    d_seismic_nl = knl['d_seismic_ell']
+    d_seismic_k3 = k3['d_seismic_ell']
+    d_seismic_k5 = k5['d_seismic_ell']
+    lim_y = [110,280]
+    # 
+    data = {"k3":d_seismic_k3,"k5":d_seismic_k5,"non-linear":d_seismic_nl}
+    # Seaborn rompe il cazzo quando uso le mie funzioni. Sono al livello di non riuscire a fottermene di questi problemi finti 
+    # Ah, si, se qualcuno mi legge, magari potenziale revisore ne sono cosciente che sta roba - come gli ultimi 30 anni di questa
+    # impostura intellettuale, non dovrebbe esistere. Ma proprio dal 2001 in avanti.
+    fig = plt.figure(figsize=(12, 12))
+    bx = 0.1 
+    by = 0.1 
+    sx = 0.38
+    dx = 0.08 
+    sy = 0.38
+    dy = 0.1     
+    ax0 = fig.add_axes([bx,by,sx,sy])
+    ax1 = fig.add_axes([bx+dx+sx,by,sx,sy])
+    ax2 = fig.add_axes([bx,by+dy+sy,sx,sy])
+    ax3 = fig.add_axes([bx+dx+sx,by+dy+sy,sx,sy])
+    
+    
+    sns.set_theme(style="darkgrid")
+    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
+    sns.boxplot(data=data, fill=True, gap=.1, ax=ax0,palette=my_pal)
+    ax0.set_ylabel(r"$\ell_{\mathrm{seismic}}$ [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax0.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax0.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
+    ax0.tick_params(axis='both', which='major', pad=9)
+    ax0.set_ylim([lim_y[0],lim_y[1]])
+    ax0.spines['top'].set_visible(False)
+    ax0.spines['right'].set_visible(False)
+    ax0.spines['left'].set_color('black')
+    ax0.spines['bottom'].set_color('black')
+    ax0.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax0.spines['left'].set_linewidth(2.0)
+    ax0.spines['bottom'].set_linewidth(2.0)
+    ax0.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax0.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax0.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax0.set_yticks([120,150,180,210,240,270])
+    ax0.set_yticklabels([120,150,180,210,240,270])
+
+    ax0.text(
+        0.02, 0.97,'[c]',
+        transform=ax0.transAxes,
+        c='w',
+        fontweight='demibold',
+        fontsize=10,
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+    )
+    ax1.scatter(knl['thermal_parameter'],d_seismic_nl,c='firebrick',s=1.1)
+    ax1.scatter(k3['thermal_parameter'],d_seismic_k3,c='cadetblue',s=1.1)
+    ax1.scatter(k5['thermal_parameter'],d_seismic_k5,c='olive',s=1.1)
+    
+    ax2.scatter(knl['phi'],d_seismic_nl,c='firebrick',s=1.1)
+    ax2.scatter(k3['phi'],d_seismic_k3,c='cadetblue',s=1.1)
+    ax2.scatter(k5['phi'],d_seismic_k5,c='cadetblue',s=1.1)
+    
+    ax3.scatter(knl['Tp'],d_seismic_nl,c='firebrick',s=1.1)
+    ax3.scatter(k3['Tp'],d_seismic_k3,c='cadetblue',s=1.1)
+    ax3.scatter(k5['Tp'],d_seismic_k5,c='olive',s=1.1)
+
+
+    lim_x  = [np.min(knl['thermal_parameter']),np.max(knl['thermal_parameter'])]
+    
+    ax1 = modify_axes(ax1,label_x=[r'$\frac{\gamma}{sin\left(\theta\right)}$','y'],lim_x = lim_x ,ticks_x=[300,500,600],label_y=['n','n'],ticks_y=[120,150,180,210,240,270],lim_y=lim_y,letter='[d]')
+    
+    lim_x = [np.min(knl['phi']),np.max(knl['phi'])]
+    
+    ax2 = modify_axes(ax2,label_x=[r'$\phi$ deg','y'],lim_x = lim_x ,ticks_x=None,label_y=[r"$\ell_{\mathrm{seismic}}$ [km]",'y'],ticks_y=[120,150,180,210,240,270],lim_y=lim_y,letter='[a]')
+
+    lim_x = [np.min(knl['Tp']),np.max(knl['Tp'])]
+    
+    ax3 = modify_axes(ax3,label_x=[r'$T_P$ $^{\circ}C$','y'],lim_x = lim_x ,ticks_x=None,label_y=['n','n'],ticks_y=[120,150,180,210,240,270],lim_y=lim_y,letter='[b]')
+
+    fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
+
+    
+def box_plot_thermal_model_max_depth(path2save: str, pdb: pd.DataFrame,figure_number:int=0)->None:
+    import seaborn as sns
+    name_plot = f'Figure_{figure_number}.png'
+
+    # Create common dataset 
+    k3, k5, knl = create_common_data_set(pdb = pdb)
+    # Compute the seismogenic length 
+    max_depth1 = extract_max_dpth(knl,150)
+    max_depth2 = extract_max_dpth(k3,150)
+    max_depth3 = extract_max_dpth(k5,150)
+    # 
+    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
+
+    fig = plt.figure(figsize=(18, 10))
+    bx = 0.1 
+    by = 0.1 
+    sx = 0.20
+    dx = 0.08 
+    sy = 0.8
+    ax0 = fig.add_axes([bx,by,sx,sy])
+    ax1 = fig.add_axes([bx+dx+sx,by,sx,sy])
+    ax2 = fig.add_axes([bx+2*dx+2*sx,by,sx,sy])
+    # ax0
+        # Compute the seismogenic length 
+    max_depth1 = extract_max_dpth(knl,150)
+    max_depth2 = extract_max_dpth(k3,150)
+    max_depth3 = extract_max_dpth(k5,150)
+    # 
+    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
+    
+    sns.set_theme(style="darkgrid")
+    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
+    sns.boxplot(data=data, fill=True, gap=.1, ax=ax0,palette=my_pal)
+    ax0.set_ylabel("max depth [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax0.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax0.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
+    ax0.tick_params(axis='both', which='major', pad=9)
+    ax0.spines['top'].set_visible(False)
+    ax0.spines['right'].set_visible(False)
+    ax0.spines['left'].set_color('black')
+    ax0.spines['bottom'].set_color('black')
+    ax0.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax0.spines['left'].set_linewidth(2.0)
+    ax0.spines['bottom'].set_linewidth(2.0)
+    ax0.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax0.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax0.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+
+    ax0.text(
+        0.02, 0.97,'[a]',
+        transform=ax0.transAxes,
+        c='w',
+        fontweight='demibold',
+        fontsize=10,
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+    )
+    
+    # Compute the seismogenic length 
+    max_depth1 = extract_max_dpth(knl,450)
+    max_depth2 = extract_max_dpth(k3,450)
+    max_depth3 = extract_max_dpth(k5,450)
+    # 
+    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
+    
+    sns.set_theme(style="darkgrid")
+    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
+    sns.boxplot(data=data, fill=True, gap=.1, ax=ax1,palette=my_pal)
+    ax1.set_ylabel("max depth [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax1.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax1.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
+    ax1.tick_params(axis='both', which='major', pad=9)
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['left'].set_color('black')
+    ax1.spines['bottom'].set_color('black')
+    ax1.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax1.spines['left'].set_linewidth(2.0)
+    ax1.spines['bottom'].set_linewidth(2.0)
+    ax1.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax1.set_yticklabels(ax1.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax1.set_xticklabels(ax1.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+
+    ax1.text(
+        0.02, 0.97,'[b]',
+        transform=ax1.transAxes,
+        c='w',
+        fontweight='demibold',
+        fontsize=10,
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+    )
+    
+    # Compute the seismogenic length 
+    max_depth1 = extract_max_dpth(knl,600)
+    max_depth2 = extract_max_dpth(k3,600)
+    max_depth3 = extract_max_dpth(k5,600)
+    # 
+    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
+    
+    sns.set_theme(style="darkgrid")
+    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
+    sns.boxplot(data=data, fill=True, gap=.1, ax=ax2,palette=my_pal)
+    ax2.set_ylabel("max depth [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax2.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
+    ax2.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
+    ax2.tick_params(axis='both', which='major', pad=9)
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+    ax2.spines['left'].set_color('black')
+    ax2.spines['bottom'].set_color('black')
+    ax2.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
+    ax2.spines['left'].set_linewidth(2.0)
+    ax2.spines['bottom'].set_linewidth(2.0)
+    ax2.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax2.set_yticklabels(ax2.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
+    ax2.set_xticklabels(ax2.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+
+    ax1.text(
+        0.02, 0.97,'[c]',
+        transform=ax1.transAxes,
+        c='w',
+        fontweight='demibold',
+        fontsize=10,
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+    )
+
+
+    fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
+
+    
+    
+    
+    
+    
+    
+    
+    
+   
+    
+    
+    
+    
+    
+    
