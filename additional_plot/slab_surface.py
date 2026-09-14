@@ -19,7 +19,7 @@ _PT_CM_ = 0.035
 _TICKSFONTSIZE_ = 0.8/_PT_CM_
 _LABELFONTSIZE_ = 0.9/_PT_CM_
 _TEXTFONTSIZE_ = 0.65/_PT_CM_
-
+# --- 
 def modify_axes(ax: mpl_axes = None,
                 label_x: list | None = None,
                 lim_x: list | None = None,
@@ -214,11 +214,6 @@ def plot_mesh_boundary(mesh,name_mesh:str,path2save:str)-> None:
                       label_y=['Depth [km]','y'])
     
     fig.savefig(name_file,dpi = 600, transparent=True)
-    
-    
-    
-    
-    
 # --- 
 def process_mesh(slab:str='CustomRibe',name_plate:str='Default')->None:
     """Script that uses a few functionalities of stonedfenicsx to build up a mesh.xmf file 
@@ -273,19 +268,12 @@ def process_mesh(slab:str='CustomRibe',name_plate:str='Default')->None:
     
     
     # call the mesh generation
-    
-    
-
+# --- 
 def main():
     plate_name = 'CustomRibe'
     slab = 'Default'
     process_mesh(slab = slab, name_plate=plate_name)
-    
-    
-    
-    
-    
-    
-
+# --- 
+# --- 
 if __name__ == '__main__':
     main()
