@@ -198,8 +198,8 @@ def perform_test(args:dict|None,name_suite:str = 'debug')-> tuple[str,str]:
     inp.g_input.resolution_normal                    = 10.0 # Resolution normal 
     inp.g_input.resolution_refine                    = 1.5 # resolution around the slab top surface and the oceanic crust within the slab. 
 
-    if args.get('plate_real') != None:
-        change_geometry(plate=args['plate_real'],args=args,inp=inp)
+    if args.get('plate_real') is not None:
+        change_geometry(plate=args['plate_real'],path=str(Path(__file__).resolve().parents[0]),inp=inp)
         inp.g_input.slab_type                            = 'FromFile' # type of slab geometry
         inp.g_input.sub_path = str(files('stonedfenicsx').resolve().parents[0] / "examples" / "data" /f"{args['plate_real']}_slab.pz")
 

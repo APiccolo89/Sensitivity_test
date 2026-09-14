@@ -58,7 +58,7 @@ merged by other scripts.
 """
 
 # --- 
-def change_geometry(plate:str,args:SimpleNamespace,inp)->None:
+def change_geometry(plate:str,path:str,inp)->None:
     """Change the geometry of the input data according to the plate name. The plate name is a string that corresponds to the key of the dictionary. The dictionary is defined in the file geometric_input_real_plate.yml. The function reads the dictionary and changes the geometry of the input data according to the plate name.
 
     Args:
@@ -68,7 +68,7 @@ def change_geometry(plate:str,args:SimpleNamespace,inp)->None:
     
     if plate != 'None':
         import yaml
-        with open(f"{os.path.dirname(os.path.realpath(__file__))}/real_plate_configuration/geometric_input_real_plate.yml", "r") as f:
+        with open(f"{path}/real_plate_configuration/geometric_input_real_plate.yml", "r") as f:
             dict_geom = yaml.safe_load(f)
         
         if plate not in dict_geom:
