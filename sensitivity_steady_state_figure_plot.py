@@ -16,8 +16,10 @@ from matplotlib.collections import LineCollection
 from numba import njit
 
 from post_process_module.figure_plot import *
-from post_process_module.process_data_visualisation import wrapper_merging_h5
 from post_process_module.post_process_data import timing_function
+from post_process_module.process_data_visualisation import wrapper_merging_h5
+
+pres_temp_hp_lt_db = data_base_PT_whitney()
 
 # --- 
 class ErrorParsing(Exception):
@@ -145,7 +147,7 @@ def create_data_structure(aux_path:str, args):
     
     data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)  
     
-    return data_table, slab_2D
+    return data_table, slab_2D, surface_data_0
 # ---
 def plot_sensitivity_study_steady_state(args)->None:
     """ Small top-level function that calls the data structure generation routine
@@ -170,7 +172,7 @@ def plot_sensitivity_study_steady_state(args)->None:
     
     # Create the main data structure to produce the figure of the paper. 
 
-    data_table, slab_2D = create_data_structure(aux_path=aux_path_data_base,args=args)
+    data_table, slab_2D, surface_data_0 = create_data_structure(aux_path=aux_path_data_base,args=args)
     # Generate path 
     path2save = aux_path / f'Result_shear_heating_{args.sh}_{args.name_suite}'
     # Create folder
@@ -178,7 +180,6 @@ def plot_sensitivity_study_steady_state(args)->None:
     # Plot mean difference
     plot_slab_variances(slab_2D, path2save = path2save, number_figure=3)
     # Create the database
-    pres_temp_hp_lt_db = data_base_PT_whitney()
     # Plot the 1D (P-T) of the slab surface
     figure_slab_surface(path2save=path2save,
                         pdb=data_table,
@@ -198,7 +199,10 @@ def plot_real_case_study_steady_state(args):
     Args:
         args (_type_): _description_
     """
-    from post_process_module.figure_plot import box_plot_thermal_model,box_plot_thermal_model_max_depth
+    from post_process_module.figure_plot import (
+        box_plot_thermal_model,
+        box_plot_thermal_model_max_depth,
+    )
     
     check_parsed_arguments(args)
     
@@ -208,7 +212,7 @@ def plot_real_case_study_steady_state(args):
     
     # Create the main data structure to produce the figure of the paper. 
 
-    data_table, slab_2D = create_data_structure(aux_path=aux_path_data_base,args=args)
+    data_table, slab_2D, surface_data_0 = create_data_structure(aux_path=aux_path_data_base,args=args)
     # Generate path 
     path2save = aux_path / f'Result_shear_heating_{args.sh}_{args.name_suite}'
     # Create folder
@@ -217,12 +221,15 @@ def plot_real_case_study_steady_state(args):
     box_plot_thermal_model(path2save=path2save,pdb=data_table,figure_number=4)
     # Box plot for the maximum depth of the isotherm within the slab
     box_plot_thermal_model_max_depth(path2save=path2save,pdb=data_table,figure_number=5)
-
-    
-    
-    
-
-
+    # Plot the 1D (P-T) of the slab surface
+    figure_slab_surface(path2save=path2save,
+                        pdb=data_table,
+                        crd=surface_data_0,
+                        petro_db=pres_temp_hp_lt_db,
+                        figure_number=6)
+    # Plot the heat flux 
+    plot_heat_flux(path2save,surface_data_0,data_table, 7)
+# --- 
 def main():
     """Generation 
 
@@ -243,7 +250,8 @@ def main():
         plot_real_case_study_steady_state(args)
     else: 
         raise ErrorParsing('wrong function plot option',-1)
-
+# --- 
+# --- 
 if __name__ =='__main__':
     main()
     

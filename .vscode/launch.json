@@ -1,6 +1,7 @@
 {
   "version": "0.2.0",
   "configurations": [
+
     
 
 
@@ -24,7 +25,7 @@
         "--sh","sh",
         "--name_suite","Mexico",
         "--steady_state","1",
-        "--csv","cases_Sensitivity_mexico.csv",
+        "--csv","cases_Sensitivity_Mexico.csv",
         "--function_plot","real"
       ],
       "console": "integratedTerminal"

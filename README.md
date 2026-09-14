@@ -98,7 +98,7 @@ To run the sensitivity analysis, the user needs to use the bash script in `submi
 
 It must run from the main folder of the repository: 
 ```bash
-    bash /submission_file/steady_state/steady_state_sensitivity.sh --group k3nsh --np 1 --name_suite Sensitivity --steady_state 1
+    bash /submission_file/steady_state/mexico_submission.sh --group k3nsh --np 1 --name_suite Sensitivity --steady_state 1
 ```
 The command above will run the number of experiment, using the data associated with the group `k3nsh` with 1 processor and with the steady state mode of **StonedFEniCSx**. The data will be saved using the `name_suite`.
 After a run of a single group of experiments the output layout will be: 
@@ -142,8 +142,6 @@ python sensitivity_steady_state_figure_plot.py --name_suite Sensitivity --type s
   <br>
   <em>Figure 1 — Slab surface temperature and key isotherm data along the slab surface. [a]: Non linear cases P-T condition along slab surface (blue dots high pressure and low temperature rocks database). [b]: Difference of temperature between non-linear case and linear case with k=3.1. [c]: Seismogenetic length in all the experiment.[d]: Error measure between linear cases and non-linear cases. [d]: Depth of the characteristic isotherm .</em>
 </p>
-
-
 
 ---
 ## Generation of the single experiment cases

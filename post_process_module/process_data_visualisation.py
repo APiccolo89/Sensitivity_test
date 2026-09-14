@@ -1,20 +1,21 @@
-import h5py
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import os
-from matplotlib.collections import LineCollection
-from matplotlib import cm, colors
 import gc
-from collections import namedtuple
-from typing import NamedTuple
-from numba import njit
+import os
 import time as timing
 import tracemalloc
-import cmcrameri
+from collections import namedtuple
 from dataclasses import dataclass
-from numpy.typing import NDArray
 from pathlib import Path
+from typing import NamedTuple
+
+import cmcrameri
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import cm, colors
+from matplotlib.collections import LineCollection
+from numba import njit
+from numpy.typing import NDArray
 
 dict_partial = {'nlsh':0,
                 'k3sh':3.1,

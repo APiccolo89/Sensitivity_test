@@ -16,7 +16,13 @@ bash submission_file/time_dependent.sh --group nlsh --name_suite time_dependent 
 
 #Test Mexico 
 ```bash
-bash submission_file/mexico_steady_state_sensy.sh --group k3sh --name_suite Mexico --np 1 --steady_state 1
-bash submission_file/mexico_steady_state_sensy.sh --group k5sh --name_suite Mexico --np 1 --steady_state 1
-bash submission_file/mexico_steady_state_sensy.sh --group nlsh --name_suite Mexico --np 1 --steady_state 1
+bash submission_file/mexico_submission.sh --group k3sh --name_suite Mexico --np 1 --steady_state 1
+bash submission_file/mexico_submission.sh --group k5sh --name_suite Mexico --np 1 --steady_state 1
+bash submission_file/mexico_submission.sh --group nlsh --name_suite Mexico --np 1 --steady_state 1
+```
+#Test Japan
+```bash
+bash submission_file/japan_submission.sh --group k3sh --name_suite Japan --np 1 --steady_state 1
+bash submission_file/japan_submission.sh --group k5sh --name_suite Japan --np 1 --steady_state 1
+bash submission_file/japan_submission.sh --group nlsh --name_suite Japan --np 1 --steady_state 1
 ```

@@ -1,30 +1,34 @@
-import h5py
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import os
-from matplotlib.collections import LineCollection
-from matplotlib import cm, colors
 import gc
-from collections import namedtuple
-from numba import njit
+import os
 import time as timing
 import tracemalloc
-import cmcrameri
-import matplotlib.axes as mpl_axes
-from .process_data_visualisation import SlabPlot2D,CoordinateSurface
-from matplotlib.ticker import FormatStrFormatter
-from matplotlib.lines import Line2D
+from collections import namedtuple
 from dataclasses import dataclass
 from typing import Optional
+
+import cmcrameri
+import h5py
+import matplotlib.axes as mpl_axes
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import cm, colors
+from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
+from matplotlib.ticker import FormatStrFormatter
+from numba import njit
+
+from .process_data_visualisation import CoordinateSurface, SlabPlot2D
 
 # Conversion pt - cm 
 _PT_CM_ = 0.035
 # Ticks, label and text font size 
 _TICKSFONTSIZE_ = 0.8/_PT_CM_
-_LABELFONTSIZE_ = 1.0/_PT_CM_
+_LABELFONTSIZE_ = 0.9/_PT_CM_
 _TEXTFONTSIZE_ = 0.65/_PT_CM_
 # --- 
+
+
 def create_array(buf:pd.DataFrame)->np.ndarray:
     
     if len(buf.shape)>1:
@@ -45,23 +49,61 @@ def ranges(x,y,z):
     lim = [np.floor(np.nanmin([np.nanmin(x),np.nanmin(y),np.nanmin(z)])),np.ceil(np.nanmax([np.nanmax(x),np.nanmax(y),np.nanmax(z)]))]
     return lim
 # ---
-def create_list_tick(lim)->list:
+def create_list_tick(lim:list)->list:
+    """Attempt to create an automatic ticks generation for the plot. 
+    Story: The idea to just open an interactive plot to check how to make the most charming plot is not 
+    so tantalising. I am trying to standardise with this small brute-force algoritm the generation 
+    of ticks
+
+    Args:
+        lim (list): limits (which must be corrected in a such way that the min and max are multiple of 5)
+
+    Returns:
+        list: ticks list
+    """
     
-    d = (lim[1]-lim[0])/4
-    d = check_precision(d)
-    t = lim[0]
-    ticks = [lim[0]]
-    while t < lim[1]:
-        t = t + d     
-        if t > lim[1]:
-            t = lim[1]
+    d = np.abs(lim[1]-lim[0])
+    
+    exp = np.floor(np.log10(d))-1
+    
+    stp = (5*10**exp)
+
+    ticks_buf = np.arange(lim[0],lim[1]+stp,stp)
+    
+    
+    
+    if len(ticks_buf)>4:
+        ticks = []
+        for i,v in enumerate(ticks_buf):
+            if i ==0: 
+                ticks.append(v)
+            else: 
+                if (v-ticks_buf[0]) % (stp*3) == 0:
+                    ticks.append(v)
         
-        ticks.append(t)
+        if ticks[-1] != ticks_buf[-1]:
+            if ticks_buf[-1]-ticks[-1] < stp*1.5:
+                ticks[-1] = ticks_buf[-1]
+            else: 
+                ticks.append(ticks_buf[-1])
+        
+    else: 
+        ticks = ticks_buf
+        
+          
     
     return ticks
 # ---
-def check_precision(value:float)-> float: 
-    
+def check_precision(value:float,m:bool)-> float: 
+    """_summary_
+
+    Args:
+        value (float): _description_
+        m (True): _description_
+
+    Returns:
+        float: _description_
+    """
     if value == 0.0:
         return 0.0
     
@@ -72,7 +114,7 @@ def check_precision(value:float)-> float:
     value_u = value_u/scale 
     buf = value_u - np.floor(value_u)
     
-    precision = [0.25,0.5,0.75,1.0]
+    precision = np.arange(0,1.0+0.05,0.05)
     
     for i in range(len(precision)):
         if i == 0:
@@ -80,11 +122,14 @@ def check_precision(value:float)-> float:
         else: 
             interval = buf>=precision[i-1] and buf<precision[i]
         if interval: 
-            corr = precision[i]
+            if m: 
+                corr = precision[i-1]
+            else:
+                corr = precision[i]
     
     value_u = (np.floor(value_u)+corr) * scale * direction
     
-    return value_u 
+    return value_u
 # ---
 def create_common_data_set(pdb:pd.DataFrame)->tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]:
     """Function that creates common datasets: 
@@ -198,8 +243,12 @@ def modify_axes(ax: mpl_axes = None,
                 label_y: Optional[list] = ['n', 'n'],
                 ticks_x: Optional[list] = None,
                 ticks_y: Optional[list] = None,
-                precision: Optional[str] = None,
-                letter:Optional[str]='[a]') -> mpl_axes:
+                label_x_c:str = 'Numeric',
+                label_y_c:str = 'Numeric',
+                ticks_label_x:list = None,
+                ticks_label_y:list = None,
+                letter:Optional[str]='[a]',
+                precision:str='%.0f') -> mpl_axes:
     """Function that modifies the axes.
     Args:
         ax (mpl_axes, optional): current axis. Defaults to None.
@@ -214,10 +263,9 @@ def modify_axes(ax: mpl_axes = None,
         mpl_axes: modified axis
     """
     # --- spine and grid styling ---
-    
-    precision = '%.0f'
-    
+        
     ax.tick_params(axis='both', which='major', pad=9)
+    ax.tick_params(which='minor', length=4, color='k')
     
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -226,7 +274,7 @@ def modify_axes(ax: mpl_axes = None,
     ax.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
     ax.spines['left'].set_linewidth(2.0)
     ax.spines['bottom'].set_linewidth(2.0)
-    ax.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
+    ax.grid(visible=True, which='both', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
     ax.set_yticklabels(ax.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
     ax.set_xticklabels(ax.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
 
@@ -244,7 +292,10 @@ def modify_axes(ax: mpl_axes = None,
 
             
     if label_x[1] == 'y':
-        ax.xaxis.set_major_formatter(FormatStrFormatter(precision))
+        if label_x_c != 'categorical':
+            ax.xaxis.set_major_formatter(FormatStrFormatter(precision))
+        else: 
+            ax.set_xticklabels(ticks_label_x)
     else:
         ax.set_xticklabels([])
 
@@ -273,7 +324,7 @@ def modify_axes(ax: mpl_axes = None,
         fontweight='demibold',
         fontsize=10,
         va='top',
-        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'k', 'alpha': 0.7}
     )
 
     return ax
@@ -575,7 +626,7 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     
     
     lim_x = ranges(dtemp_k3,dtemp_k5,np.nan)
-    lim_x = [check_precision(lim_x[0]),check_precision(lim_x[1])]
+    lim_x = [check_precision(lim_x[0],True),check_precision(lim_x[1],False)]
     ticks_x = create_list_tick(lim_x)
     
     
@@ -583,19 +634,19 @@ def figure_slab_surface(path2save:str, pdb:pd.DataFrame,crd:CoordinateSurface,pe
     ax2 = modify_axes(ax2,label_x=[r'$\Delta$ T [$^{\circ}$C]','y'],lim_y=[0,4],lim_x=lim_x,ticks_x=ticks_x,ticks_y=[0,1,2,3,4],letter='[c]')
     
     lim_x = ranges(knl['thermal_parameter']/1000,k3['thermal_parameter']/1000, k5['thermal_parameter']/1000)
-    lim_x = [check_precision(lim_x[0]),check_precision(lim_x[1])]
+    lim_x = [check_precision(lim_x[0],True),check_precision(lim_x[1],False)]
     ticks_x = create_list_tick(lim_x)
 
     
     lim_y = ranges(knl['d_seismic_ell'],k3['d_seismic_ell'],k5['d_seismic_ell'])
-    lim_y = [50.0,check_precision(lim_y[1])]
+    lim_y = [50.0,check_precision(lim_y[1],False)]
     ticks_y = create_list_tick(lim_y)
 
     
     ax3 = modify_axes(ax3,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\Delta \ell^{450-150}$ [km]','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[d]')
 
     lim_y =  ranges(err_k3,err_k5,np.nan)
-    lim_y = [check_precision(lim_y[0]),check_precision(lim_y[1])]
+    lim_y = [check_precision(lim_y[0],True),check_precision(lim_y[1],False)]
     ticks_y = create_list_tick(lim_y)
     
     ax4 = modify_axes(ax4,label_x=[r'$\gamma$ [1000 km]','y'],label_y=[r'$\xi(\Delta\ell)$','y'],lim_y=lim_y,lim_x=lim_x,ticks_x=ticks_x,ticks_y=ticks_y,letter='[e]')
@@ -894,30 +945,30 @@ def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:
     
     
     # Modify the axis 
-    lim_x = [check_precision(lim_x0[0]),check_precision(lim_x0[1])]
+    lim_x = [check_precision(lim_x0[0],True),check_precision(lim_x0[1],False)]
     ticks_x = create_list_tick(lim_x)
 
-    lim_y = [check_precision(lim_y0[0]),check_precision(lim_y0[1])]
+    lim_y = [check_precision(lim_y0[0],True),check_precision(lim_y0[1],False)]
     ticks_y = create_list_tick(lim_y)
     ax0 = modify_axes(ax0,label_x=[r'$\gamma$ [1000 km]','y'],lim_x = lim_x0,ticks_x=ticks_x,label_y=[r'd$_{150}$ [km]','y'],ticks_y=ticks_y,letter='[c]')
     
-    lim_y = [check_precision(lim_y1[0]),check_precision(lim_y1[1])]
+    lim_y = [check_precision(lim_y1[0],True),check_precision(lim_y1[1],False)]
     ticks_y = create_list_tick(lim_y)
     ax1 = modify_axes(ax1,label_x=['n','n'],lim_x = lim_x0,ticks_x=ticks_x,label_y=[r'd$_{450}$ [km]','y'],ticks_y=ticks_y,letter='[b]')
 
-    lim_y = [check_precision(lim_y2[0]),check_precision(lim_y2[1])]
+    lim_y = [check_precision(lim_y2[0],True),check_precision(lim_y2[1],False)]
     ticks_y = create_list_tick(lim_y)
     ax2 = modify_axes(ax2,label_x=['n','n'],lim_x = lim_x0,ticks_x=ticks_x,label_y=[r'd$_{600}$ [km]','y'],ticks_y=ticks_y,letter='[a]')
 
-    lim_y = [check_precision(lim_y3[0]),check_precision(lim_y3[1])]
+    lim_y = [check_precision(lim_y3[0],True),check_precision(lim_y3[1],False)]
     ticks_y = create_list_tick(lim_y)
     ax3 = modify_axes(ax3,label_x=[r'$\gamma$ [1000 km]','y'],lim_x = lim_x0,ticks_x=ticks_x,label_y=[r'$\xi_{150}$ [%]','y'],ticks_y=ticks_y,letter='[e]')
     
-    lim_y = [check_precision(lim_y4[0]),check_precision(lim_y4[1])]
+    lim_y = [check_precision(lim_y4[0],True),check_precision(lim_y4[1],False)]
     ticks_y = create_list_tick(lim_y)
     ax4 = modify_axes(ax4,label_x=['n','n'],lim_x = lim_x0,ticks_x=ticks_x,label_y=[r'$\xi_{450}$ [%]','y'],ticks_y=ticks_y,letter='[d]')
 
-    lim_y = [check_precision(lim_y4[0]),check_precision(lim_y4[1])]
+    lim_y = [check_precision(lim_y4[0],True),check_precision(lim_y4[1],False)]
     ticks_y = create_list_tick(lim_y)
     ax5 = modify_axes(ax5,label_x=['n','n'],lim_x = lim_x0,ticks_x=ticks_x,label_y=[r'$\xi_{600}$ [%]','y'],ticks_y=ticks_y,letter='[c]')
 
@@ -949,6 +1000,8 @@ def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame,figure_number:
     )
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
+    
+    
 def extract_max_dpth(db:pd.DataFrame,isotherms:int)->np.ndarray:
     buf0 = np.zeros(len(db[f'max_dpth{isotherms}']),dtype=float)
     for i in range(len(db[f'max_dpth{isotherms}'])):
@@ -956,28 +1009,37 @@ def extract_max_dpth(db:pd.DataFrame,isotherms:int)->np.ndarray:
         buf0[i] = (bufb[f'max_dpth{isotherms}'][0])
     return buf0 
 
+def _extract_limit_array(ar:np.ndarray)->list: 
+    
+    lim = [np.min(ar.flatten()),np.max(ar.flatten())]
+    lim = [check_precision(lim[0],True),check_precision(lim[1],False)]
+    ticks = create_list_tick(lim)
+    # Enlarge the limits of 0.1 just for being sure to not cut the plot using the mean
+    mean_lim = np.abs(np.mean(lim))
+    exp = np.floor(np.log10(mean_lim))
+    mean_lim = (mean_lim * 10 **(-exp))*0.5
+
+    lim = [lim[0]-mean_lim,lim[1]+mean_lim]
+    
+    return lim,ticks
 
 def box_plot_thermal_model(path2save: str, pdb: pd.DataFrame,figure_number:int=0)->None:
-    import seaborn as sns
     name_plot = f'Figure_{figure_number}.png'
-
     # Create common dataset 
     k3, k5, knl = create_common_data_set(pdb = pdb)
     # Compute the seismogenic length 
     d_seismic_nl = knl['d_seismic_ell']
     d_seismic_k3 = k3['d_seismic_ell']
     d_seismic_k5 = k5['d_seismic_ell']
-    lim_y = [110,280]
     # 
-    data = {"k3":d_seismic_k3,"k5":d_seismic_k5,"non-linear":d_seismic_nl}
     # Seaborn rompe il cazzo quando uso le mie funzioni. Sono al livello di non riuscire a fottermene di questi problemi finti 
     # Ah, si, se qualcuno mi legge, magari potenziale revisore ne sono cosciente che sta roba - come gli ultimi 30 anni di questa
     # impostura intellettuale, non dovrebbe esistere. Ma proprio dal 2001 in avanti.
     fig = plt.figure(figsize=(12, 12))
-    bx = 0.1 
+    bx = 0.11 
     by = 0.1 
     sx = 0.38
-    dx = 0.08 
+    dx = 0.07 
     sy = 0.38
     dy = 0.1     
     ax0 = fig.add_axes([bx,by,sx,sy])
@@ -985,193 +1047,299 @@ def box_plot_thermal_model(path2save: str, pdb: pd.DataFrame,figure_number:int=0
     ax2 = fig.add_axes([bx,by+dy+sy,sx,sy])
     ax3 = fig.add_axes([bx+dx+sx,by+dy+sy,sx,sy])
     
-    
-    sns.set_theme(style="darkgrid")
-    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
-    sns.boxplot(data=data, fill=True, gap=.1, ax=ax0,palette=my_pal)
-    ax0.set_ylabel(r"$\ell_{\mathrm{seismic}}$ [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax0.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax0.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
-    ax0.tick_params(axis='both', which='major', pad=9)
-    ax0.set_ylim([lim_y[0],lim_y[1]])
-    ax0.spines['top'].set_visible(False)
-    ax0.spines['right'].set_visible(False)
-    ax0.spines['left'].set_color('black')
-    ax0.spines['bottom'].set_color('black')
-    ax0.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
-    ax0.spines['left'].set_linewidth(2.0)
-    ax0.spines['bottom'].set_linewidth(2.0)
-    ax0.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
-    ax0.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
-    ax0.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
-    ax0.set_yticks([120,150,180,210,240,270])
-    ax0.set_yticklabels([120,150,180,210,240,270])
+    data = np.array([d_seismic_k3,d_seismic_k5,d_seismic_nl])
+    lim_y, ticks_y = _extract_limit_array(data)
 
-    ax0.text(
-        0.02, 0.97,'[c]',
-        transform=ax0.transAxes,
-        c='w',
-        fontweight='demibold',
-        fontsize=10,
-        va='top',
-        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
-    )
-    ax1.scatter(knl['thermal_parameter'],d_seismic_nl,c='firebrick',s=1.1)
-    ax1.scatter(k3['thermal_parameter'],d_seismic_k3,c='cadetblue',s=1.1)
-    ax1.scatter(k5['thermal_parameter'],d_seismic_k5,c='olive',s=1.1)
-    
-    ax2.scatter(knl['phi'],d_seismic_nl,c='firebrick',s=1.1)
-    ax2.scatter(k3['phi'],d_seismic_k3,c='cadetblue',s=1.1)
-    ax2.scatter(k5['phi'],d_seismic_k5,c='cadetblue',s=1.1)
-    
-    ax3.scatter(knl['Tp'],d_seismic_nl,c='firebrick',s=1.1)
-    ax3.scatter(k3['Tp'],d_seismic_k3,c='cadetblue',s=1.1)
-    ax3.scatter(k5['Tp'],d_seismic_k5,c='olive',s=1.1)
+    labels = ['k=3.1','k=5.0','NL']
+    colors = ['cadetblue','olive','firebrick']
+    bplot = ax0.boxplot(data.T,
+                       patch_artist=True,  # fill with color
+                       tick_labels=labels)  # will be used to label x-ticks
 
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
 
-    lim_x  = [np.min(knl['thermal_parameter']),np.max(knl['thermal_parameter'])]
+    ax1.scatter(knl['thermal_parameter'],d_seismic_nl,c='firebrick',s=1.5)
+    ax1.scatter(k3['thermal_parameter'],d_seismic_k3,c='cadetblue',s=1.5)
+    ax1.scatter(k5['thermal_parameter'],d_seismic_k5,c='olive',s=1.5)
     
-    ax1 = modify_axes(ax1,label_x=[r'$\frac{\gamma}{sin\left(\theta\right)}$','y'],lim_x = lim_x ,ticks_x=[300,500,600],label_y=['n','n'],ticks_y=[120,150,180,210,240,270],lim_y=lim_y,letter='[d]')
+    ax2.scatter(knl['decoupling'],d_seismic_nl,c='firebrick',s=1.5)
+    ax2.scatter(k3['decoupling'],d_seismic_k3,c='cadetblue',s=1.5)
+    ax2.scatter(k5['decoupling'],d_seismic_k5,c='olive',s=1.5)
     
-    lim_x = [np.min(knl['phi']),np.max(knl['phi'])]
-    
-    ax2 = modify_axes(ax2,label_x=[r'$\phi$ deg','y'],lim_x = lim_x ,ticks_x=None,label_y=[r"$\ell_{\mathrm{seismic}}$ [km]",'y'],ticks_y=[120,150,180,210,240,270],lim_y=lim_y,letter='[a]')
+    ax3.scatter(knl['Tp'],d_seismic_nl,c='firebrick',s=1.5)
+    ax3.scatter(k3['Tp'],d_seismic_k3,c='cadetblue',s=1.5)
+    ax3.scatter(k5['Tp'],d_seismic_k5,c='olive',s=1.5)
 
-    lim_x = [np.min(knl['Tp']),np.max(knl['Tp'])]
+    data1 = np.array([knl['thermal_parameter'].to_numpy(),k3['thermal_parameter'].to_numpy(),k5['thermal_parameter'].to_numpy()])
+    lim1_x, ticks_x1 = _extract_limit_array(data1)
     
-    ax3 = modify_axes(ax3,label_x=[r'$T_P$ $^{\circ}C$','y'],lim_x = lim_x ,ticks_x=None,label_y=['n','n'],ticks_y=[120,150,180,210,240,270],lim_y=lim_y,letter='[b]')
+    data2 = np.array([knl['decoupling'].to_numpy(),k3['decoupling'].to_numpy(),k5['decoupling'].to_numpy()])
+    lim2_x, ticks_x2 = _extract_limit_array(data2)
+    
+    data3 = np.array([knl['Tp'].to_numpy(),k3['Tp'].to_numpy(),k5['Tp'].to_numpy()])
+    lim3_x, ticks_x3 = _extract_limit_array(data3)
+    
+    ax0 = modify_axes(ax0,
+                      label_x=[r'Thermal models','y'],
+                      label_y=[r'$\ell^{\mathrm{seismic}}$ [km]','y'],
+                      ticks_y=ticks_y,
+                      lim_y=lim_y,
+                      label_x_c = 'categorical',
+                      ticks_label_x=['k=3.1','k=5','NL'],
+                      letter='[a]')
+    
+    ax1 = modify_axes(ax1,
+                      label_x=[r'$\frac{\gamma}{sin\left(\theta\right)}$ [km]','y'],
+                      lim_x = lim1_x ,
+                      ticks_x=ticks_x1,
+                      label_y=['n','n'],
+                      ticks_y=ticks_y,
+                      lim_y=lim_y,
+                      letter='[b]')
+    ax2 = modify_axes(ax2,
+                      label_x=[r'$d_c$ [km]','y'],
+                      label_y=[r'$\ell^{\mathrm{seismic}}$ [km]','y'],
+                      lim_x = lim2_x ,
+                      ticks_x=ticks_x2,
+                      ticks_y=ticks_y,
+                      lim_y=lim_y,
+                      letter='[c]')
+    
+    ax3 = modify_axes(ax3,
+                      label_x=[r'$T_p$ $[^\circ C]$','y'],
+                      lim_x = lim3_x ,
+                      ticks_x=ticks_x3,
+                      label_y=['n','n'],
+                      ticks_y=ticks_y,
+                      lim_y=lim_y,
+                      letter='[d]')
+    
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
 
     
 def box_plot_thermal_model_max_depth(path2save: str, pdb: pd.DataFrame,figure_number:int=0)->None:
-    import seaborn as sns
+    
     name_plot = f'Figure_{figure_number}.png'
 
     # Create common dataset 
     k3, k5, knl = create_common_data_set(pdb = pdb)
     # Compute the seismogenic length 
-    max_depth1 = extract_max_dpth(knl,150)
-    max_depth2 = extract_max_dpth(k3,150)
-    max_depth3 = extract_max_dpth(k5,150)
-    # 
-    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
-
-    fig = plt.figure(figsize=(18, 10))
+    fig = plt.figure(figsize=(12, 10))
     bx = 0.1 
     by = 0.1 
-    sx = 0.20
+    sx = 0.24
     dx = 0.08 
-    sy = 0.8
-    ax0 = fig.add_axes([bx,by,sx,sy])
-    ax1 = fig.add_axes([bx+dx+sx,by,sx,sy])
-    ax2 = fig.add_axes([bx+2*dx+2*sx,by,sx,sy])
+    dy = 0.14
+    sy = 0.3
+    ax0 = fig.add_axes([bx,by+sy+dy,sx,sy])
+    ax1 = fig.add_axes([bx+dx+sx,by+sy+dy,sx,sy])
+    ax2 = fig.add_axes([bx+2*dx+2*sx,by+sy+dy,sx,sy])
+    ax3 = fig.add_axes([bx,by,sx,sy])
+    ax4 = fig.add_axes([bx+dx+sx,by,sx,sy])
+    ax5 = fig.add_axes([bx+2*dx+2*sx,by,sx,sy])
     # ax0
-        # Compute the seismogenic length 
-    max_depth1 = extract_max_dpth(knl,150)
-    max_depth2 = extract_max_dpth(k3,150)
-    max_depth3 = extract_max_dpth(k5,150)
-    # 
-    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
+    # Compute the seismogenic length 
+    max_depth3 = extract_max_dpth(knl,150)
+    max_depth1 = extract_max_dpth(k3,150)
+    max_depth2 = extract_max_dpth(k5,150)
+    data = np.array([max_depth1,max_depth2,max_depth3])
+    lim_y0, ticks_y0 = _extract_limit_array(data)
     
-    sns.set_theme(style="darkgrid")
-    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
-    sns.boxplot(data=data, fill=True, gap=.1, ax=ax0,palette=my_pal)
-    ax0.set_ylabel("max depth [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax0.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax0.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
-    ax0.tick_params(axis='both', which='major', pad=9)
-    ax0.spines['top'].set_visible(False)
-    ax0.spines['right'].set_visible(False)
-    ax0.spines['left'].set_color('black')
-    ax0.spines['bottom'].set_color('black')
-    ax0.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
-    ax0.spines['left'].set_linewidth(2.0)
-    ax0.spines['bottom'].set_linewidth(2.0)
-    ax0.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
-    ax0.set_yticklabels(ax0.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
-    ax0.set_xticklabels(ax0.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
+    
+    labels = ['k3','k5','NL']
+    colors = ['cadetblue','olive','firebrick']
+    bplot = ax0.boxplot(data.T,
+                       patch_artist=True,  # fill with color
+                       tick_labels=labels)  # will be used to label x-ticks
+
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
+
+
+    # ax1
+    # Compute the seismogenic length 
+    max_depth3 = extract_max_dpth(knl,450)
+    max_depth1 = extract_max_dpth(k3,450)
+    max_depth2 = extract_max_dpth(k5,450)
+    data = np.array([max_depth1,max_depth2,max_depth3])
+    lim_y1, ticks_y1 = _extract_limit_array(data)
+    labels = ['k3','k5','NL']
+    colors = ['cadetblue','olive','firebrick']
+    bplot = ax1.boxplot(data.T,
+                       patch_artist=True,  # fill with color
+                       tick_labels=labels)  # will be used to label x-ticks
+
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
+
+
+    # ax2
+    # Compute the seismogenic length 
+    max_depth3 = extract_max_dpth(knl,600)
+    max_depth1 = extract_max_dpth(k3,600)
+    max_depth2 = extract_max_dpth(k5,600)
+    data = np.array([max_depth1,max_depth2,max_depth3])
+    lim_y2, ticks_y2 = _extract_limit_array(data)
+    labels = ['k3','k5','NL']
+    colors = ['cadetblue','olive','firebrick']
+    bplot = ax2.boxplot(data.T,
+                       patch_artist=True,  # fill with color
+                       tick_labels=labels)  # will be used to label x-ticks
+
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
+
+
+    # ax3
+    # Compute the seismogenic length 
+    max_depth3 = extract_max_dpth(knl,150)
+    max_depth1 = max_depth3 - extract_max_dpth(k3,150)
+    max_depth2 = max_depth3 - extract_max_dpth(k5,150)
+    data = np.array([max_depth1,max_depth2])
+    lim_y3, ticks_y3 = _extract_limit_array(data)
+    
+    
+    labels = ['k3','k5']
+    colors = ['cadetblue','olive']
+    bplot = ax3.boxplot(data.T,
+                       patch_artist=True,  # fill with color
+                       tick_labels=labels)  # will be used to label x-ticks
+
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
+    ax4.axhline(y=0.0,linewidth=2, color='firebrick')
+
+
+    # ax4
+    # Compute the seismogenic length 
+    max_depth3 = extract_max_dpth(knl,450)
+    max_depth1 = max_depth3 - extract_max_dpth(k3,450)
+    max_depth2 = max_depth3 - extract_max_dpth(k5,450)
+    data = np.array([max_depth1,max_depth2])
+    lim_y4, ticks_y4 = _extract_limit_array(data)
+    labels = ['k3','k5']
+    colors = ['cadetblue','olive']
+    bplot = ax4.boxplot(data.T,
+                       patch_artist=True,  # fill with color
+                       tick_labels=labels)  # will be used to label x-ticks
+    ax4.axhline(y=0.0,linewidth=2, color='firebrick')
+
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
+
+
+    # ax5
+    # Compute the seismogenic length 
+    max_depth3 = extract_max_dpth(knl,600)
+    max_depth1 = max_depth3 - extract_max_dpth(k3,600)
+    max_depth2 = max_depth3 - extract_max_dpth(k5,600)
+    data = np.array([max_depth1,max_depth2])
+    lim_y5, ticks_y5 = _extract_limit_array(data)
+    labels = ['k3','k5']
+    colors = ['cadetblue','olive']
+    bplot = ax5.boxplot(data.T,
+                       patch_artist=True,  # fill with color
+                       tick_labels=labels)  # will be used to label x-ticks
+    ax5.axhline(y=0.0,linewidth=2, color='firebrick')
+
+    # fill with colors
+    for patch, color in zip(bplot['boxes'], colors):
+        patch.set_facecolor(color)
+
 
     ax0.text(
-        0.02, 0.97,'[a]',
+        0.1, 1.3,r'max depth 150 $^{\circ}C$',
         transform=ax0.transAxes,
         c='w',
         fontweight='demibold',
-        fontsize=10,
+        fontsize=20,
         va='top',
-        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'k', 'alpha': 0.7}
     )
-    
-    # Compute the seismogenic length 
-    max_depth1 = extract_max_dpth(knl,450)
-    max_depth2 = extract_max_dpth(k3,450)
-    max_depth3 = extract_max_dpth(k5,450)
-    # 
-    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
-    
-    sns.set_theme(style="darkgrid")
-    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
-    sns.boxplot(data=data, fill=True, gap=.1, ax=ax1,palette=my_pal)
-    ax1.set_ylabel("max depth [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax1.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax1.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
-    ax1.tick_params(axis='both', which='major', pad=9)
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['right'].set_visible(False)
-    ax1.spines['left'].set_color('black')
-    ax1.spines['bottom'].set_color('black')
-    ax1.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
-    ax1.spines['left'].set_linewidth(2.0)
-    ax1.spines['bottom'].set_linewidth(2.0)
-    ax1.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
-    ax1.set_yticklabels(ax1.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
-    ax1.set_xticklabels(ax1.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
 
     ax1.text(
-        0.02, 0.97,'[b]',
+        0.1, 1.3,r'max depth 450 $^{\circ}C$',
         transform=ax1.transAxes,
         c='w',
         fontweight='demibold',
-        fontsize=10,
+        fontsize=20,
         va='top',
-        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'k', 'alpha': 0.7}
     )
-    
-    # Compute the seismogenic length 
-    max_depth1 = extract_max_dpth(knl,600)
-    max_depth2 = extract_max_dpth(k3,600)
-    max_depth3 = extract_max_dpth(k5,600)
-    # 
-    data = {"k3":max_depth2,"k5":max_depth3,"non-linear":max_depth1}
-    
-    sns.set_theme(style="darkgrid")
-    my_pal = {"k3": "cadetblue", "k5": "olive", "non-linear": "firebrick"}
-    sns.boxplot(data=data, fill=True, gap=.1, ax=ax2,palette=my_pal)
-    ax2.set_ylabel("max depth [km]",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax2.set_xlabel("Thermal model",fontsize=_LABELFONTSIZE_, labelpad=10)
-    ax2.tick_params(axis='both', labelsize=_TICKSFONTSIZE_)
-    ax2.tick_params(axis='both', which='major', pad=9)
-    ax2.spines['top'].set_visible(False)
-    ax2.spines['right'].set_visible(False)
-    ax2.spines['left'].set_color('black')
-    ax2.spines['bottom'].set_color('black')
-    ax2.tick_params(axis='both', colors='black', direction='in', length=5, width=2.0)
-    ax2.spines['left'].set_linewidth(2.0)
-    ax2.spines['bottom'].set_linewidth(2.0)
-    ax2.grid(visible=True, which='major', axis='both', color='gray', linestyle='--', linewidth=0.3, alpha=0.7)
-    ax2.set_yticklabels(ax2.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
-    ax2.set_xticklabels(ax2.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
 
-    ax1.text(
-        0.02, 0.97,'[c]',
-        transform=ax1.transAxes,
+    ax2.text(
+        0.1, 1.3,r'max depth 600 $^{\circ}C$',
+        transform=ax2.transAxes,
         c='w',
         fontweight='demibold',
-        fontsize=10,
+        fontsize=20,
         va='top',
-        bbox=dict(boxstyle='round,pad=0.3', facecolor='k', alpha=0.7)
+        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'k', 'alpha': 0.7}
     )
 
+    # Check precision generate limits that should be 0.5 or 1.0 or 0.0
+
+    ax0 = modify_axes(ax0,
+                      label_x=[r'Thermal models','y'],
+                      label_y=[r'depth [km]','y'],
+                      ticks_y=ticks_y0,
+                      lim_y=lim_y0,
+                      label_x_c = 'categorical',
+                      ticks_label_x=['k=3.1','k=5','NL'],
+                      letter='[a]')
+    
+    ax1 = modify_axes(ax1,
+                      label_x=[r'Thermal models','y'],
+                      label_y=['n','y'],
+                      ticks_y=ticks_y1,
+                      lim_y=lim_y1,
+                      label_x_c = 'categorical',
+                      ticks_label_x=['k=3.1','k=5','NL'],
+                      letter='[b]')
+
+    ax2 = modify_axes(ax2,
+                      label_x=[r'Thermal models','y'],
+                      label_y=['n','y'],
+                      ticks_y=ticks_y2,
+                      lim_y=lim_y2,
+                      label_x_c = 'categorical',
+                      ticks_label_x=['k=3.1','k=5','NL'],
+                      letter='[c]')
+    
+    ax3 = modify_axes(ax3,
+                      label_x=[r'Thermal models','y'],
+                      label_y=[r'$\Delta$depth [km]','y'],
+                      ticks_y=ticks_y3,
+                      lim_y=lim_y3,
+                      label_x_c = 'categorical',
+                      ticks_label_x=['k=3.1','k=5'],
+                      letter='[d]')
+    
+    ax4 = modify_axes(ax4,
+                      label_x=[r'Thermal models','y'],
+                      label_y=['n','y'],
+                      ticks_y=ticks_y4,
+                      lim_y=lim_y4,
+                      label_x_c = 'categorical',
+                      ticks_label_x=['k=3.1','k=5'],
+                      letter='[e]')
+
+    ax5 = modify_axes(ax5,
+                      label_x=[r'Thermal models','y'],
+                      label_y=['n','y'],
+                      ticks_y=ticks_y5,
+                      lim_y=lim_y5,
+                      label_x_c = 'categorical',
+                      ticks_label_x=['k=3.1','k=5'],
+                      letter='[f]')
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
 
