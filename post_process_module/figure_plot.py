@@ -17,6 +17,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
 from matplotlib.ticker import FormatStrFormatter
 from numba import njit
+import csv 
 
 from .process_data_visualisation import CoordinateSurface, SlabPlot2D
 
@@ -27,8 +28,63 @@ _TICKSFONTSIZE_ = 0.8/_PT_CM_
 _LABELFONTSIZE_ = 0.9/_PT_CM_
 _TEXTFONTSIZE_ = 0.65/_PT_CM_
 # --- 
+def print_save_IQ_information(pdb:pd.DataFrame,pt2save:str,prop:str):
+    
+    def compute_stats(a:pd.DataFrame,name:str)->dict:
+        dict_stat = {}
+        quartiles = a.quantile([0.05,0.25, 0.75,0.95])
+        quartiles = quartiles.to_numpy()
+        median = a.median()
+        dict_stat['name'] = name
+        dict_stat['IQR'] = quartiles[2]-quartiles[1]
+        dict_stat['95%'] = quartiles[3]
+        dict_stat['5%'] = quartiles[0]
+        dict_stat['median'] = median
 
+        return dict_stat
 
+    # --- 
+    k3, k5, knl = create_common_data_set(pdb = pdb)
+
+    knl_a = knl[prop]
+    k3_b = k3[prop]
+    k5_c = k5[prop]
+    
+    dab = knl_a - k3_b
+    dac = knl_a - k5_c
+    # --- 
+    stat_nla = compute_stats(knl_a,'NL')
+    stat_k3b = compute_stats(k3_b,'k=3.1')
+    stat_k5c = compute_stats(k5_c,'k=5.0')
+    # --- 
+    stat_dab = compute_stats(dab,'NL-k3')
+    stat_dac = compute_stats(dac,'NL-k5')
+    
+    for i in stat_nla.keys(): 
+        if i == 'name':
+            continue
+        else:
+            print(f"   {i}: k3 = {stat_k3b[i]:.2f}, k5 = {stat_k5c[i]:.2f}, nl = {stat_nla[i]:.2f}")
+            print(f"   {i}: (nl-k3) = {stat_dab[i]:.2f}, k5 = {stat_dac[i]:.2f}")
+
+    rows = []
+    rows.append(stat_nla)
+    rows.append(stat_k3b)
+    rows.append(stat_k5c)
+    rows.append(stat_dab)
+    rows.append(stat_dac)
+    
+    pathcsv = f'{pt2save}/table_csv_{prop}.csv'
+    # Prepare list of field
+    field = [i for i in stat_nla.keys()]
+    with  open(pathcsv,'a',newline='') as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=field,
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+# --- 
 def create_array(buf:pd.DataFrame)->np.ndarray:
     
     if len(buf.shape)>1:
@@ -1006,7 +1062,7 @@ def extract_max_dpth(db:pd.DataFrame,isotherms:int)->np.ndarray:
     buf0 = np.zeros(len(db[f'max_dpth{isotherms}']),dtype=float)
     for i in range(len(db[f'max_dpth{isotherms}'])):
         bufb =  db.iloc[i]
-        buf0[i] = (bufb[f'max_dpth{isotherms}'][0])
+        buf0[i] = (bufb[f'max_dpth{isotherms}'])
     return buf0 
 
 def _extract_limit_array(ar:np.ndarray)->list: 
@@ -1022,7 +1078,7 @@ def _extract_limit_array(ar:np.ndarray)->list:
     lim = [lim[0]-mean_lim,lim[1]+mean_lim]
     
     return lim,ticks
-
+# --- 
 def box_plot_thermal_model(path2save: str, pdb: pd.DataFrame,figure_number:int=0)->None:
     name_plot = f'Figure_{figure_number}.png'
     # Create common dataset 
@@ -1118,8 +1174,7 @@ def box_plot_thermal_model(path2save: str, pdb: pd.DataFrame,figure_number:int=0
     
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
-
-    
+# --- 
 def box_plot_thermal_model_max_depth(path2save: str, pdb: pd.DataFrame,figure_number:int=0)->None:
     
     name_plot = f'Figure_{figure_number}.png'
@@ -1342,7 +1397,8 @@ def box_plot_thermal_model_max_depth(path2save: str, pdb: pd.DataFrame,figure_nu
                       letter='[f]')
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
-
+# --- 
+# --- 
     
     
     

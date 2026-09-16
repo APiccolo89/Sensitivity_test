@@ -67,3 +67,4 @@ Output_h5_files/*
 7815843_99/fenics/libffcx_expressions_8526ba03689529427328d7f274fee991da186dcc.o
 *.tar.tar
 output_bash/file_tar_test.tar
+*.csv

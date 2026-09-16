@@ -148,7 +148,7 @@ def create_data_structure(aux_path:str, args):
     data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)  
     
     return data_table, slab_2D, surface_data_0
-# ---
+#---
 def plot_sensitivity_study_steady_state(args)->None:
     """ Small top-level function that calls the data structure generation routine
     and produce the figure of the manuscript. 
@@ -211,10 +211,14 @@ def plot_real_case_study_steady_state(args):
     aux_path_data_base = aux_path / 'Output_h5_files'
     
     # Create the main data structure to produce the figure of the paper. 
+    path2save = aux_path / f'Result_shear_heating_{args.sh}_{args.name_suite}'
 
     data_table, slab_2D, surface_data_0 = create_data_structure(aux_path=aux_path_data_base,args=args)
+    print_save_IQ_information(data_table,path2save,'d_seismic_ell')
+    print_save_IQ_information(data_table,path2save,'max_dpth150')
+    print_save_IQ_information(data_table,path2save,'max_dpth450')
+    print_save_IQ_information(data_table,path2save,'max_dpth600')
     # Generate path 
-    path2save = aux_path / f'Result_shear_heating_{args.sh}_{args.name_suite}'
     # Create folder
     path2save.mkdir(exist_ok=True)
     # Box plot for the seismogenetic zone 
@@ -229,6 +233,10 @@ def plot_real_case_study_steady_state(args):
                         figure_number=6)
     # Plot the heat flux 
     plot_heat_flux(path2save,surface_data_0,data_table, 7)
+    # Print information regarding IQ, median, std max_dpth{isotherms}
+
+
+
 # --- 
 def main():
     """Generation 
@@ -237,11 +245,11 @@ def main():
         ErrorParsing: _description_
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sh",            type=str,                help = "Super Group: experiment with or without shear heating: sh = yes, shear heating; nsh = no, shear heating")
-    parser.add_argument("--name_suite",    type=str,                help = "Name of the test suite. This is a string that corresponds to the name of the test suite.")
-    parser.add_argument("--steady_state",  type=int,                help = "Flag to run the test in steady-state or time-dependent mode. 1 = steady-state, 0 = time-dependent")
-    parser.add_argument("--csv",           type=str,                help = 'csv table used to produce the cases. Important to check what are the main variables that changes within the runs.')
-    parser.add_argument("--number_worker", type=int, default=100,   help = 'number of processor of the array job. The default is 100, as the run of the manuscript. User can change, but needs to be consistent with their work flow.')
+    parser.add_argument("--sh",            type=str,                  help = "Super Group: experiment with or without shear heating: sh = yes, shear heating; nsh = no, shear heating")
+    parser.add_argument("--name_suite",    type=str,                  help = "Name of the test suite. This is a string that corresponds to the name of the test suite.")
+    parser.add_argument("--steady_state",  type=int,                  help = "Flag to run the test in steady-state or time-dependent mode. 1 = steady-state, 0 = time-dependent")
+    parser.add_argument("--csv",           type=str,                  help = 'csv table used to produce the cases. Important to check what are the main variables that changes within the runs.')
+    parser.add_argument("--number_worker", type=int, default=100,     help = 'number of processor of the array job. The default is 100, as the run of the manuscript. User can change, but needs to be consistent with their work flow.')
     parser.add_argument("--function_plot", type=str, default='basic', help = 'choose the template for the plotting and analysis')
     args = parser.parse_args()
     if args.function_plot == 'basic':
