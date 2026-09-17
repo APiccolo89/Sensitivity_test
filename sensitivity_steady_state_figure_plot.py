@@ -178,20 +178,19 @@ def plot_sensitivity_study_steady_state(args)->None:
     # Create folder
     path2save.mkdir(exist_ok=True)
     # Plot mean difference
-    plot_slab_variances(slab_2D, path2save = path2save, number_figure=3)
+    plot_slab_variances(slab_2D, path2save = path2save, number_figure='a')
     # Create the database
     # Plot the 1D (P-T) of the slab surface
     figure_slab_surface(path2save=path2save,
                         pdb=data_table,
                         crd=surface_data_0,
                         petro_db=pres_temp_hp_lt_db,
-                        figure_number=0)
+                        figure_number='b')
     # Plot the heat flux 
-    plot_heat_flux(path2save,surface_data_0,data_table, 4)
 
     print(f'Saving picture into {path2save}...')
     # Plot the main 
-    plot_slab_versus_thermalpar(path2save=path2save,pdb=data_table,figure_number=1)
+    plot_slab_versus_thermalpar(path2save=path2save,pdb=data_table,figure_number='c')
 # --- 
 def plot_real_case_study_steady_state(args): 
     """_summary_
@@ -222,13 +221,9 @@ def plot_real_case_study_steady_state(args):
     # Create folder
     path2save.mkdir(exist_ok=True)
     # Box plot for the seismogenetic zone 
-    box_plot_thermal_model(path2save=path2save,pdb=data_table,figure_number=4)
+    box_plot_thermal_model(path2save=path2save,pdb=data_table,figure_number='d')
     # Box plot for the maximum depth of the isotherm within the slab
-    box_plot_thermal_model_max_depth(path2save=path2save,pdb=data_table,figure_number=5)
-
-
-
-
+    box_plot_thermal_model_max_depth(path2save=path2save,pdb=data_table,figure_number='e')
 # --- 
 def main():
     """Generation 

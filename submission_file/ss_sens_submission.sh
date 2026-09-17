@@ -101,8 +101,7 @@ for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
         --name_suite ${name_suite}\
         --id_batch \$id_batch \
         --steady_state ${steady_state}\
-        --name_csv cases_Sensitivity_test_ss.csv\
-        --plate_real Sensitivity_test_ss\
+        --name_csv cases_Sensitivity_steady_s_sensitivity.csv\
 
     rm -rf "\$XDG_CACHE_HOME"
 

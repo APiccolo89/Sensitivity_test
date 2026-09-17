@@ -42,14 +42,12 @@ Sensitivity_Test/
         ├── post_process_data.py
         ├── post_process_data_visualization.py
     ├── generation_cases_script/
-        ├── generate_cases_Mexico.py
-        ├── generate_cases_Sensitivity.py
-        ├── generate_cases_time_dependent.py
+        ├── generate_cases.py
     ├── real_configuration_plate/ 
         ├── geometric_input_real_plate.yml
     ├── script_run_stoned.py
     ├── sensitivity_steady_state_figure_plot.py
-
+    ├── plot_subduction_surface_real_cases.py
 ```
 
 ---
@@ -94,14 +92,17 @@ The argument `--plate` is the one defining the name of the suite: three names ar
 These files collect all the experiments to run.
 
 To run the experiments, there are three bash scripts that handle all the runs; the bash scripts must be launched from the top folder:
+:warning: **Warning:** This is the work flow that has been used to produce the data of the paper. This means that you need to readapt these files to the policy of your HPC or your server or your local machine.
+
+
 #Test Sensitivity_test with generic mesh
 ```bash
-bash submission_file/steady_state_sensy.sh --group k3nsh --name_suite ss_sens_submission --np 1 --steady_state 1 
-bash submission_file/steady_state_sensy.sh --group k5nsh --name_suite ss_sens_submission --np 1 --steady_state 1 
-bash submission_file/steady_state_sensy.sh --group nlnsh --name_suite ss_sens_submission --np 1 --steady_state 1 
-bash submission_file/steady_state_sensy.sh --group k3sh --name_suite ss_sens_submission --np 1 --steady_state 1 
-bash submission_file/steady_state_sensy.sh --group k5sh --name_suite ss_sens_submission --np 1 --steady_state 1 
-bash submission_file/steady_state_sensy.sh --group nlsh --name_suite ss_sens_submission --np 1 --steady_state 1 
+bash submission_file/ss_sens_submission.sh --group k3nsh --name_suite steady_s_sensitivity --np 1 --steady_state 1 
+bash submission_file/ss_sens_submission.sh --group k5nsh --name_suite steady_s_sensitivity --np 1 --steady_state 1 
+bash submission_file/ss_sens_submission.sh --group nlnsh --name_suite steady_s_sensitivity --np 1 --steady_state 1 
+bash submission_file/ss_sens_submission.sh --group k3sh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
+bash submission_file/ss_sens_submission.sh --group k5sh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
+bash submission_file/ss_sens_submission.sh --group nlsh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
 ```
 #Test Mexico 
 ```bash
@@ -120,8 +121,8 @@ The arguments are:
 - `--group`: the code that defines the type of experiments (see above)
 - `--np`: the number of processors
 - `--steady_state`: the steady state flag that indicates the type of simulations. 
-
 These bash scripts run a Python configuration script called `script_run_stoned.py`.
+> **Important:** **Automation**  It is possible to create a wrap that automate these operations. However, it depends on your HPC, the command has been spelled out, just for facilitating the usage of this work flow. 
 
 > **Important:** **bash_clean** After all the runs are completed, the user can use the same signature of the bash script to call
 
@@ -136,7 +137,7 @@ After a run of a single group of experiments, the output layout will be:
 
 ```
     Sensitivity_tests/
-      ├── h5_Outputs/
+      ├── Output_h5_files/
         ├──{`name_suite`}_{`group`}_h5_files/
             ├──Data_Base_{id_batch}.h5
       ├── test_folder/

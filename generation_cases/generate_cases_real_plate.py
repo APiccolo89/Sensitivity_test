@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
 
-_PLOT_ = True
+_PLOT_ = False
 
 def plot(scaled_sample:np.ndarray, path_save:str, keys:list)->None:
 

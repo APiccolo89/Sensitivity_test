@@ -11,7 +11,7 @@
         "--sh","sh",
         "--name_suite","Mexico",
         "--steady_state","1",
-        "--csv","cases_Sensitivity_Mexico.csv",
+        "--csv","cases_Sensitivity_steady_s_sensitivity.csv",
         "--function_plot","real"
       ],
       "console": "integratedTerminal"

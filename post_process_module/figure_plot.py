@@ -1448,7 +1448,7 @@ def plot_eye_candy(a:pd.DataFrame
                    ,s2:CoordinateSurface
                    ,ptsave:str):
     # name plot
-    name_plot = f'{ptsave}/eye_candy.png'
+    name_plot = f'{ptsave}/Figure_f.png'
     # Main figure canvas 
     fig = plt.figure(figsize=(16, 12))
     # Slab panel surface

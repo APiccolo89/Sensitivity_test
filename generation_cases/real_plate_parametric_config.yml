@@ -20,12 +20,12 @@ Japan:
   decoupling: [60, 90]
   Tp: [1350,1450]
   n_cases: 3500
-Sensitivity_test_ss: 
+steady_s_sensitivity: 
   age: [30.0, 110.0]
   vc: [3.0, 10.0]
   Tp: [1350,1425]
   n_cases: 7000 
-Sensitivity_test_td: 
+td_s_sensitivity: 
   age: [30,110.0]
   vc: [3.0,10.0]
   Tp: 1350
