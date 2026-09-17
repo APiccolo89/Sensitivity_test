@@ -1,18 +1,35 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
+
+        {
+      "name": "TestPlot",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/sensitivity_steady_state_figure_plot.py",
+      "args": [
+        "--sh","sh",
+        "--name_suite","Mexico",
+        "--steady_state","1",
+        "--csv","cases_Sensitivity_Mexico.csv",
+        "--function_plot","real"
+      ],
+      "console": "integratedTerminal"
+    },
     {
       "name": "Sensitivity Test - case 0",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/Sensitivity_tests_time_dep_exp.py",
+      "program": "${workspaceFolder}/script_run_stoned.py",
       "args": [
         "--case_index", "0",
-        "--case", "debug",
+        "--group", "k3sh",
         "--id_batch", "1",
         "--name_suite", "debug",
-       "--steady_state","0"],
+       "--steady_state","1",
+        "--name_csv", "cases_Sensitivity_mexico.csv",
+        "--plate_real", "Mexico",
+      ],
       "console": "integratedTerminal"
     }
   ]

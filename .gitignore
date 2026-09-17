@@ -60,3 +60,11 @@ Sensitivity100_TD/Sensitivity_case0_100/time_dependent.xdmf
 Sensitivity0/*
 *.txt
 time_dependent.xdmf
+Output_h5_files/*
+Output_h5_files/*
+*Failed_tests.jsonl
+*.log
+7815843_99/fenics/libffcx_expressions_8526ba03689529427328d7f274fee991da186dcc.o
+*.tar.tar
+output_bash/file_tar_test.tar
+*.csv

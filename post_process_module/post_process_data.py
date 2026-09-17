@@ -14,6 +14,7 @@ import fcntl
 from datetime import datetime
 from pathlib import Path, PurePath
 from stonedfenicsx.stoned_fenicsx import git_info
+import post_process_module.global_var as _GVARIABLES_
 # ---
 # ---
 
@@ -71,7 +72,7 @@ def timing_function(fun):
         elif dt > 3600.0:
             m, s = divmod(dt, 60)
             h, m = divmod(m, 60)
-            print(f".  {fun.__name__} took {dt/3600:.2f} hr, {m:.2f} min and {s:.2f} sec")
+            print(f".  {fun.__name__} took {h:.2f} hr, {m:.2f} min and {s:.2f} sec")
         else:
             print(f".  {fun.__name__} took {dt:.2f} sec")
         return result
@@ -93,10 +94,7 @@ def test_success(name_test: str,steadystate=True):
     else: 
         file = f'{name_test}/time_dependent.h5'
     
-    if os.path.isfile(file)==False:
-        return False
-    else:
-        return True
+    return os.path.isfile(file) != False
 # ---
 def extract_slab_surface(T:Test,steady_state=True,ts=0)->np.ndarray:
     if steady_state:
@@ -108,11 +106,12 @@ def extract_slab_surface(T:Test,steady_state=True,ts=0)->np.ndarray:
 
 def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndarray,tag:str)->np.ndarray:
 
-    from stonedfenicsx.config.phase_db import read_rheology 
+    from stonedfenicsx.config.phase_db import read_rheology
     
-    temp_slab = temp_slab + 273.15 
-    pres_slab = pres_slab * 1e9
-    A = read_rheology('Wet_Quartzite_2001_Dislocation_creep',1)
+    temp_slab = temp_slab + _GVARIABLES_._K_
+    pres_slab = pres_slab * _GVARIABLES_._PA_
+
+    A = read_rheology(tag,1)
     water = (np.exp(- (A.eh2o+A.vh2o*pres_slab)/(8.314 * temp_slab))/np.exp(- (A.eh2o+A.vh2o*1e5)/(8.314 * 298.15)))
     
     cds = A.b * np.exp(-(A.e + pres_slab * A.v)/(8.314 * temp_slab)) * water **(A.r)
@@ -124,7 +123,7 @@ def compute_tau_rheological_law(eps:float,temp_slab:np.ndarray,pres_slab:np.ndar
     return tau_viscous
 
 # ---
-def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argparse.Namespace)->np.ndarray:
+def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:dict)->np.ndarray:
     """Function that extract the stress at slab interface.
 
     Args:
@@ -136,11 +135,13 @@ def extract_shearzone_data(temp_slab:np.ndarray,pres_slab:np.ndarray,args:argpar
         np.ndarray: tau_eff
     """
     
-    vel = args.vc*1e-2/365.25/60/60/24
+    vel = args['vc']*1e-2/365.25/60/60/24
     eps = 0.5 * (vel *  1 /500) 
-    if args.shear_heating:
-        tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,args.shear_heating)   
-        tau_fr = pres_slab*1e9*np.sin(np.radians(5.0))
+    if args['shear_heating']:
+        tag = args.get('shear_heating_law', _GVARIABLES_._SHEAR_HEATING_LAW)
+        phi = args.get('phi',_GVARIABLES_._PHI_)
+        tau_viscous = compute_tau_rheological_law(eps,temp_slab,pres_slab,tag)   
+        tau_fr = pres_slab*1e9*np.sin(np.radians(phi))
         tau_eff = tau_viscous * np.tanh(tau_fr/tau_viscous)/1e6
     else: 
         tau_eff = pres_slab*0.0
@@ -193,7 +194,7 @@ def extract_slab_oceanic_surface_Temperature(T: Test,steady_state=True,ts=0)->tu
     
     return cd_s,cd_o, T_S, T_O, P_S, P_O
 # ---
-def extract_heat_flux(T: Test,steady_state:bool=False,ts:int=0)->tuple[np.ndarray, np.ndarray]:
+def extract_heat_flux(T: Test,steady_state:bool=True,ts:int=0)->tuple[np.ndarray, np.ndarray]:
     
     if not steady_state: 
         q = T.Data_raw.TimeDependent.qy[:,ts]
@@ -236,12 +237,12 @@ def extract_isotherm(X, Y, T, level):
     return cx, cy
 # ---
 @timing_function
-def extract_relevant_data_td(path:str,args:argparse.Namespace)->namedtuple:
+def extract_relevant_data_td(path:str,args:dict)->namedtuple:
     """_summary_
 
     Args:
         path (str): path to the test
-        args (argparse.Namespace): meta_data of the simulation
+        args (dict): meta_data of the simulation
 
     Returns:
         named_tuple: data of the simulation. 
@@ -315,7 +316,7 @@ def extract_relevant_data_td(path:str,args:argparse.Namespace)->namedtuple:
     
 # ---
 @timing_function
-def extract_relevant_data(path:str,args:argparse.Namespace)->list:
+def extract_relevant_data(path:str,args:dict)->list:
     X_O = None;X_S=None
     T = Test(path_2_test=path)
     Slab_surface = extract_slab_surface(T=T)
@@ -385,15 +386,17 @@ def extract_relevant_data(path:str,args:argparse.Namespace)->list:
     return list_data
 # ---
 @timing_function
-def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
+def save_test_data(name_suite:str = 'Sensitivity' ,arguments:dict| None=None, pathtotest:tuple[str,str] = None)->None:
 
-    print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
+    print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir / f"{name_suite}_h5_files_{arguments.id_db}"
+    SSTD = _GVARIABLES_.dict_td[str(arguments['steady_state'])]
+    path2save = main_dir / "Output_h5_files" / f"{name_suite}_h5_files_{arguments['group']}_{SSTD}"
+
+    path2save.mkdir(parents=True, exist_ok=True)
     
-    if not os.path.isdir(path2save):
-        os.mkdir(path2save)
+
 
     print(f"Test data will be saved in {path2save}")
     
@@ -402,20 +405,20 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
 
-    print(f"Extracting relevant data for case {arguments.case_index} and saving to Data_Base.h5")
+    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test)
     if test_successful:
         list_data = extract_relevant_data(path=f'{real_test}',args=arguments)
         
-        print(f"  Print Meta_data for case {arguments.case_index} and {name_test}")
-        for key, value in vars(arguments).items():
-            print(f"  - {key}: {value}")    
+        print(f"  Print Meta_data for case {arguments['case_index']} and {name_test}")
+        for key in arguments.keys():
+            print(f"  - {key}: {arguments[key]}")    
        
 
-        with h5py.File(f'{path2save}/Data_Base_{arguments.id_batch}.h5', 'a') as f:
+        with h5py.File(f'{path2save}/Data_Base_{arguments["id_batch"]}.h5', 'a') as f:
             print('  - Saving data to Data_Base.h5')
-            print(f"{path2save}/Data_Base_{arguments.id_batch}.h5 ")
+            print(f"{path2save}/Data_Base_{arguments['id_batch']}.h5")
             if save_grid:
                 if "Xi" not in f:
                     f.create_dataset("Xi", data=list_data.Xi)
@@ -435,13 +438,16 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
                 flag_welford = True
             grp = f.create_group(name_test)
             
-            for key, value in vars(arguments).items():
+            for key in arguments.keys():
+                value = arguments[key]
                 if isinstance(value, str):
                     grp.create_dataset(
                         key,
                         data=value,
                         dtype=h5py.string_dtype(encoding="utf-8"),
                     )
+                elif key == 'mat_prop':
+                    pass
                 else:
                     grp.create_dataset(key, data=value)
 
@@ -469,13 +475,13 @@ def save_test_data(name_suite:str = 'Sensitivity' ,arguments:argparse.Namespace 
                 T_mean, T_var = update_Welfrod_ALG(list_data.Slab_surface,T_mean,T_var,n_lc_tst)
                 f["mean_lc_tst"][()] = T_mean
                 f["var_lc_tst"][()] = T_var
-                print(f"  - Updated mean and variance for the Welford algorithm for case {arguments.case_index} and {n_lc_tst} tests")
+                print(f"  - Updated mean and variance for the Welford algorithm for case {arguments['case_index']} and {n_lc_tst} tests")
             del list_data 
             gc.collect()
     else: 
         test_successful = False
         
-    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
+    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments['case_index'], id_batch=arguments['id_batch'], success=test_successful, path_h5=f"{path2save}/Data_Base_{arguments['id_batch']}.h5")
     
     print('===================================================================================================================')
 # ---
@@ -497,15 +503,13 @@ def create_arrays(Temp:np.ndarray)->tuple[np.ndarray,np.ndarray]:
 
 
 @timing_function
-def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
+def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:dict = None, pathtotest:tuple[str,str] = None)->None:
 
-    print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
+    print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir / f"{name_suite}_h5_files_{arguments.id_db}"
-    
-    if not os.path.isdir(path2save):
-        os.mkdir(path2save)
+    path2save = main_dir /'h5_outputs' /f"{name_suite}_h5_files_{arguments['group']}"
+    path2save.mkdir(parents=True, exist_ok=True)
 
     print(f"Test data will be saved in {path2save}")
     
@@ -514,23 +518,23 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Name
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
 
-    print(f"Extracting relevant data for case {arguments.case_index} and saving to Data_Base.h5")
+    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test,steadystate=False)
     if test_successful:
         list_data = extract_relevant_data_td(path=f'{real_test}',args=arguments)
         
-        print(f"  Print Meta_data for case {arguments.case_index} and {name_test}")
+        print(f"  Print Meta_data for case {arguments['case_index']} and {name_test}")
         for key, value in vars(arguments).items():
             print(f"  - {key}: {value}")    
        
-        print(f"Case {arguments.case_index}: {name_test} ")
+        print(f"Case {arguments['case_index']}: {name_test} ")
     
 
 
-        with h5py.File(f'{path2save}/Data_Base_{arguments.id_batch}.h5', 'a') as f:
+        with h5py.File(f"{path2save}/Data_Base_{arguments['id_batch']}.h5", 'a') as f:
             print('  - Saving data to Data_Base.h5')
-            print(f"{path2save}/Data_Base_{arguments.id_batch}.h5 ")
+            print(f"{path2save}/Data_Base_{arguments['id_batch']}.h5 ")
             if save_grid:
                 if "Xi" not in f:
                     f.create_dataset("Xi", data=list_data.Xi)
@@ -550,13 +554,16 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Name
                 flag_welford = True
             grp = f.create_group(name_test)
             
-            for key, value in vars(arguments).items():
+            for key in arguments.keys():
+                value = arguments[key]
                 if isinstance(value, str):
                     grp.create_dataset(
                         key,
                         data=value,
                         dtype=h5py.string_dtype(encoding="utf-8"),
                     )
+                elif key == 'mat_prop':
+                    pass
                 else:
                     grp.create_dataset(key, data=value)
 
@@ -571,18 +578,18 @@ def save_test_data_td(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Name
     else: 
         test_successful = False
         
-    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.id_db, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.id_db}.h5')
+    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments['case_index'], id_batch=arguments['id_batch'], success=test_successful, path_h5=f"{path2save}/Data_Base_{arguments['id_batch']}.h5")
     
     print('===================================================================================================================')
 # ---
 
 @timing_function
-def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:argparse.Namespace = None, pathtotest:tuple[str,str] = None)->None:
+def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:dict = None, pathtotest:tuple[str,str] = None)->None:
 
-    print(f"Saving test data for case {arguments.case_index} to Data_Base.h5")
+    print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
     
     main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir /'h5_outputs' /f"{name_suite}_h5_files_{arguments.case}"
+    path2save = main_dir /'h5_outputs' /f"{name_suite}_h5_files_{arguments['group']}"
     path2save.mkdir(parents=True, exist_ok=True)
     
     print(f"Test data will be saved in {path2save}")
@@ -592,23 +599,23 @@ def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:argparse.
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
     info_stoned = git_info()
-    print(f"Extracting relevant data for case {arguments.case_index} and saving to Data_Base.h5")
+    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test,steadystate=False)
     if test_successful:
         list_data = extract_relevant_data_td(path=f'{real_test}',args=arguments)
         
-        print(f"  Print Meta_data for case {arguments.case_index} and {name_test}")
+        print(f"  Print Meta_data for case {arguments['case_index']} and {name_test}")
         for key, value in vars(arguments).items():
             print(f"  - {key}: {value}")    
        
-        print(f"Case {arguments.case_index}: {name_test} ")
+        print(f"Case {arguments['case_index']}: {name_test} ")
     
 
 
-        with h5py.File(f'{path2save}/Data_Base_{arguments.id_batch}.h5', 'a') as f:
+        with h5py.File(f"{path2save}/Data_Base_{arguments['id_batch']}.h5", 'a') as f:
             print('  - Saving data to Data_Base.h5')
-            print(f"{path2save}/Data_Base_{arguments.id_batch}.h5 ")
+            print(f"{path2save}/Data_Base_{arguments['id_batch']}.h5 ")
             if save_grid:
                 if "Xi" not in f:
                     f.create_dataset("Xi", data=list_data.Xi)
@@ -655,7 +662,7 @@ def save_test_data_td_alt(name_suite:str = 'Sensitivity_td' ,arguments:argparse.
     else: 
         test_successful = False
         
-    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments.case_index, id_batch=arguments.case, success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments.case}.h5')
+    write_case_log(log_path=f'{path2save}/Failed_tests.jsonl', case_index=arguments['case_index'], id_batch=arguments['group'], success=test_successful, path_h5=f'{path2save}/Data_Base_{arguments["id_batch"]}.h5')
     
     print('===================================================================================================================')
 # ---
