@@ -37,9 +37,7 @@ class Test:
         """
         self.path_2_test = path_2_test
         self.MeshData = MeshData(self.path_2_test, td)
-        self.Data_raw = Data_Raw(
-            self.path_2_test, num=len(self.MeshData.X[:, 0]), td=td
-        )
+        self.Data_raw = Data_Raw(self.path_2_test, num=len(self.MeshData.X[:, 0]), td=td)
 
     def _interpolate_data(self, Data_field):
         """Interpolate the data on a regular grid for visualisation
@@ -255,9 +253,7 @@ class Data_experiment:
 
             if proceed:
                 with h5py.File(f1, "r") as fl:
-                    self.Temp = np.array(
-                        fl["/Function/Temperature  [degC]/0"]
-                    ).flatten()
+                    self.Temp = np.array(fl["/Function/Temperature  [degC]/0"]).flatten()
 
                     self.Pres = np.array(fl["/Function/Pressure  [GPa]/0"]).flatten()
 
@@ -334,9 +330,7 @@ class MeshData:
         def extract_coordinates(mesh_tag: list) -> np.ndarray:
 
             if len(mesh_tag) == 2:
-                condition = (self.mesh_tag == mesh_tag[0]) | (
-                    self.mesh_tag == mesh_tag[1]
-                )
+                condition = (self.mesh_tag == mesh_tag[0]) | (self.mesh_tag == mesh_tag[1])
             else:
                 condition = self.mesh_tag == mesh_tag[0]
 

@@ -30,11 +30,11 @@ class ErrorParsing(Exception):
                 f"{self.message}"
             )
         elif self.error_code == 0:
-            string_error = (
-                f"Code error {self.error_code}: Wrong sh-group: \b{self.message}"
-            )
+            string_error = f"Code error {self.error_code}: Wrong sh-group: \b{self.message}"
         elif self.error_code == 1:
-            string_error = f"Code error {self.error_code}: Wrong steady state flag: \b{self.message}"
+            string_error = (
+                f"Code error {self.error_code}: Wrong steady state flag: \b{self.message}"
+            )
         elif self.error_code == 2:
             string_error = (
                 f"Code error {self.error_code}: Wrong suite name, "
@@ -46,9 +46,7 @@ class ErrorParsing(Exception):
                 f"{self.message}"
             )
         elif self.error_code == 4:
-            string_error = (
-                f"Code error {self.error_code}. WRONG CSV file:\n" f"{self.message}"
-            )
+            string_error = f"Code error {self.error_code}. WRONG CSV file:\n" f"{self.message}"
         else:
             string_error = "Ops, unknown error... "
 
@@ -162,9 +160,7 @@ def create_data_structure(aux_path: str, args):
 
     slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
 
-    data_table = pd.concat(
-        [data_table_0, data_table_1, data_table_2], ignore_index=True
-    )
+    data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
 
     return data_table, slab_2D, surface_data_0
 
@@ -250,9 +246,7 @@ def plot_real_case_study_steady_state(args):
     # Box plot for the seismogenetic zone
     box_plot_thermal_model(path2save=path2save, pdb=data_table, figure_number="d")
     # Box plot for the maximum depth of the isotherm within the slab
-    box_plot_thermal_model_max_depth(
-        path2save=path2save, pdb=data_table, figure_number="e"
-    )
+    box_plot_thermal_model_max_depth(path2save=path2save, pdb=data_table, figure_number="e")
 
 
 # ---

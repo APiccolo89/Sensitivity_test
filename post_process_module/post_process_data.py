@@ -111,9 +111,7 @@ def extract_slab_surface(T: Test, steady_state=True, ts=0) -> np.ndarray:
     if steady_state:
         T_slab_surf = T._interpolate_data_slab("SteadyState.Temp")
     else:
-        T_slab_surf = T._interpolate_data_slab(
-            "TimeDependent.Temp", ts=ts, steady_state=False
-        )
+        T_slab_surf = T._interpolate_data_slab("TimeDependent.Temp", ts=ts, steady_state=False)
     return T_slab_surf
 
 
@@ -142,9 +140,7 @@ def compute_tau_rheological_law(
 
 
 # ---
-def extract_shearzone_data(
-    temp_slab: np.ndarray, pres_slab: np.ndarray, args: dict
-) -> np.ndarray:
+def extract_shearzone_data(temp_slab: np.ndarray, pres_slab: np.ndarray, args: dict) -> np.ndarray:
     """Function that extract the stress at slab interface.
 
     Args:
@@ -306,22 +302,12 @@ def extract_relevant_data_td(path: str, args: dict) -> namedtuple:
     for i in range(len(T.Data_raw.TimeDependent.time_list)):
 
         Slab_surface = extract_slab_surface(T=T, steady_state=False, ts=i)
-        x_150[i], y_150[i] = extract_isotherm(
-            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 150.0
-        )
-        x_350[i], y_350[i] = extract_isotherm(
-            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 350.0
-        )
-        x_450[i], y_450[i] = extract_isotherm(
-            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 450.0
-        )
-        x_600[i], y_600[i] = extract_isotherm(
-            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 600.0
-        )
+        x_150[i], y_150[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 150.0)
+        x_350[i], y_350[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 350.0)
+        x_450[i], y_450[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 450.0)
+        x_600[i], y_600[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 600.0)
 
-        X_S, X_O, a, b, c, d = extract_slab_oceanic_surface_Temperature(
-            T, steady_state=False
-        )
+        X_S, X_O, a, b, c, d = extract_slab_oceanic_surface_Temperature(T, steady_state=False)
         T_S.append(a)
         T_O.append(b)
         P_S.append(c)
@@ -539,11 +525,7 @@ def save_test_data(
 
     main_dir = Path(__file__).resolve().parents[1]
     SSTD = _GVARIABLES_.dict_td[str(arguments["steady_state"])]
-    path2save = (
-        main_dir
-        / "Output_h5_files"
-        / f"{name_suite}_h5_files_{arguments['group']}_{SSTD}"
-    )
+    path2save = main_dir / "Output_h5_files" / f"{name_suite}_h5_files_{arguments['group']}_{SSTD}"
 
     path2save.mkdir(parents=True, exist_ok=True)
 
@@ -554,9 +536,7 @@ def save_test_data(
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
 
-    print(
-        f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5"
-    )
+    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test)
     if test_successful:
@@ -621,9 +601,7 @@ def save_test_data(
                 T_mean = f["mean_lc_tst"][()]
                 T_var = f["var_lc_tst"][()]
                 n_lc_tst = f["n_lc_tst"][()]
-                T_mean, T_var = update_Welfrod_ALG(
-                    list_data.Slab_surface, T_mean, T_var, n_lc_tst
-                )
+                T_mean, T_var = update_Welfrod_ALG(list_data.Slab_surface, T_mean, T_var, n_lc_tst)
                 f["mean_lc_tst"][()] = T_mean
                 f["var_lc_tst"][()] = T_var
                 print(
@@ -686,9 +664,7 @@ def save_test_data_td(
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
 
-    print(
-        f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5"
-    )
+    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test, steadystate=False)
     if test_successful:
@@ -781,9 +757,7 @@ def save_test_data_td_alt(
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
     info_stoned = git_info()
-    print(
-        f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5"
-    )
+    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test, steadystate=False)
     if test_successful:

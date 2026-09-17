@@ -66,9 +66,7 @@ def print_save_IQ_information(pdb: pd.DataFrame, pt2save: str, prop: str):
         if i == "name":
             continue
         else:
-            print(
-                f"   {i}: k3 = {stat_k3b[i]:.2f}, k5 = {stat_k5c[i]:.2f}, nl = {stat_nla[i]:.2f}"
-            )
+            print(f"   {i}: k3 = {stat_k3b[i]:.2f}, k5 = {stat_k5c[i]:.2f}, nl = {stat_nla[i]:.2f}")
             print(f"   {i}: (nl-k3) = {stat_dab[i]:.2f}, k5 = {stat_dac[i]:.2f}")
 
     rows = []
@@ -230,21 +228,9 @@ def create_common_data_set(
         .reset_index(drop=True)
     )
 
-    a_common = (
-        (a.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
-    )
-    b_common = (
-        (b.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
-    )
-    c_common = (
-        (c.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
-    )
+    a_common = (a.merge(common_keys, on=keys, how="inner")).sort_values(keys).reset_index(drop=True)
+    b_common = (b.merge(common_keys, on=keys, how="inner")).sort_values(keys).reset_index(drop=True)
+    c_common = (c.merge(common_keys, on=keys, how="inner")).sort_values(keys).reset_index(drop=True)
 
     return a_common, b_common, c_common
 
@@ -255,6 +241,7 @@ class data_base_PT_whitney:
         T, P = np.loadtxt("PT_whitney.csv", delimiter=",", skiprows=1, unpack=True)
         self.T = T
         self.P = P
+
 
 # ---
 # latex Font
@@ -342,9 +329,7 @@ def modify_axes(
 
     # --- y-axis ---
     if label_y[0] != "n":
-        ax.set_ylabel(
-            label_y[0], fontsize=_LABELFONTSIZE_, labelpad=10
-        )  # fixed: was label_x[0]
+        ax.set_ylabel(label_y[0], fontsize=_LABELFONTSIZE_, labelpad=10)  # fixed: was label_x[0]
         ax.yaxis.set_label_position("left")  # fixed: was 'top'
 
     if lim_y is not None:  # fixed: was lim_x
@@ -417,17 +402,13 @@ def plot_slab_variances(A, path2save: str, number_figure: int) -> None:
     levels1 = np.linspace(np.floor(lima[1]), np.ceil(limb[1]), 10)
     alpha = 1.0
 
-    a = ax0.pcolormesh(
-        Xi, Yi, NL.temp_mean_2d - k3.temp_mean_2d, cmap="cmc.roma", alpha=alpha
-    )
+    a = ax0.pcolormesh(Xi, Yi, NL.temp_mean_2d - k3.temp_mean_2d, cmap="cmc.roma", alpha=alpha)
 
     divider = make_axes_locatable(ax0)
     cax = divider.append_axes("bottom", size="5%", pad=0.8)
     cbar = plt.colorbar(a, cax=cax, orientation="horizontal", location="top")
 
-    b = ax1.pcolormesh(
-        Xi, Yi, NL.temp_mean_2d - k5.temp_mean_2d, cmap="cmc.roma", alpha=alpha
-    )
+    b = ax1.pcolormesh(Xi, Yi, NL.temp_mean_2d - k5.temp_mean_2d, cmap="cmc.roma", alpha=alpha)
     cbar.set_label(label=r"$\bar{T}_{NL}$ - $\bar{T}_{k=3}$ [$^\circ$C]", fontsize=14)
     cbar.ax.tick_params(labelsize=12)
     divider = make_axes_locatable(ax1)
@@ -700,47 +681,23 @@ def figure_slab_surface(
     ax0.axvline(450, linewidth=0.8, c="k", linestyle=":")
 
     ax0.scatter(petro_db.T, petro_db.P, c="b", s=5.0, marker="x")
-    ax3.scatter(
-        k3["thermal_parameter"] / 1000, knl["d_seismic_ell"], color="firebrick", s=0.5
-    )
-    ax3.scatter(
-        k3["thermal_parameter"] / 1000, k3["d_seismic_ell"], color="cadetblue", s=0.5
-    )
-    ax3.scatter(
-        k3["thermal_parameter"] / 1000, k5["d_seismic_ell"], color="olive", s=0.5
-    )
+    ax3.scatter(k3["thermal_parameter"] / 1000, knl["d_seismic_ell"], color="firebrick", s=0.5)
+    ax3.scatter(k3["thermal_parameter"] / 1000, k3["d_seismic_ell"], color="cadetblue", s=0.5)
+    ax3.scatter(k3["thermal_parameter"] / 1000, k5["d_seismic_ell"], color="olive", s=0.5)
 
-    err_k3 = (
-        np.abs((knl["d_seismic_ell"] - k3["d_seismic_ell"]) / knl["d_seismic_ell"])
-        * 100
-    )
-    err_k5 = (
-        np.abs((knl["d_seismic_ell"] - k5["d_seismic_ell"]) / knl["d_seismic_ell"])
-        * 100
-    )
+    err_k3 = np.abs((knl["d_seismic_ell"] - k3["d_seismic_ell"]) / knl["d_seismic_ell"]) * 100
+    err_k5 = np.abs((knl["d_seismic_ell"] - k5["d_seismic_ell"]) / knl["d_seismic_ell"]) * 100
 
     ax4.scatter(k5["thermal_parameter"] / 1000, err_k5, color="olive", s=0.5)
     ax4.scatter(k3["thermal_parameter"] / 1000, err_k3, color="cadetblue", s=0.5)
 
-    ax5.scatter(
-        k5["thermal_parameter"] / 1000, k5["d_seismic_150"], color="olive", s=0.5
-    )
-    ax5.scatter(
-        k3["thermal_parameter"] / 1000, k3["d_seismic_150"], color="cadetblue", s=0.5
-    )
-    ax5.scatter(
-        knl["thermal_parameter"] / 1000, knl["d_seismic_150"], color="firebrick", s=0.5
-    )
+    ax5.scatter(k5["thermal_parameter"] / 1000, k5["d_seismic_150"], color="olive", s=0.5)
+    ax5.scatter(k3["thermal_parameter"] / 1000, k3["d_seismic_150"], color="cadetblue", s=0.5)
+    ax5.scatter(knl["thermal_parameter"] / 1000, knl["d_seismic_150"], color="firebrick", s=0.5)
 
-    ax5.scatter(
-        knl["thermal_parameter"] / 1000, knl["d_seismic_450"], color="firebrick", s=0.5
-    )
-    ax5.scatter(
-        k3["thermal_parameter"] / 1000, k3["d_seismic_450"], color="cadetblue", s=0.5
-    )
-    ax5.scatter(
-        k5["thermal_parameter"] / 1000, k5["d_seismic_450"], color="olive", s=0.5
-    )
+    ax5.scatter(knl["thermal_parameter"] / 1000, knl["d_seismic_450"], color="firebrick", s=0.5)
+    ax5.scatter(k3["thermal_parameter"] / 1000, k3["d_seismic_450"], color="cadetblue", s=0.5)
+    ax5.scatter(k5["thermal_parameter"] / 1000, k5["d_seismic_450"], color="olive", s=0.5)
 
     # Homogeneise the layout of the figure.
 
@@ -885,9 +842,7 @@ def plot_distance_to_isotherms(
 
     name_plot = f"{name_figure}_{name}.png"
 
-    def modify_axes(
-        ax=None, label_x=None, lim_x=None, lim_y=None, label_y=None, isotherms=None
-    ):
+    def modify_axes(ax=None, label_x=None, lim_x=None, lim_y=None, label_y=None, isotherms=None):
         ax.spines["bottom"].set_visible(True)
         ax.spines["left"].set_visible(True)
 
@@ -976,19 +931,13 @@ def plot_distance_to_isotherms(
     )
 
     k3_common = (
-        (k3.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
+        (k3.merge(common_keys, on=keys, how="inner")).sort_values(keys).reset_index(drop=True)
     )
     k5_common = (
-        (k5.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
+        (k5.merge(common_keys, on=keys, how="inner")).sort_values(keys).reset_index(drop=True)
     )
     NL_common = (
-        (NL.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
+        (NL.merge(common_keys, on=keys, how="inner")).sort_values(keys).reset_index(drop=True)
     )
 
     d_300_k3, d_300_k5 = extract_data(k3_common, k5_common, NL_common, 300, scale=scale)
@@ -1048,9 +997,7 @@ def plot_distance_to_isotherms(
         s=10,
         label="k=3.0",
     )
-    ax4.scatter(
-        k5_common["ell_point_300"], d_300_k5, c="olive", marker="d", s=10, label="k=5.0"
-    )
+    ax4.scatter(k5_common["ell_point_300"], d_300_k5, c="olive", marker="d", s=10, label="k=5.0")
     ax5.scatter(
         k3_common["ell_point_500"],
         d_500_k3,
@@ -1059,9 +1006,7 @@ def plot_distance_to_isotherms(
         s=10,
         label="k=3.0",
     )
-    ax5.scatter(
-        k5_common["ell_point_500"], d_500_k5, c="olive", marker="d", s=10, label="k=5.0"
-    )
+    ax5.scatter(k5_common["ell_point_500"], d_500_k5, c="olive", marker="d", s=10, label="k=5.0")
     ax6.scatter(
         k3_common["ell_point_600"],
         d_600_k3,
@@ -1070,9 +1015,7 @@ def plot_distance_to_isotherms(
         s=10,
         label="k=3.0",
     )
-    ax6.scatter(
-        k5_common["ell_point_600"], d_600_k5, c="olive", marker="d", s=10, label="k=5.0"
-    )
+    ax6.scatter(k5_common["ell_point_600"], d_600_k5, c="olive", marker="d", s=10, label="k=5.0")
 
     ax4 = modify_axes(
         ax4,
@@ -1129,9 +1072,7 @@ def plot_distance_to_isotherms(
 
 
 # ---
-def plot_slab_versus_thermalpar(
-    path2save: str, pdb: pd.DataFrame, figure_number: int = 0
-):
+def plot_slab_versus_thermalpar(path2save: str, pdb: pd.DataFrame, figure_number: int = 0):
 
     name_plot = f"Figure_{figure_number}.png"
 
@@ -1144,9 +1085,7 @@ def plot_slab_versus_thermalpar(
         normalised=False,
     ):
         db = db[(db["thermal_parameter"] >= al0) & (db["thermal_parameter"] < bl1)]
-        db_nl = db_nl[
-            (db_nl["thermal_parameter"] >= al0) & (db_nl["thermal_parameter"] < bl1)
-        ]
+        db_nl = db_nl[(db_nl["thermal_parameter"] >= al0) & (db_nl["thermal_parameter"] < bl1)]
 
         buf0 = np.zeros([len(db_nl[f"max_dpth{isotherms}"])], dtype=np.float32)
         for i in range(len(db_nl[f"max_dpth{isotherms}"])):
@@ -1196,8 +1135,8 @@ def plot_slab_versus_thermalpar(
                 b, c, tpl0, tpl1, isotherms, normalised=normalised
             )
             if not normalised:
-                c_array[i, 0], c_array[i, 1], c_array[i, 2], c_array[i, 3] = (
-                    compute_values(c, c, tpl0, tpl1, isotherms, normalised=normalised)
+                c_array[i, 0], c_array[i, 1], c_array[i, 2], c_array[i, 3] = compute_values(
+                    c, c, tpl0, tpl1, isotherms, normalised=normalised
                 )
             newthpar[i] = (tpl0 + tpl1) / 2.0  # centro del bin
 
@@ -1212,9 +1151,7 @@ def plot_slab_versus_thermalpar(
         labels=("k=3.0", "k=5.0", "NL"),
         normalised: bool = False,
     ):
-        a_array, b_array, c_array, x = extract_arrays(
-            a, b, c, isotherms, normalised=normalised
-        )
+        a_array, b_array, c_array, x = extract_arrays(a, b, c, isotherms, normalised=normalised)
         if not normalised:
             dat = (a_array, b_array, c_array)
             lim_a = ranges(
@@ -1240,9 +1177,7 @@ def plot_slab_versus_thermalpar(
         model = ("k=3.1", "k=5.0", "nl")
 
         for idx, arr in enumerate(dat):
-            ax.plot(
-                x / 1000, arr[:, 0], color=colors[idx], label=labels[idx]
-            )  # mediana
+            ax.plot(x / 1000, arr[:, 0], color=colors[idx], label=labels[idx])  # mediana
             ax.fill_between(
                 x / 1000,
                 arr[:, 2],  # mediana - std
@@ -1253,9 +1188,7 @@ def plot_slab_versus_thermalpar(
 
             d_a = arr[-1, 0] - arr[0, 0]
             d_x = x[-1] - x[0]
-            print(
-                f"d_depth{isotherms} {model[idx]} = {(d_a/d_x)*1000:.2f} and d_a = {d_a:.2f}"
-            )
+            print(f"d_depth{isotherms} {model[idx]} = {(d_a/d_x)*1000:.2f} and d_a = {d_a:.2f}")
 
         return ax, lim_x, lim_y
 
@@ -1279,15 +1212,9 @@ def plot_slab_versus_thermalpar(
     ax2, lim_x2, lim_y2 = plot_values(ax=ax2, a=k3, b=k5, c=knl, isotherms=600)
     ax1, lim_x1, lim_y1 = plot_values(ax=ax1, a=k3, b=k5, c=knl, isotherms=450)
     ax0, lim_x0, lim_y0 = plot_values(ax=ax0, a=k3, b=k5, c=knl, isotherms=150)
-    ax5, lim_x5, lim_y5 = plot_values(
-        ax=ax5, a=k3, b=k5, c=knl, isotherms=600, normalised=True
-    )
-    ax4, lim_x4, lim_y4 = plot_values(
-        ax=ax4, a=k3, b=k5, c=knl, isotherms=450, normalised=True
-    )
-    ax3, lim_x3, lim_y3 = plot_values(
-        ax=ax3, a=k3, b=k5, c=knl, isotherms=150, normalised=True
-    )
+    ax5, lim_x5, lim_y5 = plot_values(ax=ax5, a=k3, b=k5, c=knl, isotherms=600, normalised=True)
+    ax4, lim_x4, lim_y4 = plot_values(ax=ax4, a=k3, b=k5, c=knl, isotherms=450, normalised=True)
+    ax3, lim_x3, lim_y3 = plot_values(ax=ax3, a=k3, b=k5, c=knl, isotherms=150, normalised=True)
 
     # Modify the axis
     lim_x = [check_precision(lim_x0[0], True), check_precision(lim_x0[1], False)]
@@ -1432,9 +1359,7 @@ def _extract_limit_array(ar: np.ndarray) -> list:
 
 
 # ---
-def box_plot_thermal_model(
-    path2save: str, pdb: pd.DataFrame, figure_number: int = 0
-) -> None:
+def box_plot_thermal_model(path2save: str, pdb: pd.DataFrame, figure_number: int = 0) -> None:
     name_plot = f"Figure_{figure_number}.png"
     # Create common dataset
     k3, k5, knl = create_common_data_set(pdb=pdb)
@@ -1817,9 +1742,7 @@ def plot_heat_flux_slab_real(
     return ax
 
 
-def plot_slab_slab_real(
-    ax, pdb: pd.DataFrame, c="forestgreen"
-) -> tuple[mpl_axes, list, list]:
+def plot_slab_slab_real(ax, pdb: pd.DataFrame, c="forestgreen") -> tuple[mpl_axes, list, list]:
     T_S = create_array(pdb["T_S"])
     P_S = create_array(pdb["P_S"])
     temp_min = np.min(T_S, 0)

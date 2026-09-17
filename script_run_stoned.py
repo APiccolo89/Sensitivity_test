@@ -159,7 +159,9 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
     inp.g_input.transition = 10  # transition delta depth -> the distance at which the transition from uncoupled and coupled flow happens
     inp.g_input.slab_type = "CustomRibe"  # type of slab geometry
     inp.g_input.resolution_normal = 10.0  # Resolution normal
-    inp.g_input.resolution_refine = 1.5  # resolution around the slab top surface and the oceanic crust within the slab.
+    inp.g_input.resolution_refine = (
+        1.5  # resolution around the slab top surface and the oceanic crust within the slab.
+    )
 
     if args.get("plate_real") != None:
         change_geometry(plate=args["plate_real"], args=args, inp=inp)
@@ -172,9 +174,7 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
         )
 
     if args["shear_heating"]:
-        Ph.shear_heating_disl_law = args.get(
-            "shear_heating_law", _GVARIABLES_._SHEAR_HEATING_LAW
-        )
+        Ph.shear_heating_disl_law = args.get("shear_heating_law", _GVARIABLES_._SHEAR_HEATING_LAW)
         Ph.shear_heating_disl_phi = args.get("phi", _GVARIABLES_._PHI_)
 
     define_material_properties(Ph, args)
@@ -249,17 +249,13 @@ def configure_run_save():
 
     name_suite = args_cli.name_suite
 
-    path2table = (
-        Path(__file__).resolve().parents[0] / "generation_cases" / args_cli.name_csv
-    )
+    path2table = Path(__file__).resolve().parents[0] / "generation_cases" / args_cli.name_csv
 
     arguments = parse_the_argument(args_cli, pathtotable=path2table)
 
     pathtest, _ = perform_test(args=arguments, name_suite=name_suite)
 
-    print(
-        f"Test completed for group {arguments['case_index']}. Results saved in {pathtest}"
-    )
+    print(f"Test completed for group {arguments['case_index']}. Results saved in {pathtest}")
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -267,13 +263,9 @@ def configure_run_save():
     if rank == 0:
         print(f"Rank {rank} is saving the test data for group {arguments['group']}")
         if arguments["steady_state"] == 0:
-            save_test_data_td_alt(
-                name_suite=name_suite, pathtotest=pathtest, arguments=arguments
-            )
+            save_test_data_td_alt(name_suite=name_suite, pathtotest=pathtest, arguments=arguments)
         else:
-            save_test_data(
-                name_suite=name_suite, pathtotest=pathtest, arguments=arguments
-            )
+            save_test_data(name_suite=name_suite, pathtotest=pathtest, arguments=arguments)
         # remove the tests folder
 
     print(f"Removing path test {pathtest}")

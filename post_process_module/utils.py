@@ -284,9 +284,7 @@ def parse_the_argument(args: argparse.Namespace, pathtotable: str) -> dict:
         required = ["case_index", "group", "id_batch"]
         missing = [name for name in required if getattr(args, name) is None]
         if missing:
-            raise ValueError(
-                f"missing required arguments: {', '.join('--' + m for m in missing)}"
-            )
+            raise ValueError(f"missing required arguments: {', '.join('--' + m for m in missing)}")
 
         case_index = args.case_index
         group_sim = dict_case[args.group]

@@ -122,9 +122,7 @@ def extract_boundary_mesh(test: Test) -> boundary_mesh:
         boundary=[dict_tag_lines["Right_wed"], dict_tag_lines["Right_lit"]],
         sorting_direction="y",
     )
-    left_domain = find_x_y_reorder(
-        boundary=dict_tag_lines["Left_inlet"], sorting_direction="y"
-    )
+    left_domain = find_x_y_reorder(boundary=dict_tag_lines["Left_inlet"], sorting_direction="y")
     slab_top = find_x_y_reorder(
         boundary=[
             dict_tag_lines["Subduction_top_lit"],

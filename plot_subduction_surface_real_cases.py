@@ -38,9 +38,7 @@ def create_data_structure(aux_path: str, args):
 
     slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
 
-    data_table = pd.concat(
-        [data_table_0, data_table_1, data_table_2], ignore_index=True
-    )
+    data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
 
     return data_table, slab_2D, surface_data_0
 
