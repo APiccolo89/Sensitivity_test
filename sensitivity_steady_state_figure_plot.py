@@ -213,7 +213,7 @@ def plot_real_case_study_steady_state(args):
     # Create the main data structure to produce the figure of the paper. 
     path2save = aux_path / f'Result_shear_heating_{args.sh}_{args.name_suite}'
 
-    data_table, slab_2D, surface_data_0 = create_data_structure(aux_path=aux_path_data_base,args=args)
+    data_table, _, _ = create_data_structure(aux_path=aux_path_data_base,args=args)
     print_save_IQ_information(data_table,path2save,'d_seismic_ell')
     print_save_IQ_information(data_table,path2save,'max_dpth150')
     print_save_IQ_information(data_table,path2save,'max_dpth450')
@@ -225,15 +225,7 @@ def plot_real_case_study_steady_state(args):
     box_plot_thermal_model(path2save=path2save,pdb=data_table,figure_number=4)
     # Box plot for the maximum depth of the isotherm within the slab
     box_plot_thermal_model_max_depth(path2save=path2save,pdb=data_table,figure_number=5)
-    # Plot the 1D (P-T) of the slab surface
-    figure_slab_surface(path2save=path2save,
-                        pdb=data_table,
-                        crd=surface_data_0,
-                        petro_db=pres_temp_hp_lt_db,
-                        figure_number=6)
-    # Plot the heat flux 
-    plot_heat_flux(path2save,surface_data_0,data_table, 7)
-    # Print information regarding IQ, median, std max_dpth{isotherms}
+
 
 
 
