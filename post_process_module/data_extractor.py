@@ -1,3 +1,7 @@
+"""
+Module that extract the data from the output of StonedFEniCSx
+"""
+
 import os
 import warnings
 

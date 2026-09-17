@@ -1,20 +1,26 @@
-import pandas as pd
-import numpy as np
-import h5py
-import argparse
-import os
-import csv
-from collections import namedtuple
-import gc
-import time as timing
-from functools import wraps
-from post_process_module.data_extractor import Test
-import json
+"""Post processing functions
+The function in this module are conceived to receive the data of a single test. 
+The test is processed to retrieve the main data (i.e. key isotherms and so forth)
+In this module there are functions that create the dataset in H5DF for each tests
+and update the Welford Alg. 
+"""
 import fcntl
+import gc
+import json
+import os
+import time as timing
+from collections import namedtuple
 from datetime import datetime
+from functools import wraps
 from pathlib import Path, PurePath
+
+import h5py
+import numpy as np
+import pandas as pd
 from stonedfenicsx.stoned_fenicsx import git_info
+
 import post_process_module.global_var as _GVARIABLES_
+from post_process_module.data_extractor import Test
 
 # ---
 # ---

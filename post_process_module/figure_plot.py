@@ -1,25 +1,19 @@
+"""
+Module that collects all the function that assist the plot
+of the results. In this module, the data are also post-processed
+and transformed when it is required. 
+"""
 import csv
-import gc
-import os
-import time as timing
-import tracemalloc
-from collections import namedtuple
-from dataclasses import dataclass
-from typing import Optional
 
-import cmcrameri
-import h5py
 import matplotlib.axes as mpl_axes
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import cm, colors
-from matplotlib.collections import LineCollection
+from matplotlib import colors
 from matplotlib.lines import Line2D
 from matplotlib.ticker import FormatStrFormatter
-from numba import njit
 
-from .process_data_visualisation import CoordinateSurface, SlabPlot2D
+from .process_data_visualisation import CoordinateSurface
 
 # Conversion pt - cm
 _PT_CM_ = 0.035
