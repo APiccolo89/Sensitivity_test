@@ -9,7 +9,6 @@ import matplotlib.axes as mpl_axes
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import colors
 from matplotlib.lines import Line2D
 from matplotlib.ticker import FormatStrFormatter
 
@@ -878,6 +877,7 @@ def plot_slab_versus_thermalpar(
         lim_y = ranges(lim_a, lim_b, np.nan)
         lim_x = ranges(x / 1000, np.nan, np.nan)
         model = ("k=3.1", "k=5.0", "nl")
+        colors = ["cadetblue", "olive", "firebrick"]
 
         for idx, arr in enumerate(dat):
             ax.plot(
