@@ -77,12 +77,18 @@ def extract_information(dict_conf:dict)->tuple[np.ndarray,np.ndarray]:
 
 
 def main()->None:
-
+    # Parse the input argument
+    # Find the real folder of the current file
+    # Read yml file 
+    # Produce a dictionary of values (i.e., read yml file for the given plate, extract the target parameter and relative value)
+    # Extract the hbounds and lbounds and number of case and the list of the parameter name
+    # Produce the random esemble and scale it
+    # write .csv in the same folder with the appropriate name. 
     parser = argparse.ArgumentParser()
     parser.add_argument("--plate",  default='Mexico', type=str, help = "name of the plate/suite")
     
     args = parser.parse_args()
-    
+    #
     path_real = Path(__file__).resolve().parents[0]
     
     dict_value = read_yml_configuration_file(path=path_real,plate=args.plate)
@@ -93,15 +99,8 @@ def main()->None:
     sampler = scipy.stats.qmc.LatinHypercube(d=len(keys))
     sample = sampler.random(n=n)
     scaled_sample = scipy.stats.qmc.scale(sample, lbounds, hbounds)
-
-    # Non linear cases 
-
     random_cases = np.linspace(0, (n)-1, num= n, dtype=int)
-
-
-
     rows = []
-    case_id = 0
     temporary_dict = {p[0]: None for p in keys}
     temporary_dict['case_index'] = None
     

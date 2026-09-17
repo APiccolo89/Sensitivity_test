@@ -7,9 +7,7 @@ from importlib.resources import files
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 from mpi4py import MPI
-from numpy.typing import NDArray
 
 import post_process_module.global_var as _GVARIABLES_
 from post_process_module.post_process_data import (

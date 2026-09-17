@@ -39,7 +39,6 @@ def plot_slab_surfaces_japan_mexico_sensitivity():
         
     aux_path = Path(__file__).resolve().parent
     
-    aux_path_data_base = aux_path / 'Output_h5_files'
     
     # Create the main data structure to produce the figure of the paper. 
     path2save = aux_path / 'Slab_surface_plot'

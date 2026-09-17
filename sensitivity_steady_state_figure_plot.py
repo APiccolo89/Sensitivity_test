@@ -1,19 +1,7 @@
 import argparse
-import gc
-import os
-import time as timing
-import tracemalloc
-from collections import namedtuple
 from pathlib import Path
 
-import cmcrameri
-import h5py
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from matplotlib import cm, colors
-from matplotlib.collections import LineCollection
-from numba import njit
 
 from post_process_module.figure_plot import *
 from post_process_module.post_process_data import timing_function

@@ -1,7 +1,9 @@
+import os
+import warnings
+
 import h5py
 import numpy as np
-import warnings
-import os
+
 r_grid = 800
 def get_nested_attr(obj, path):
     for part in path.split("."):
@@ -9,8 +11,28 @@ def get_nested_attr(obj, path):
     return obj
 
 class Test:
+    """Class containing the data of the current test
+    
+    path_2_test: the current path of the test at hand
+    MeshData: class containing the mesh data
+    Data_Raw: class containing the field
+    
+    methods: 
+    _interpolate_data(): function that interpolate the raw data (unstructured triangular grid) to a regular quadrangular 
+    grid. It uses the additional information provided by the boundary to filter artifact
+    
+    _interpolate_data_slab(): function that interpolate the raw data of the simulation and select only the slab domain. 
+    
+    """
+    
+    
     def __init__(self,path_2_test:str,td:bool=False):
-        self.meta_data = None
+        """Initialisation of the class 
+    
+        Args:
+            path_2_test (str): the path to the test
+            td (bool, optional): _description_.Tell the class if the test is steady state or not. False: means steady state, True: means timedependent
+        """
         self.path_2_test = path_2_test 
         self.MeshData = MeshData(self.path_2_test,td)
         self.Data_raw = Data_Raw(self.path_2_test,num=len(self.MeshData.X[:,0]),td=td)
@@ -27,9 +49,7 @@ class Test:
         """
         import numpy as np
         from scipy.interpolate import griddata
-        
-        xi = self.MeshData.X[:,0]
-        yi = self.MeshData.X[:,1]
+
         Xi = self.MeshData.Xi
         Yi = self.MeshData.Yi
         
@@ -56,8 +76,7 @@ class Test:
         import numpy as np
         from scipy.interpolate import griddata
         
-        xi = self.MeshData.X[:,0]
-        yi = self.MeshData.X[:,1]
+
         Xi = self.MeshData.Xi
         Yi = self.MeshData.Yi
         
@@ -76,38 +95,16 @@ class Test:
 
         
         return Zi  
-
-    def _interpolate_data_ex(self,field):
-        """ Interpolate the data on a regular grid for visualisation
-        Args:
-            Data_field (str): field to be interpolated
-        Returns:
-            Zi (np.array): interpolated data
-            
-            Paraview is not able to visualise unstructured data properly, so we need to interpolate the data on a regular grid for visualisation purposes.
-            The nan mask is used to mask the data outside the domain, and giving you the illusion that I was able to generate a curved mesh in python. Ahah. 
-        """
-        import numpy as np
-        from scipy.interpolate import griddata
-        
-        xi = self.MeshData.X[:,0]
-        yi = self.MeshData.X[:,1]
-        Xi = self.MeshData.Xi
-        Yi = self.MeshData.Yi
-        
-        # Extrac the field data         
-        Zi = griddata(self.MeshData.X, field, (Xi, Yi), method='linear')
-        
-        Zi[self.MeshData.ar==False] = np.nan
-
-        
-        return Zi  
-class Data_Raw():
+# --- 
+class Data_Raw:
+    
     def __init__(self,f:str,num:int,td:bool=False):
-        """ Extract the data from the h5 file. 
+        """_summary_
 
         Args:
-            f (str): path to the test 
+            f (str): path 2 the file
+            num (int): number of nodes of the unstructured grid
+            td (bool, optional): _description_. Defaults to False. time dependent flag: True: Time Dependent; False: Steady state
         """
         
         
@@ -116,15 +113,39 @@ class Data_Raw():
         else:
             self.TimeDependent = Data_experiment(f,num,ts=True)
         
-class Data_experiment():
+class Data_experiment:
     '''
     Class to extract the data from either the steady state or time dependent h5 file.
     the init function requires the path to the test, the number of points and the number of timestep
     The main issue is for the timedependent case, as I need to extract the number of timesteps from the 
-    the h5 file, but I will create the function later, and will be in the metadata field of the test 
+    the h5 file, but I will create the function later, and will be in the metadata field of the test. 
+    times     = time array
+    time_list = time list
+    Temp      = Temperature array [C]
+    Pres      = Dynamic Pressure array [GPa]
+    LitPres   = Lithostatic Pressure array [GPa]
+    vx        = velocity along x [cm/yr]
+    vy        = velocity along y [cm/yr]
+    qx        = heat flux x component [W/m]
+    qy        = heat flux y component [W/m]  
+    kappa     = Thermal diffusivity [mm^2/s] 
+    alpha     = Thermal expansivity 
+    eta       = Viscosity [Pas] 
+    rho       = Density [kg/m3] 
+    k         = Conductivity [W/K/m] 
+    Cp        = Heat capacity [J/kg/K]
+    NoTD      = False
+    method: 
+    extract_data() method that read the output files of StonedFenicsx and fill up all the arrays previously preparred. 
+    
+
     '''
     def __init__(self,f:str,num:int,ts:bool):
         """ Extract the steady state data from the h5 file. 
+        The function infers if the test is time dependent, extract the number of timestep
+        and allocate arrays with dimension [num,TS], where num is the total number of nodes, 
+        and TS the total amout of timestep. Then it calls the routine to extract the data
+        that automatically generate all the array. 
 
         Args:
             f (str)  : path to the test
@@ -195,6 +216,7 @@ class Data_experiment():
         
         
     def extract_data(self,f:str,ts:bool):
+    
         import h5py
         import numpy as np
         
@@ -259,8 +281,7 @@ class Data_experiment():
 
                     self.kappa = np.array(fl['/Function/kappa  [m2/s]/0']).flatten()
 
-
-        
+# --- 
 class MeshData(): 
     def __init__(self,f:str,td:bool=False):
         """ Extract the mesh data from the h5 file. Produce the visualisation grid and the polygon 
@@ -344,9 +365,8 @@ class MeshData():
         X_Sl[:,1] = b
     
         
-        from shapely.geometry import Polygon as sPolygon
-        
         from shapely import contains_xy as scontains_xy
+        from shapely.geometry import Polygon as sPolygon
         
         polygon = sPolygon(np.vstack((np.array(X_L), np.array(X_BS), np.array(X_BT), np.array(X_Sl))))
         
@@ -376,7 +396,6 @@ class MeshData():
         
         right  = np.array([x[self.X[:,0]==x_max],y[ self.X[:,0]==x_max]])
         
-        x_bot  = np.min(bottom[0,:])
         
         l_min  = np.min(left[1,:])
         
@@ -424,9 +443,8 @@ class MeshData():
         
         top = top[ind_arg[::-1], :]        
         
-        from shapely.geometry import Polygon as sPolygon
-        
         from shapely import contains_xy as scontains_xy
+        from shapely.geometry import Polygon as sPolygon
         
         polygon = sPolygon(np.vstack((np.array(p_list), np.array(bottom), np.array(right), np.array(top), np.array(left))))
         
