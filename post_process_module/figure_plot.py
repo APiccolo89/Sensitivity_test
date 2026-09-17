@@ -270,18 +270,18 @@ plt.rcParams.update(
 # ---
 def modify_axes(
     ax: mpl_axes = None,
-    label_x: Optional[list] = ["n", "n"],
-    lim_x: Optional[list] = None,
-    lim_y: Optional[list] = None,
-    label_y: Optional[list] = ["n", "n"],
-    ticks_x: Optional[list] = None,
-    ticks_y: Optional[list] = None,
+    label_x: list = ["n", "n"],
+    lim_x: list|None = None,
+    lim_y: list|None = None,
+    label_y: list|None = ["n", "n"],
+    ticks_x: list|None = None,
+    ticks_y: list|None = None,
     label_x_c: str = "Numeric",
     label_y_c: str = "Numeric",
-    ticks_label_x: list = None,
-    ticks_label_y: list = None,
-    letter: Optional[str] = "[a]",
-    precision: str = "%.0f",
+    ticks_label_x: list|None= None,
+    ticks_label_y: list|None = None,
+    letter: str|None = "[a]",
+    precision: str = "%.1f",
 ) -> mpl_axes:
     """Function that modifies the axes.
     Args:
@@ -374,8 +374,8 @@ def modify_axes(
 
 # ---
 def plot_slab_variances(A, path2save: str, number_figure: int) -> None:
-    import numpy as np
     import matplotlib.pyplot as plt
+    import numpy as np
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
     name_plot = f"Figure_{number_figure}.png"
@@ -507,94 +507,6 @@ def plot_slab_variances(A, path2save: str, number_figure: int) -> None:
 
 
 # ---
-def plot_heat_flux(path2save: str, crd, pdb: pd.DataFrame, figure_number: int) -> None:
-
-    name_plot = f"Figure_{figure_number}.png"
-
-    fig = plt.figure(figsize=(8, 6))
-
-    ax0 = fig.add_axes([0.17, 0.16, 0.32, 0.8])
-    ax1 = fig.add_axes([0.63, 0.16, 0.32, 0.8])
-
-    #
-    k3, k5, knl = create_common_data_set(pdb=pdb)
-
-    k3_heat_flux = create_array(k3.loc[(k3["k"] == 3.1), f"Q"]) * 1000
-    k5_heat_flux = create_array(k5.loc[(k5["k"] == 5.0), f"Q"]) * 1000
-    knl_heat_flux = create_array(knl.loc[(knl["k"] == 0.0), f"Q"]) * 1000
-
-    k3_rer = np.abs((knl_heat_flux - k3_heat_flux) / knl_heat_flux) * 100
-    k5_rer = np.abs((knl_heat_flux - k5_heat_flux) / knl_heat_flux) * 100
-
-    for i in range(len(k3_heat_flux[:, 0])):
-        ax0.plot(crd.x_heat_flux, k5_heat_flux[i, :], color="olive", lw=0.01)
-        ax0.plot(crd.x_heat_flux, k3_heat_flux[i, :], color="cadetblue", lw=0.01)
-        ax0.plot(crd.x_heat_flux, knl_heat_flux[i, :], color="firebrick", lw=0.01)
-        ax1.plot(crd.x_heat_flux, k3_rer[i, :], color="cadetblue", lw=0.01)
-        ax1.plot(crd.x_heat_flux, k5_rer[i, :], color="olive", lw=0.01)
-
-    ax0 = modify_axes(
-        ax0,
-        label_x=[r"x, [km]", "y"],
-        lim_x=[0, 600],
-        lim_y=[0, 100],
-        label_y=[r"q, [$m W/m^2$]", "y"],
-        ticks_x=[0.0, 300, 600],
-        ticks_y=[0, 20, 40, 60, 80, 100],
-        letter="[a]",
-    )
-    ax1 = modify_axes(
-        ax1,
-        label_x=[r"x, [km]", "y"],
-        lim_x=[0, 600],
-        lim_y=[0, 30.0],
-        label_y=[r"$\xi(q)$ %", "y"],
-        ticks_x=[0.0, 300, 600],
-        ticks_y=[0.0, 10.0, 20.0, 30.0],
-        letter="[b]",
-    )
-
-    fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
-
-
-# ---
-def colored_line_set(x_list, y_list, vc, case_ids, cmap="viridis", lw=2, ax=None):
-    """Plot multiple lines with color mapped to scalar vc.
-
-    Parameters
-    ----------
-    x_list : list of arrays
-        List containing x coordinates for each line.
-    y_list : list of arrays
-        List containing y coordinates for each line.
-    vc : array-like
-        Scalar values used to color each line.
-    cmap : str
-        Matplotlib colormap name.
-    lw : float
-        Line width.
-    ax : matplotlib axis or None
-    """
-    if ax is None:
-        fig, ax = plt.subplots()
-
-    norm = colors.Normalize(vmin=np.min(vc), vmax=np.max(vc))
-    cmap = cm.get_cmap(cmap)
-
-    for x, c, case_id in zip(x_list, vc, case_ids):
-        print(f"Plotting case {case_id} with vc={c:.2f} cm/yr")
-        ax.plot(x, y_list, color=cmap(norm(c)), lw=0.5)
-        ax.axhline(y=-80.0, color="black", lw=0.5, ls="--")
-        ax.axhline(y=-120.0, color="black", lw=0.5, ls="--")
-
-    sm = cm.ScalarMappable(norm=norm, cmap=cmap)
-    sm.set_array([])
-    plt.colorbar(sm, ax=ax, label="vc")
-
-    return ax
-
-
-# ---
 def figure_slab_surface(
     path2save: str,
     pdb: pd.DataFrame,
@@ -674,10 +586,6 @@ def figure_slab_surface(
 
     k3, k5, knl = create_common_data_set(pdb=pdb)
 
-    temp_min_gr = 0 + 5 * np.abs(crd.z_slab)
-    temp_max_gr = 0 + 20 * np.abs(crd.z_slab)
-    temp_mean_gr = 0 + 10 * np.abs(crd.z_slab)
-    p_fake = np.abs(crd.z_slab) * 9.81 * 3200
 
     # Extract the temperature of the non linear experiments
     k_nl_slab_temp = create_array(knl.loc[(knl["k"] == 0), f"T_S"])
@@ -869,262 +777,6 @@ def figure_slab_surface(
 
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
 
-
-# ---
-def plot_distance_to_isotherms(
-    path2save: str,
-    DB: pd.DataFrame,
-    scale=False,
-    name: str = "PT",
-    name_figure: str = "",
-):
-
-    name_plot = f"{name_figure}_{name}.png"
-
-    def modify_axes(
-        ax=None, label_x=None, lim_x=None, lim_y=None, label_y=None, isotherms=None
-    ):
-        ax.spines["bottom"].set_visible(True)
-        ax.spines["left"].set_visible(True)
-
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-
-        ax.spines["left"].set_color("black")
-        ax.spines["bottom"].set_color("black")
-
-        ax.tick_params(axis="both", colors="black", direction="in", length=5, width=2.0)
-        ax.spines["left"].set_linewidth(2.0)
-        ax.spines["bottom"].set_linewidth(2.0)
-        ax.grid(
-            visible=True,
-            which="major",
-            axis="both",
-            color="gray",
-            linestyle="--",
-            linewidth=0.5,
-            alpha=0.7,
-        )
-        if label_x is not None:
-            ax.set_xlabel(label_x, fontsize=14, labelpad=10)
-
-        ax.set_xticklabels(ax.get_xticklabels(), fontsize=12)
-
-        if label_y is not None and isotherms is not None:
-            ax.set_ylabel(label_y, fontsize=14)
-
-        ax.set_yticklabels(ax.get_yticklabels(), fontsize=12)
-
-        return ax
-
-    def plot_histogram(ax, k3, k5, bins):
-        import scipy.stats as stats
-
-        kde1 = stats.gaussian_kde(k3)
-        kde2 = stats.gaussian_kde(k5)
-
-        k3_fit = kde1(bins)
-        k5_fit = kde2(bins)
-
-        k3_fit = k3_fit
-        k5_fit = k5_fit
-
-        LN_3 = k3_fit
-        LN_5 = k5_fit
-
-        ax.hist(k5, bins, alpha=0.1, color="olive", density=True)
-        ax.hist(k3, bins, alpha=0.1, color="cadetblue", density=True)
-
-        ax.plot(bins, LN_3, color="cadetblue", linewidth=1.2)
-        ax.plot(bins, LN_5, color="olive", linewidth=1.2)
-
-        max_fit = []
-
-        return ax, max_fit
-
-    def extract_data(
-        a: pd.DataFrame, b: pd.DataFrame, c: pd.DataFrame, isotherms: int, scale=False
-    ):
-        # Select couple of experiments from k3/k5 and NL
-
-        x0 = a[f"ell_point_{isotherms}"]
-        x1 = b[f"ell_point_{isotherms}"]
-        x2 = c[f"ell_point_{isotherms}"]
-
-        d_k3 = (x0 - x2) / x2  # compute_distance(x2,x0)
-        d_k5 = (x1 - x2) / x2  # compute_distance(x2,x1)
-
-        return d_k3, d_k5
-
-    keys = ["Tp", "age", "vc"]
-
-    k3 = DB[(DB["option_thermal"] == 0) & (DB["k"] == 3.0)]
-    k5 = DB[(DB["option_thermal"] == 0) & (DB["k"] == 5.0)]
-    NL = DB[(DB["option_thermal"] > 0)]
-
-    common_keys = (
-        k3[keys]
-        .merge(k5[keys], on=keys, how="inner")
-        .merge(NL[keys], on=keys, how="inner")
-        .drop_duplicates()
-        .sort_values(keys)
-        .reset_index(drop=True)
-    )
-
-    k3_common = (
-        (k3.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
-    )
-    k5_common = (
-        (k5.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
-    )
-    NL_common = (
-        (NL.merge(common_keys, on=keys, how="inner"))
-        .sort_values(keys)
-        .reset_index(drop=True)
-    )
-
-    d_300_k3, d_300_k5 = extract_data(k3_common, k5_common, NL_common, 300, scale=scale)
-    d_500_k3, d_500_k5 = extract_data(k3_common, k5_common, NL_common, 500, scale=scale)
-    d_600_k3, d_600_k5 = extract_data(k3_common, k5_common, NL_common, 600, scale=scale)
-
-    fig = plt.figure(figsize=(10, 6))
-    bx = 0.1
-    by = 0.1
-    sx = 0.25
-    dx = 0.06
-    sy = 0.35
-    dy = 0.1
-    ax1 = fig.add_axes([bx, by, sx, sy])
-    ax2 = fig.add_axes([bx + dx + sx, by, sx, sy])
-    ax3 = fig.add_axes([bx + 2 * dx + 2 * sx, by, sx, sy])
-    ax4 = fig.add_axes([bx, by + sy + dy, sx, sy])
-    ax5 = fig.add_axes([bx + dx + sx, by + sy + dy, sx, sy])
-    ax6 = fig.add_axes([bx + 2 * dx + 2 * sx, by + sy + dy, sx, sy])
-
-    ax1, _ = plot_histogram(
-        ax1,
-        d_300_k3,
-        d_300_k5,
-        bins=np.linspace(
-            np.min([d_300_k3.min(), d_300_k5.min()]),
-            np.max([d_300_k3.max(), d_300_k5.max()]),
-            50,
-        ),
-    )
-    ax2, _ = plot_histogram(
-        ax2,
-        d_500_k3,
-        d_500_k5,
-        bins=np.linspace(
-            np.min([d_500_k3.min(), d_500_k5.min()]),
-            np.max([d_500_k3.max(), d_500_k5.max()]),
-            50,
-        ),
-    )
-    ax3, _ = plot_histogram(
-        ax3,
-        d_600_k3,
-        d_600_k5,
-        bins=np.linspace(
-            np.min([d_600_k3.min(), d_600_k5.min()]),
-            np.max([d_600_k3.max(), d_600_k5.max()]),
-            50,
-        ),
-    )
-
-    ax4.scatter(
-        k3_common["ell_point_300"],
-        d_300_k3,
-        c="cadetblue",
-        marker="d",
-        s=10,
-        label="k=3.0",
-    )
-    ax4.scatter(
-        k5_common["ell_point_300"], d_300_k5, c="olive", marker="d", s=10, label="k=5.0"
-    )
-    ax5.scatter(
-        k3_common["ell_point_500"],
-        d_500_k3,
-        c="cadetblue",
-        marker="d",
-        s=10,
-        label="k=3.0",
-    )
-    ax5.scatter(
-        k5_common["ell_point_500"], d_500_k5, c="olive", marker="d", s=10, label="k=5.0"
-    )
-    ax6.scatter(
-        k3_common["ell_point_600"],
-        d_600_k3,
-        c="cadetblue",
-        marker="d",
-        s=10,
-        label="k=3.0",
-    )
-    ax6.scatter(
-        k5_common["ell_point_600"], d_600_k5, c="olive", marker="d", s=10, label="k=5.0"
-    )
-
-    ax4 = modify_axes(
-        ax4,
-        label_x=r"$\gamma$ [km]",
-        label_y=r"$err_{abs}$ [n.d.]",
-        lim_x=[0.0, 1.0],
-        lim_y=[0.0, 1.0],
-        isotherms=300,
-    )
-    ax5 = modify_axes(
-        ax5,
-        label_x=r"$\gamma$ [km]",
-        label_y=None,
-        lim_x=[0.0, 1.0],
-        lim_y=[0.0, 1.0],
-        isotherms=500,
-    )
-    ax6 = modify_axes(
-        ax6,
-        label_x=r"$\gamma$ [km]",
-        label_y=None,
-        lim_x=[0.0, 1.0],
-        lim_y=[0.0, 1.0],
-        isotherms=600,
-    )
-
-    ax1 = modify_axes(
-        ax1,
-        label_x=r"$err_{abs}$ [n.d.]",
-        label_y=r"f []",
-        lim_x=[0.0, 1.0],
-        lim_y=None,
-        isotherms=300,
-    )
-    ax2 = modify_axes(
-        ax2,
-        label_x=r"$err_{abs}$ [n.d.]",
-        label_y=None,
-        lim_x=[0.0, 1.0],
-        lim_y=None,
-        isotherms=500,
-    )
-    ax3 = modify_axes(
-        ax3,
-        label_x=r"$err_{abs}$ [n.d.]",
-        label_y=None,
-        lim_x=[0.0, 1.0],
-        lim_y=None,
-        isotherms=600,
-    )
-
-    fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
-    # Extract data
-
-
-# ---
 def plot_slab_versus_thermalpar(
     path2save: str, pdb: pd.DataFrame, figure_number: int = 0
 ):
@@ -1150,7 +802,7 @@ def plot_slab_versus_thermalpar(
             bufb = db.iloc[i]
             if normalised:
                 buf0[i] = np.abs(
-                    (bufa[f"max_dpth{isotherms}"][0] - bufb[f"max_dpth{isotherms}"][0])
+                    bufa[f"max_dpth{isotherms}"][0] - bufb[f"max_dpth{isotherms}"][0]
                 )
             else:
                 buf0[i] = bufb[f"max_dpth{isotherms}"][0]
@@ -1231,7 +883,6 @@ def plot_slab_versus_thermalpar(
 
         lim_y = ranges(lim_a, lim_b, np.nan)
         lim_x = ranges(x / 1000, np.nan, np.nan)
-        colors = ("cadetblue", "olive", "firebrick")
         model = ("k=3.1", "k=5.0", "nl")
 
         for idx, arr in enumerate(dat):

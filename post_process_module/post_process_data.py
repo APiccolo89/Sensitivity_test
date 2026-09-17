@@ -104,22 +104,16 @@ def test_success(name_test: str, steadystate=True):
         file = f"{name_test}/time_dependent.h5"
 
     return os.path.isfile(file) != False
-
-
 # ---
 def extract_slab_surface(T: Test, steady_state=True, ts=0) -> np.ndarray:
     if steady_state:
-        T_slab_surf = T._interpolate_data_slab("SteadyState.Temp")
+        T_slab_surf = T.interpolate_data_slab("SteadyState.Temp")
     else:
-        T_slab_surf = T._interpolate_data_slab(
+        T_slab_surf = T.interpolate_data_slab(
             "TimeDependent.Temp", ts=ts, steady_state=False
         )
     return T_slab_surf
-
-
 # ---
-
-
 def compute_tau_rheological_law(
     eps: float, temp_slab: np.ndarray, pres_slab: np.ndarray, tag: str
 ) -> np.ndarray:

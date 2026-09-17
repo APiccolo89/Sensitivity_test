@@ -25,7 +25,7 @@ def change_geometry(plate: str, args: SimpleNamespace, inp) -> None:
         import yaml
 
         with open(
-            f"{os.path.dirname(os.path.realpath(__file__))}/real_plate_configuration/geometric_input_real_plate.yml",
+            f"{os.path.dirname(os.path.dirname(os.path.realpath(__file__)))}/real_plate_configuration/geometric_input_real_plate.yml",
             "r",
         ) as f:
             dict_geom = yaml.safe_load(f)

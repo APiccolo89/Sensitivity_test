@@ -210,11 +210,11 @@ if not save_dir.exists():
 test_name_a = current_dir / "Sensitivity_case0_100"
 test_a = Test(test_name_a)
 
-temp_steady_state = test_a._interpolate_data_slab(Data_field="SteadyState.Temp")
+temp_steady_state = test_a.interpolate_data_slab(Data_field="SteadyState.Temp")
 t_ss_L2 = np.linalg.norm(temp_steady_state[np.isfinite(temp_steady_state)], ord=2)
 for i in range(len(test_a.Data_raw.TimeDependent.time_list)):
     time = test_a.Data_raw.TimeDependent.time_list[i]
-    temp_td = test_a._interpolate_data_slab(
+    temp_td = test_a.interpolate_data_slab(
         Data_field="TimeDependent.Temp", steady_state=False, ts=i
     )
     t_td_L2 = np.linalg.norm(temp_td[np.isfinite(temp_td)], ord=2)

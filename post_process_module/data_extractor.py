@@ -40,7 +40,7 @@ class Test:
             self.path_2_test, num=len(self.MeshData.X[:, 0]), td=td
         )
 
-    def _interpolate_data(self, Data_field):
+    def interpolate_data(self, Data_field):
         """Interpolate the data on a regular grid for visualisation
         Args:
             Data_field (str): field to be interpolated
@@ -65,7 +65,7 @@ class Test:
 
         return Zi
 
-    def _interpolate_data_slab(self, Data_field, ts=0, steady_state=True):
+    def interpolate_data_slab(self, Data_field, ts=0, steady_state=True):
         """Interpolate the data on a regular grid for visualisation
         Args:
             Data_field (str): field to be interpolated

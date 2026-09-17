@@ -3,7 +3,7 @@
 <p align="center">
   <img src="Slab_surface_plot/eye_candy.png" alt="Temperature surface slabs and heat fluxes for each family of experiments" width="600">
   <br>
-  <em>[a]: P-T conditions of the surface of the slab. The black square represents the HP-LT conditions of the exhumed rocks coming from the \cite{whitney2020lawsonite} database. The green shaded area represents the conditions collected by the Central Honshu experimental ensemble, the red one those collected by the Mexico ensemble, while the grey ones are those related to the sensitivity cases; [b-c-d] The heat fluxes at the top of the model for each ensemble of experiments. The purple band represents the x-projection of the decoupling depth, while the orange band represents the x-projection of the depth of maximum shear stress computed along the slab surface.</em>
+  <em>[a]: P-T conditions of the surface of the slab. The black square represents the HP-LT conditions of the exhumed rocks coming from the Whitney (2020) database. The green shaded area represents the conditions collected by the Central Honshu experimental ensemble, the red one those collected by the Mexico ensemble, while the grey ones are those related to the sensitivity cases; [b-c-d] The heat fluxes at the top of the model for each ensemble of experiments. The purple band represents the x-projection of the decoupling depth, while the orange band represents the x-projection of the depth of maximum shear stress computed along the slab surface.</em>
 </p>
 
 
@@ -32,22 +32,23 @@ The name of the group, in practice, represents the combination of the thermal mo
 The routines presented are:
 ```
 Sensitivity_Test/
-    ├── figure_additional/
+    ├── additional_plot/
         ├── slab_surface.py
-        ├── plot_material_property.py
     ├── post_process_module/
         ├── data_extractor.py
         ├── figure_plot.py
         ├── global_var.py 
         ├── post_process_data.py
-        ├── post_process_data_visualization.py
-    ├── generation_cases_script/
-        ├── generate_cases.py
-    ├── real_configuration_plate/ 
+        ├── process_data_visualisation.py
+        ├── utils.py
+    ├── generation_cases/
+        ├── generate_cases_real_plate.py
+    ├── real_plate_configuration/ 
         ├── geometric_input_real_plate.yml
     ├── script_run_stoned.py
     ├── sensitivity_steady_state_figure_plot.py
     ├── plot_subduction_surface_real_cases.py
+    ├── time_dependent.py
 ```
 
 ---
@@ -71,8 +72,6 @@ In the following README.md, I try to spell out the workflow in such a way that t
 ## Quick start: 
 
 The user needs to install **StonedFEniCSx** (follow the guide here: [InstallationSTONED](https://apiccolo89.github.io/StonedFenicsx/installation.html)).
-### Installing the required packages from the environment
-
 ### Running bash scripts 
 After the installation, the user needs to copy the repository: 
 
@@ -81,7 +80,7 @@ After the installation, the user needs to copy the repository:
 ```
 Then, for running the suite of experiments: 
 ```bash 
-    python generate_case_steady_real_plate.py --plate Mexico
+    python generation_cases/generate_cases_real_plate.py --plate Mexico
 ```
 The argument `--plate` is the one defining the name of the suite: three names are available: `Mexico`, `Japan` and `Sensitivity_test_ss`. The script will produce the `.csv` files associated with the plate: 
 
@@ -95,7 +94,7 @@ To run the experiments, there are three bash scripts that handle all the runs; t
 :warning: **Warning:** This is the work flow that has been used to produce the data of the paper. This means that you need to readapt these files to the policy of your HPC or your server or your local machine.
 
 
-#Test Sensitivity_test with generic mesh
+**Test Sensitivity_test with generic mesh**
 ```bash
 bash submission_file/ss_sens_submission.sh --group k3nsh --name_suite steady_s_sensitivity --np 1 --steady_state 1 
 bash submission_file/ss_sens_submission.sh --group k5nsh --name_suite steady_s_sensitivity --np 1 --steady_state 1 
@@ -104,13 +103,13 @@ bash submission_file/ss_sens_submission.sh --group k3sh  --name_suite steady_s_s
 bash submission_file/ss_sens_submission.sh --group k5sh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
 bash submission_file/ss_sens_submission.sh --group nlsh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
 ```
-#Test Mexico 
+**Test Mexico**
 ```bash
 bash submission_file/mexico_submission.sh --group k3sh --name_suite Mexico --np 1 --steady_state 1
 bash submission_file/mexico_submission.sh --group k5sh --name_suite Mexico --np 1 --steady_state 1
 bash submission_file/mexico_submission.sh --group nlsh --name_suite Mexico --np 1 --steady_state 1
 ```
-#Test Japan
+**Test Japan**
 ```bash
 bash submission_file/japan_submission.sh --group k3sh --name_suite Japan --np 1 --steady_state 1
 bash submission_file/japan_submission.sh --group k5sh --name_suite Japan --np 1 --steady_state 1

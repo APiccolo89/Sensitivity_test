@@ -2,14 +2,13 @@ import sys
 from importlib.resources import files
 from pathlib import Path
 
-import matplotlib.axes as mpl_axes
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import FormatStrFormatter
 
 # caution: path[0] is reserved for script path (or '' in REPL)
 sys.path.insert(1, str(Path(__file__).resolve().parents[1] / "post_process_module"))
 
+from figure_plot import modify_axes
 from utils import change_geometry
 
 # Conversion pt - cm
@@ -18,118 +17,6 @@ _PT_CM_ = 0.035
 _TICKSFONTSIZE_ = 0.8 / _PT_CM_
 _LABELFONTSIZE_ = 0.9 / _PT_CM_
 _TEXTFONTSIZE_ = 0.65 / _PT_CM_
-
-
-# ---
-def modify_axes(
-    ax: mpl_axes = None,
-    label_x: list | None = None,
-    lim_x: list | None = None,
-    lim_y: list | None = None,
-    label_y: list | None = None,
-    ticks_x: list | None = None,
-    ticks_y: list | None = None,
-    precision: list | None = None,
-    letter: str = "[a]",
-) -> mpl_axes:
-    """Function that modifies the axes.
-    Args:
-        ax (mpl_axes, optional): current axis. Defaults to None.
-        label_x (list, optional): [label, show_ticklabels ('y'/'n')]. Defaults to ['n','n']. -> in case of the label name = string to use as label
-        lim_x (list, optional): limits of the x-axis. Defaults to None.
-        lim_y (list, optional): limits of the y-axis. Defaults to None.
-        label_y (list, optional): [label, show_ticklabels ('y'/'n')]. Defaults to ['n','n']. -> in case of the label name = string to use as label
-        ticks_x (list, optional): x tick positions. Defaults to None.
-        ticks_y (list, optional): y tick positions. Defaults to None.
-        isotherms (int, optional): isotherm option. Defaults to 0.
-    Returns:
-        mpl_axes: modified axis
-    """
-    # --- spine and grid styling ---
-
-    precision = "%.1f"
-
-    ax.tick_params(axis="both", which="major", pad=9)
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_color("black")
-    ax.spines["bottom"].set_color("black")
-    ax.tick_params(axis="both", colors="black", direction="in", length=5, width=2.0)
-    ax.spines["left"].set_linewidth(2.0)
-    ax.spines["bottom"].set_linewidth(2.0)
-    ax.grid(
-        visible=True,
-        which="major",
-        axis="both",
-        color="gray",
-        linestyle="--",
-        linewidth=0.3,
-        alpha=0.7,
-    )
-    ax.set_yticklabels(ax.get_yticklabels(), fontsize=_TICKSFONTSIZE_)
-    ax.set_xticklabels(ax.get_xticklabels(), fontsize=_TICKSFONTSIZE_)
-
-    # --- x-axis ---
-    if label_x[0] != "n":
-        ax.set_xlabel(label_x[0], fontsize=_LABELFONTSIZE_, labelpad=10)
-        ax.xaxis.set_label_position("bottom")
-
-    if lim_x is not None:
-        ax.set_xlim(lim_x[0], lim_x[1])
-
-    if ticks_x is not None:
-        ax.set_xticks(ticks_x)
-
-    if label_x[1] == "y":
-        current_x_ticks = ax.get_xticks()
-        precision = "%.0f"
-        for i in current_x_ticks:
-            if i - np.floor(i) != 0:
-                precision = "%.1f"
-                break
-
-        ax.xaxis.set_major_formatter(FormatStrFormatter(precision))
-    else:
-        ax.set_xticklabels([])
-
-    # --- y-axis ---
-    if label_y[0] != "n":
-        ax.set_ylabel(
-            label_y[0], fontsize=_LABELFONTSIZE_, labelpad=10
-        )  # fixed: was label_x[0]
-        ax.yaxis.set_label_position("left")  # fixed: was 'top'
-
-    if lim_y is not None:  # fixed: was lim_x
-        ax.set_ylim(lim_y[0], lim_y[1])
-
-    if ticks_y is not None:
-        ax.set_yticks(ticks_y)
-
-    if label_y[1] == "y":
-        current_y_ticks = ax.get_yticks()
-        precision = "%.0f"
-        for i in current_y_ticks:
-            if i - np.floor(i) != 0:
-                precision = "%.1f"
-                break
-        ax.yaxis.set_major_formatter(FormatStrFormatter(precision))
-    else:
-        ax.set_yticklabels([])
-
-    ax.text(
-        0.02,
-        0.97,
-        letter,
-        transform=ax.transAxes,
-        c="w",
-        fontweight="demibold",
-        fontsize=10,
-        va="top",
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="k", alpha=0.7),
-    )
-
-    return ax
 
 
 # ---
