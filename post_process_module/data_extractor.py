@@ -110,8 +110,6 @@ class Data_Raw():
             f (str): path to the test 
         """
         
-        import h5py
-        import numpy as np
         
         if not td:
             self.SteadyState = Data_experiment(f,num,ts=False)
