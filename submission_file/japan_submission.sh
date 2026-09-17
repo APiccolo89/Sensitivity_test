@@ -92,7 +92,7 @@ mkdir -p "\${log_worker}"
 
 for case_index in \$(seq \${worker_id} \${n_workers} \$((n_cases - 1))); do
     export XDG_CACHE_HOME=/mnt/scratch/wlnw570/fenics_cache/\${SLURM_JOB_ID}_\${SLURM_ARRAY_TASK_ID}_\${case_index}
-    echo ${XDG_CACHE_HOME}
+    echo \${XDG_CACHE_HOME}
     mkdir -p "\$XDG_CACHE_HOME"
 
     mpirun -n ${np} "\$PYTHON" -u script_run_stoned.py \
