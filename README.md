@@ -1,9 +1,9 @@
 # Sensitivity test
 
 <p align="center">
-  <img src="Result_shear_heating_sh/Figure_3.png" alt="Slab 2D plot" width="600">
+  <img src="Slab_surface_plot/eye_candy.png" alt="Temperature surface slabs and heat fluxes for each family of experiments" width="600">
   <br>
-  <em>Figure 0 — Average difference of slab temperature. [a]: Difference between non-linear test group and the group of experiment with k=3.1. [b]: Difference between non-linear test group and the group of experiment with k=5.0.</em>
+  <em>[a]: P-T condition of the surface of the slab. The black square represents the HP-LT of the exhumed rocks coming from the \cite{whitney2020lawsonite} database. The green shaded area is the condition collected by the Central Honshu experimental ensemble, the red is the condition collected by the Mexico ensemble, while the grey one are those related to the sensitivity cases.; [b-c-d] The heat fluxes at the top of the model of each ensemble of experiment. The purple band represent the x-projection of the decoupling depth, while the orange band represent the x-projection of the depth of maximum shear stress computed along the slab surface.</em>
 </p>
 
 
@@ -12,6 +12,8 @@
 This routine has been used to produce the sensitivity analysis of (name of the manuscript). Everything is set up to reproduce these experiments; as such, the scripts have several hardcoded values. However, the workflow that is described here can be translated to use the code for other purposes.
 
 The experiments can be divided into 6 groups, and per each group there is a number of single case experiment. So, there are n single experiment cases that differs only for three or two parameters, that are run with different common values as a function of their group. 
+
+In the main manuscript, 6 groups for the sensitivity test had be ran, while for the real cases **Mexico** and **Central Honshu** (called Japan) had been ran only the cases with shear heating.  
 
 
 |**group** | **shear heating** | **k** | 

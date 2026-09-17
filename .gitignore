@@ -43,7 +43,7 @@ err0/
 out0/
 mesh_meta_data.yml
 mesh.msh
-*.png
+
 Result_shear_heating_yes/*
 Result_shear_heating_no/*
 Result_shear_heating_yes/Figure_0.png
@@ -64,7 +64,6 @@ Output_h5_files/*
 Output_h5_files/*
 *Failed_tests.jsonl
 *.log
-7815843_99/fenics/libffcx_expressions_8526ba03689529427328d7f274fee991da186dcc.o
 *.tar.tar
 output_bash/file_tar_test.tar
 *.csv
