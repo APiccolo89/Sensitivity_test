@@ -14,14 +14,13 @@ from . import global_var as _GVARIABLES_
 def change_geometry(plate: str, args: SimpleNamespace, inp) -> None:
     # Read the yml configuration file
     # Adjust the g_input
+    """Change the geometry of the input data according to the plate name.
 
-    """Change the geometry of the input data according to the plate name. The plate name is a string that corresponds to the key of the dictionary. The dictionary is defined in the file geometric_input_real_plate.yml. The function reads the dictionary and changes the geometry of the input data according to the plate name.
-
-    Args:
-        plate (str): Name of the plate to use for the real geometry (only the basic one stored in StonedFEniCSx is available). If None, the default geometry is used.
-        inp (SimpleNamespace): Input data of StonedFEniCSx
+    The plate name is a string that corresponds to the key of the dictionary. The dictionary is defined in the file geometric_input_real_plate.yml. The function reads the dictionary and changes the geometry of the input data according to the plate name.
+        Args:
+            plate (str): Name of the plate to use for the real geometry (only the basic one stored in StonedFEniCSx is available). If None, the default geometry is used.
+            inp (SimpleNamespace): Input data of StonedFEniCSx
     """
-
     if plate != "None":
         import yaml
 
@@ -51,8 +50,8 @@ def define_material_properties(Ph, args):
     # Select the type of simulation
     # Adjust the material property as a consequence
     # Print the output because I am paranoid
-    """Function that construct the material properties in a programmatical way, using the avaiable option
-
+    """Function that construct the material properties in a programmatical way,
+    using the avaiable option.
 
     Args:
         Ph (PhInput): The pre-processed phase database
@@ -61,7 +60,6 @@ def define_material_properties(Ph, args):
     Raises:
         ValueError: Wrong group or not-existent template
     """
-
     # Fixed rheology of the mantle. Usually the difference with rheologies and thermal field are minimal.
     Ph.wedge_mantle.name_diffusion = _GVARIABLES_._NAME_DIFFUSION_CREEP_
     Ph.wedge_mantle.name_dislocation = _GVARIABLES_._NAME_DISLOCATION_CREEP_
@@ -105,7 +103,7 @@ def define_material_properties(Ph, args):
         ]:
             continue
         phase = getattr(Ph, i.name)
-        print(f"Phase {i.name   } properties:")
+        print(f"Phase {i.name} properties:")
         print(f"       .rho0 = {phase.rho0}")
         print(f"       .name_capacity = {phase.name_capacity}")
         print(f"       .name_conductivity = {phase.name_conductivity}")
@@ -161,9 +159,7 @@ def choose_material_properties(k: float) -> dict:
     phase_properties["mantle"]["radiogenic"] = 0.0
 
     if k in (3.1, 5.0):
-
         for m in materials:
-
             phase_properties[m]["alpha"] = "Constant"
             phase_properties[m]["capacity"] = "Constant"
             phase_properties[m]["density"] = "Constant"
@@ -200,12 +196,12 @@ def choose_material_properties(k: float) -> dict:
 
 # ---
 def create_case_dictionary() -> dict:
-    """Small function that creates the dictionary of the cases Kind of overkill -> future yaml file
+    """Small function that creates the dictionary of the cases Kind of overkill
+    -> future yaml file.
 
     Returns:
         dict: dictionary of cases
     """
-
     # Main type
     main_case_dt = np.dtype(
         [
@@ -268,7 +264,6 @@ def parse_the_argument(args: argparse.Namespace, pathtotable: str) -> dict:
     Returns:
         dict: updated argument dictionary with the group parameters and material properties
     """
-
     # Extract group:
     dict_case = create_case_dictionary()
 
@@ -280,11 +275,12 @@ def parse_the_argument(args: argparse.Namespace, pathtotable: str) -> dict:
         name_suite = "debug"
         shear_heating = group_sim["shear_heating"]
     else:
-
         required = ["case_index", "group", "id_batch"]
         missing = [name for name in required if getattr(args, name) is None]
         if missing:
-            raise ValueError(f"missing required arguments: {', '.join('--' + m for m in missing)}")
+            raise ValueError(
+                f"missing required arguments: {', '.join('--' + m for m in missing)}"
+            )
 
         case_index = args.case_index
         group_sim = dict_case[args.group]

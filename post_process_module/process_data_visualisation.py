@@ -82,7 +82,9 @@ def find_distance_isotherm(
         XS[0, min_distance + 1] - XS[0, min_distance],
         XS[1, min_distance + 1] - XS[1, min_distance],
     )
-    num = np.abs(dx * (y - XS[1, min_distance + 1]) - dy * (x - XS[0, min_distance + 1]))
+    num = np.abs(
+        dx * (y - XS[1, min_distance + 1]) - dy * (x - XS[0, min_distance + 1])
+    )
     dist = num / np.sqrt(dx * dx + dy * dy)
     seg_len2 = dx * dx + dy * dy
     t = ((x - XS[0, min_distance]) * dx + (y - XS[1, min_distance]) * dy) / seg_len2
@@ -91,7 +93,9 @@ def find_distance_isotherm(
     return dist, ell_point
 
 
-def interpolate_surfaces_slab(v: np.ndarray, x_or: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def interpolate_surfaces_slab(
+    v: np.ndarray, x_or: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """_summary_
 
     Args:
@@ -102,7 +106,9 @@ def interpolate_surfaces_slab(v: np.ndarray, x_or: np.ndarray) -> tuple[np.ndarr
         tuple[np.ndarray,np.ndarray]: new values, new coordinates
     """
 
-    def interpolate(x: np.ndarray, y: np.ndarray, lim: list) -> tuple[np.ndarray, np.ndarray]:
+    def interpolate(
+        x: np.ndarray, y: np.ndarray, lim: list
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Small function that effectively interpolate the data, after
         reordiering them as a function of y.
 
@@ -140,7 +146,6 @@ def merge_data_base(name_suite, list_of_partial_files, plate, partial, recreate=
 
     with h5py.File(output_file, "a") as f_out:
         for file in list_of_partial_files:
-
             if not os.path.exists(file):
                 print(f"Skipping missing file: {file}")
                 continue
@@ -161,7 +166,6 @@ def merge_data_base(name_suite, list_of_partial_files, plate, partial, recreate=
                     )
 
                 for key in f_partial:
-
                     #  overwrite if exists
                     if key in f_out:
                         del f_out[key]
@@ -177,7 +181,7 @@ def merge_data_base(name_suite, list_of_partial_files, plate, partial, recreate=
         f_out.create_dataset("global_count", data=n_g)
 
         print(
-            f"Global mean: {np.nanmean(T_mean_g)}, Global std: {np.sqrt(np.nanmin(T_var_g/(n_g-1)))} {np.sqrt(np.nanmax(T_var_g/(n_g-1)))}, Global count: {n_g}"
+            f"Global mean: {np.nanmean(T_mean_g)}, Global std: {np.sqrt(np.nanmin(T_var_g / (n_g - 1)))} {np.sqrt(np.nanmax(T_var_g / (n_g - 1)))}, Global count: {n_g}"
         )
 
     return "Data merged successfully"
@@ -206,7 +210,6 @@ def update_Welfrod_single_batch(
     Returns:
         tuple[float,float,int]: updated global mean, variance, and count
     """
-
     n_t = n_g + n_l
     delta = mean_l - mean_g
     mean = mean_g + delta * (n_l / n_t)
@@ -231,7 +234,9 @@ def compute_total_length(X_S: np.ndarray) -> float:
 
 
 @njit
-def interpolate_value_0D(ar: np.ndarray, x: np.ndarray, depth: float, ind: None | int) -> float:
+def interpolate_value_0D(
+    ar: np.ndarray, x: np.ndarray, depth: float, ind: None | int
+) -> float:
     """Interpolate 0D (aka was to lazy to look the interp function)
 
     Args:
@@ -269,7 +274,9 @@ def find_real_ell_z(
         dtemp_ = temp[ind_] - temp[ind_ - 1]
         dell_ = ell[ind_] - ell[ind_ - 1]
         dz_ = z[ind_] - z[ind_ - 1]
-        ell_p = interpolate_value(ind_, dtemp_, temp[ind_ - 1], dell_, ell[ind_ - 1], ell[ind_])
+        ell_p = interpolate_value(
+            ind_, dtemp_, temp[ind_ - 1], dell_, ell[ind_ - 1], ell[ind_]
+        )
         z_p = interpolate_value(ind_, dtemp_, temp[ind_ - 1], dz_, z[ind_ - 1], z[ind_])
 
     return ell_p, z_p
@@ -281,11 +288,10 @@ def create_data_frame(
 ) -> tuple[pd.DataFrame, namedtuple, namedtuple]:
     def extract_max_depth(f: h5py.File, case_key: str, isotherm: str) -> float:
         y = f[f"{case_key}/y_{isotherm}"][()]
-
         return y
 
-    """Read the h5file to produce a data frame storing the relevant information for the
-    sensitivity test
+    """Read the h5file to produce a data frame storing the relevant information
+    for the sensitivity test.
 
     Args:
         data_table (pd.DataFrame): initial data table
@@ -320,7 +326,6 @@ def create_data_frame(
                 continue
 
             else:
-
                 case_id = i
                 option_thermal = 1 if partial[0] == "nl" else 0
                 max_dpth150 = extract_max_depth(f, i, "150")
@@ -350,15 +355,27 @@ def create_data_frame(
                 z_ocean = np.array(f[f"{i}/X_O"][1, :])
 
                 # Interpolate value into a reduced array
-                temp_s, z_slab_n = interpolate_surfaces_slab(np.array(f[f"{i}/T_S"][:]), z_slab)
-                pres_s, _ = interpolate_surfaces_slab(np.array(f[f"{i}/P_S"][:]), z_slab)
-                temp_o, z_ocean_n = interpolate_surfaces_slab(np.array(f[f"{i}/T_O"][:]), z_ocean)
-                pres_o, _ = interpolate_surfaces_slab(np.array(f[f"{i}/P_O"][:]), z_ocean)
-                tau_surf, _ = interpolate_surfaces_slab(np.array(f[f"{i}/tau_shear"]), z_slab)
+                temp_s, z_slab_n = interpolate_surfaces_slab(
+                    np.array(f[f"{i}/T_S"][:]), z_slab
+                )
+                pres_s, _ = interpolate_surfaces_slab(
+                    np.array(f[f"{i}/P_S"][:]), z_slab
+                )
+                temp_o, z_ocean_n = interpolate_surfaces_slab(
+                    np.array(f[f"{i}/T_O"][:]), z_ocean
+                )
+                pres_o, _ = interpolate_surfaces_slab(
+                    np.array(f[f"{i}/P_O"][:]), z_ocean
+                )
+                tau_surf, _ = interpolate_surfaces_slab(
+                    np.array(f[f"{i}/tau_shear"]), z_slab
+                )
                 heat_f, x_heat_n = interpolate_surfaces_slab(
                     np.array(f[f"{i}/heat_flux"][:]), x_heat
                 )
-                x_slab, _ = interpolate_surfaces_slab(np.array(f[f"{i}/X_S"][0, :]), z_slab)
+                x_slab, _ = interpolate_surfaces_slab(
+                    np.array(f[f"{i}/X_S"][0, :]), z_slab
+                )
 
                 if f"{i}/decoupling" in f:
                     dc = -f[f"{i}/decoupling"][()]
@@ -446,7 +463,8 @@ def wrapper_merging_h5(
     recreate: bool = False,
     n_workers: int = 100,
 ) -> tuple[pd.DataFrame, CoordinateSurface, SlabPlot2D]:
-    """Function that merges and post process the data coming from the small h5 files
+    """Function that merges and post process the data coming from the small h5
+    files.
 
     Args:
         aux_path (str): path to the main Output_h5_files
@@ -461,7 +479,6 @@ def wrapper_merging_h5(
                                                           coordinate system for plotting 1D profile and 2D plot
                                                           slab 2D meshes to visualise them
     """
-
     name_merged_file = f"{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5"
     aux_path2 = aux_path / f"{name_suite}_h5_files_{partial[0]}_{partial[1]}"
 
@@ -472,7 +489,9 @@ def wrapper_merging_h5(
             list_partial_files.append(f"{aux_path2}/Data_Base_{i}.h5")
 
         print(
-            merge_data_base(name_suite, list_partial_files, name_suite, partial, recreate=recreate)
+            merge_data_base(
+                name_suite, list_partial_files, name_suite, partial, recreate=recreate
+            )
         )
     else:
         print("Data Base is already there, and the flag to recreate has not been set")

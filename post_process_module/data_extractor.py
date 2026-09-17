@@ -14,7 +14,7 @@ def get_nested_attr(obj, path):
 
 
 class Test:
-    """Class containing the data of the current test
+    """Class containing the data of the current test.
 
     path_2_test: the current path of the test at hand
     MeshData: class containing the mesh data
@@ -25,11 +25,10 @@ class Test:
     grid. It uses the additional information provided by the boundary to filter artifact
 
     _interpolate_data_slab(): function that interpolate the raw data of the simulation and select only the slab domain.
-
     """
 
     def __init__(self, path_2_test: str, td: bool = False):
-        """Initialisation of the class
+        """Initialisation of the class.
 
         Args:
             path_2_test (str): the path to the test
@@ -37,7 +36,9 @@ class Test:
         """
         self.path_2_test = path_2_test
         self.MeshData = MeshData(self.path_2_test, td)
-        self.Data_raw = Data_Raw(self.path_2_test, num=len(self.MeshData.X[:, 0]), td=td)
+        self.Data_raw = Data_Raw(
+            self.path_2_test, num=len(self.MeshData.X[:, 0]), td=td
+        )
 
     def _interpolate_data(self, Data_field):
         """Interpolate the data on a regular grid for visualisation
@@ -85,7 +86,6 @@ class Test:
         X = self.MeshData.X
 
         if steady_state:
-
             Zi = griddata(X, values, (Xi, Yi), method="linear")
         else:
             val = values[:, ts].copy()
@@ -98,7 +98,6 @@ class Test:
 
 # ---
 class Data_Raw:
-
     def __init__(self, f: str, num: int, td: bool = False):
         """_summary_
 
@@ -107,7 +106,6 @@ class Data_Raw:
             num (int): number of nodes of the unstructured grid
             td (bool, optional): _description_. Defaults to False. time dependent flag: True: Time Dependent; False: Steady state
         """
-
         if not td:
             self.SteadyState = Data_experiment(f, num, ts=False)
         else:
@@ -144,17 +142,17 @@ class Data_experiment:
 
     def __init__(self, f: str, num: int, ts: bool):
         """Extract the steady state data from the h5 file.
-        The function infers if the test is time dependent, extract the number of timestep
-        and allocate arrays with dimension [num,TS], where num is the total number of nodes,
-        and TS the total amout of timestep. Then it calls the routine to extract the data
-        that automatically generate all the array.
+
+        The function infers if the test is time dependent, extract the number of timestep and
+        allocate arrays with dimension [num,TS], where num is the total number
+        of nodes, and TS the total amout of timestep. Then it calls the routine
+        to extract the data that automatically generate all the array.
 
         Args:
             f (str)  : path to the test
             num (int): number of points
             ts (int) : time step
         """
-
         import h5py
         import numpy as np
 
@@ -253,7 +251,9 @@ class Data_experiment:
 
             if proceed:
                 with h5py.File(f1, "r") as fl:
-                    self.Temp = np.array(fl["/Function/Temperature  [degC]/0"]).flatten()
+                    self.Temp = np.array(
+                        fl["/Function/Temperature  [degC]/0"]
+                    ).flatten()
 
                     self.Pres = np.array(fl["/Function/Pressure  [GPa]/0"]).flatten()
 
@@ -287,10 +287,11 @@ class Data_experiment:
 # ---
 class MeshData:
     def __init__(self, f: str, td: bool = False):
-        """Extract the mesh data from the h5 file. Produce the visualisation grid and the polygon
+        """Extract the mesh data from the h5 file.
 
-        Args:
-            f (str): path to the test
+        Produce the visualisation grid and the polygon
+                Args:
+                    f (str): path to the test
         """
         if td:
             f1 = "%s/time_dependent.h5" % f
@@ -330,7 +331,9 @@ class MeshData:
         def extract_coordinates(mesh_tag: list) -> np.ndarray:
 
             if len(mesh_tag) == 2:
-                condition = (self.mesh_tag == mesh_tag[0]) | (self.mesh_tag == mesh_tag[1])
+                condition = (self.mesh_tag == mesh_tag[0]) | (
+                    self.mesh_tag == mesh_tag[1]
+                )
             else:
                 condition = self.mesh_tag == mesh_tag[0]
 

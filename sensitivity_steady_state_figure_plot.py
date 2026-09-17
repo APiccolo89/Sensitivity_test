@@ -3,11 +3,17 @@ from pathlib import Path
 
 import pandas as pd
 
-from post_process_module.figure_plot import *
+from post_process_module.figure_plot import (
+    box_plot_thermal_model,
+    box_plot_thermal_model_max_depth,
+    data_base_PT_whitney,
+    figure_slab_surface,
+    plot_slab_variances,
+    plot_slab_versus_thermalpar,
+    print_save_IQ_information,
+)
 from post_process_module.post_process_data import timing_function
 from post_process_module.process_data_visualisation import wrapper_merging_h5
-
-pres_temp_hp_lt_db = data_base_PT_whitney()
 
 
 # ---
@@ -46,7 +52,7 @@ class ErrorParsing(Exception):
                 f"{self.message}"
             )
         elif self.error_code == 4:
-            string_error = f"Code error {self.error_code}. WRONG CSV file:\n" f"{self.message}"
+            string_error = f"Code error {self.error_code}. WRONG CSV file:\n{self.message}"
         else:
             string_error = "Ops, unknown error... "
 
@@ -63,7 +69,6 @@ def check_parsed_arguments(args) -> None:
     Raises:
         ErrorParsing: If the group name is wrong, or all the test are not performed, or any of the test is not
         performed, raise ErrorParsing.
-
     """
     required = ["sh", "name_suite", "csv", "steady_state"]
 
@@ -113,7 +118,7 @@ def check_parsed_arguments(args) -> None:
         raise ErrorParsing(s0, 2)
         # Check if any folder is false
     elif not all(folder):
-        indices = [index for index, value in enumerate(folder) if value == False]
+        indices = [index for index, value in enumerate(folder) if not value]
         values = [f"{sub_group[i]}{args.sh}" for i in indices]
         suite_wrong = ""
         for i in values:
@@ -180,7 +185,6 @@ def plot_sensitivity_study_steady_state(args) -> None:
     Returns:
         None:
     """
-
     check_parsed_arguments(args)
 
     aux_path = Path(__file__).resolve().parent
@@ -204,7 +208,7 @@ def plot_sensitivity_study_steady_state(args) -> None:
         path2save=path2save,
         pdb=data_table,
         crd=surface_data_0,
-        petro_db=pres_temp_hp_lt_db,
+        petro_db=data_base_PT_whitney(),
         figure_number="b",
     )
     # Plot the heat flux
@@ -221,10 +225,6 @@ def plot_real_case_study_steady_state(args):
     Args:
         args (_type_): _description_
     """
-    from post_process_module.figure_plot import (
-        box_plot_thermal_model,
-        box_plot_thermal_model_max_depth,
-    )
 
     check_parsed_arguments(args)
 
@@ -251,7 +251,7 @@ def plot_real_case_study_steady_state(args):
 
 # ---
 def main():
-    """Generation
+    """Generation.
 
     Raises:
         ErrorParsing: _description_

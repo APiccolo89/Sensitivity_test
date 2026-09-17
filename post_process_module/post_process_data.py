@@ -90,7 +90,7 @@ def timing_function(fun):
 
 # ---
 def test_success(name_test: str, steadystate=True):
-    """Check if the test produced the expected output
+    """Check if the test produced the expected output.
 
     Args:
         name_test (str): path2test
@@ -111,7 +111,9 @@ def extract_slab_surface(T: Test, steady_state=True, ts=0) -> np.ndarray:
     if steady_state:
         T_slab_surf = T._interpolate_data_slab("SteadyState.Temp")
     else:
-        T_slab_surf = T._interpolate_data_slab("TimeDependent.Temp", ts=ts, steady_state=False)
+        T_slab_surf = T._interpolate_data_slab(
+            "TimeDependent.Temp", ts=ts, steady_state=False
+        )
     return T_slab_surf
 
 
@@ -140,7 +142,9 @@ def compute_tau_rheological_law(
 
 
 # ---
-def extract_shearzone_data(temp_slab: np.ndarray, pres_slab: np.ndarray, args: dict) -> np.ndarray:
+def extract_shearzone_data(
+    temp_slab: np.ndarray, pres_slab: np.ndarray, args: dict
+) -> np.ndarray:
     """Function that extract the stress at slab interface.
 
     Args:
@@ -151,7 +155,6 @@ def extract_shearzone_data(temp_slab: np.ndarray, pres_slab: np.ndarray, args: d
     Returns:
         np.ndarray: tau_eff
     """
-
     vel = args["vc"] * 1e-2 / 365.25 / 60 / 60 / 24
     eps = 0.5 * (vel * 1 / 500)
     if args["shear_heating"]:
@@ -279,7 +282,6 @@ def extract_relevant_data_td(path: str, args: dict) -> namedtuple:
     Returns:
         named_tuple: data of the simulation.
     """
-
     T = Test(path_2_test=path, td=True)
     x_150 = np.zeros([len(T.Data_raw.TimeDependent.time_list)])
     y_150 = np.zeros([len(T.Data_raw.TimeDependent.time_list)])
@@ -300,14 +302,23 @@ def extract_relevant_data_td(path: str, args: dict) -> namedtuple:
     tau_val = np.zeros([len(T.Data_raw.TimeDependent.time_list), 5])
 
     for i in range(len(T.Data_raw.TimeDependent.time_list)):
-
         Slab_surface = extract_slab_surface(T=T, steady_state=False, ts=i)
-        x_150[i], y_150[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 150.0)
-        x_350[i], y_350[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 350.0)
-        x_450[i], y_450[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 450.0)
-        x_600[i], y_600[i] = extract_isotherm(T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 600.0)
+        x_150[i], y_150[i] = extract_isotherm(
+            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 150.0
+        )
+        x_350[i], y_350[i] = extract_isotherm(
+            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 350.0
+        )
+        x_450[i], y_450[i] = extract_isotherm(
+            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 450.0
+        )
+        x_600[i], y_600[i] = extract_isotherm(
+            T.MeshData.Xi, T.MeshData.Yi, Slab_surface, 600.0
+        )
 
-        X_S, X_O, a, b, c, d = extract_slab_oceanic_surface_Temperature(T, steady_state=False)
+        X_S, X_O, a, b, c, d = extract_slab_oceanic_surface_Temperature(
+            T, steady_state=False
+        )
         T_S.append(a)
         T_O.append(b)
         P_S.append(c)
@@ -525,7 +536,11 @@ def save_test_data(
 
     main_dir = Path(__file__).resolve().parents[1]
     SSTD = _GVARIABLES_.dict_td[str(arguments["steady_state"])]
-    path2save = main_dir / "Output_h5_files" / f"{name_suite}_h5_files_{arguments['group']}_{SSTD}"
+    path2save = (
+        main_dir
+        / "Output_h5_files"
+        / f"{name_suite}_h5_files_{arguments['group']}_{SSTD}"
+    )
 
     path2save.mkdir(parents=True, exist_ok=True)
 
@@ -536,7 +551,9 @@ def save_test_data(
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
 
-    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
+    print(
+        f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5"
+    )
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test)
     if test_successful:
@@ -546,7 +563,7 @@ def save_test_data(
         for key in arguments.keys():
             print(f"  - {key}: {arguments[key]}")
 
-        with h5py.File(f'{path2save}/Data_Base_{arguments["id_batch"]}.h5', "a") as f:
+        with h5py.File(f"{path2save}/Data_Base_{arguments['id_batch']}.h5", "a") as f:
             print("  - Saving data to Data_Base.h5")
             print(f"{path2save}/Data_Base_{arguments['id_batch']}.h5")
             if save_grid:
@@ -601,7 +618,9 @@ def save_test_data(
                 T_mean = f["mean_lc_tst"][()]
                 T_var = f["var_lc_tst"][()]
                 n_lc_tst = f["n_lc_tst"][()]
-                T_mean, T_var = update_Welfrod_ALG(list_data.Slab_surface, T_mean, T_var, n_lc_tst)
+                T_mean, T_var = update_Welfrod_ALG(
+                    list_data.Slab_surface, T_mean, T_var, n_lc_tst
+                )
                 f["mean_lc_tst"][()] = T_mean
                 f["var_lc_tst"][()] = T_var
                 print(
@@ -664,7 +683,9 @@ def save_test_data_td(
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
 
-    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
+    print(
+        f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5"
+    )
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test, steadystate=False)
     if test_successful:
@@ -757,7 +778,9 @@ def save_test_data_td_alt(
     name_test = PurePath(pathtotest).name
     real_test = pathtotest
     info_stoned = git_info()
-    print(f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5")
+    print(
+        f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5"
+    )
     print(f"name_test: {name_test}")
     test_successful = test_success(real_test, steadystate=False)
     if test_successful:
@@ -823,7 +846,7 @@ def save_test_data_td_alt(
         case_index=arguments["case_index"],
         id_batch=arguments["group"],
         success=test_successful,
-        path_h5=f'{path2save}/Data_Base_{arguments["id_batch"]}.h5',
+        path_h5=f"{path2save}/Data_Base_{arguments['id_batch']}.h5",
     )
 
     print(

@@ -1,11 +1,7 @@
 # --
-import h5py
-import numpy as np
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 from post_process_module.data_extractor import Test
-import pathlib
 from pathlib import Path
 from typing import NamedTuple
 from numpy.typing import NDArray
@@ -49,8 +45,8 @@ plt.rcParams.update(
 
 
 def plot_colorbar_and_deactivate(fig, cax, mappable, **kwargs):
-    """
-    Plot a colorbar on a pre-existing axis and deactivate the axis afterwards.
+    """Plot a colorbar on a pre-existing axis and deactivate the axis
+    afterwards.
 
     Parameters
     ----------
@@ -67,7 +63,6 @@ def plot_colorbar_and_deactivate(fig, cax, mappable, **kwargs):
     -------
     cb : matplotlib.colorbar.Colorbar
     """
-
     cb = fig.colorbar(mappable, cax=cax, **kwargs)
     cb.ax.tick_params(labelsize=_CBTICKSFONTSIZE_)
     cb.ax.xaxis.set_ticks_position("bottom")
@@ -229,7 +224,7 @@ for i in range(len(test_a.Data_raw.TimeDependent.time_list)):
     sum_norm = np.linalg.norm(sum_Dt[np.isfinite(sum_Dt)], ord=2)
 
     print(
-        f"Time = {time:.2f} [Myr], L2 norm of steady state = {t_ss_L2:.2e}, L2 norm of time dependent = {t_td_L2:.2e}, L2 norm of difference = {dT_norm:.2e}, Relative difference = {dT_norm/sum_norm:.2e}"
+        f"Time = {time:.2f} [Myr], L2 norm of steady state = {t_ss_L2:.2e}, L2 norm of time dependent = {t_td_L2:.2e}, L2 norm of difference = {dT_norm:.2e}, Relative difference = {dT_norm / sum_norm:.2e}"
     )
 
     fig = plt.figure(figsize=[12, 6])

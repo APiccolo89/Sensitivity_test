@@ -38,7 +38,6 @@ def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
     This should be possible, but, I am not willing to spend a few hours in this task. So, here you are the quick and dirty solution.
     TO DO: Reintegrate the h5 file routine for the thermal properties and create a control called: caching.
     """
-
     import copy
 
     from stonedfenicsx.stoned_fenicsx import stoned_fenicsx
@@ -86,17 +85,19 @@ def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
 # ---
 @timing_function
 def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str]:
-    """Configuration script of StonedFEniCSx for the time-dependent sensitivity tests. The script reads the input data from a .csv table and creates the input data for StonedFEniCSx. The script also creates the material properties dictionary and assigns it to the phases. The script also creates the input data for StonedFEniCSx and runs the simulation. The results are saved in a folder, in a number of h5 files that will be merged by other scripts.
+    """Configuration script of StonedFEniCSx for the time-dependent sensitivity
+    tests.
 
-    Args:
-        args (SimpleNamespace, optional): updated Arguments of the script.
-        name_suite (str, optional): Name of the test suite. Defaults to 'debug'.
+    The script reads the input data from a .csv table and creates the input data for StonedFEniCSx. The script also creates the material properties dictionary and assigns it to the phases. The script also creates the input data for StonedFEniCSx and runs the simulation. The results are saved in a folder, in a number of h5 files that will be merged by other scripts.
+        Args:
+            args (SimpleNamespace, optional): updated Arguments of the script.
+            name_suite (str, optional): Name of the test suite. Defaults to 'debug'.
 
-    Raises:
-        ValueError: _description_
+        Raises:
+            ValueError: _description_
 
-    Returns:
-        tuple[str,str]: general path of the tests and name of the test
+        Returns:
+            tuple[str,str]: general path of the tests and name of the test
     """
     # To configure the simulation, the code must ALWAYS read the input.yml file. This is a template file that contains the default values of the input data. The code will then modify the values of the input data according to the arguments passed to the script.
     from stonedfenicsx.config.input_parser import parse_input
@@ -163,7 +164,7 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
         1.5  # resolution around the slab top surface and the oceanic crust within the slab.
     )
 
-    if args.get("plate_real") != None:
+    if args.get("plate_real") is not None:
         change_geometry(plate=args["plate_real"], args=args, inp=inp)
         inp.g_input.slab_type = "FromFile"  # type of slab geometry
         inp.g_input.sub_path = str(

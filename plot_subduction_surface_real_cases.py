@@ -2,11 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from post_process_module.figure_plot import *
+from post_process_module.figure_plot import data_base_PT_whitney, plot_eye_candy
 from post_process_module.post_process_data import timing_function
 from post_process_module.process_data_visualisation import wrapper_merging_h5
-
-pres_temp_hp_lt_db = data_base_PT_whitney()
 
 
 # ---
@@ -50,7 +48,6 @@ def plot_slab_surfaces_japan_mexico_sensitivity():
     Args:
         args (_type_): _description_
     """
-    from post_process_module.figure_plot import plot_eye_candy
 
     aux_path = Path(__file__).resolve().parent
 

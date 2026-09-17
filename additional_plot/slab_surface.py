@@ -95,7 +95,9 @@ def modify_axes(
 
     # --- y-axis ---
     if label_y[0] != "n":
-        ax.set_ylabel(label_y[0], fontsize=_LABELFONTSIZE_, labelpad=10)  # fixed: was label_x[0]
+        ax.set_ylabel(
+            label_y[0], fontsize=_LABELFONTSIZE_, labelpad=10
+        )  # fixed: was label_x[0]
         ax.yaxis.set_label_position("left")  # fixed: was 'top'
 
     if lim_y is not None:  # fixed: was lim_x
@@ -225,7 +227,9 @@ def plot_mesh_boundary(mesh, name_mesh: str, path2save: str) -> None:
             c=c,
         )
 
-    ax0 = modify_axes(ax=ax0, label_x=["Distance [km]", "y"], label_y=["Depth [km]", "y"])
+    ax0 = modify_axes(
+        ax=ax0, label_x=["Distance [km]", "y"], label_y=["Depth [km]", "y"]
+    )
 
     fig.savefig(name_file, dpi=600, transparent=True)
 
@@ -261,15 +265,18 @@ def process_mesh(slab: str = "CustomRibe", name_plate: str = "Default") -> None:
     inp.g_input.transition = 10  # transition delta depth -> the distance at which the transition from uncoupled and coupled flow happens
     inp.g_input.slab_type = "CustomRibe"  # type of slab geometry
     inp.g_input.resolution_normal = 10.0  # Resolution normal
-    inp.g_input.resolution_refine = (
-        1.5  # resolution around the slab top surface and the oceanic crust within the slab.
-    )
+    inp.g_input.resolution_refine = 1.5  # resolution around the slab top surface and the oceanic crust within the slab.
 
     if name_plate != "CustomRibe":
-        change_geometry(plate=slab, path=str(Path(__file__).resolve().parents[1]), inp=inp)
+        change_geometry(
+            plate=slab, path=str(Path(__file__).resolve().parents[1]), inp=inp
+        )
         inp.g_input.slab_type = "FromFile"  # type of slab geometry
         inp.g_input.sub_path = str(
-            files("stonedfenicsx").resolve().parents[0] / "examples" / "data" / f"{slab}_slab.pz"
+            files("stonedfenicsx").resolve().parents[0]
+            / "examples"
+            / "data"
+            / f"{slab}_slab.pz"
         )
     # create the fake folders:
     inp.ctrl_io.path_save = Path(__file__).resolve().parents[0] / "mesh"
@@ -279,7 +286,9 @@ def process_mesh(slab: str = "CustomRibe", name_plate: str = "Default") -> None:
     # convert the unit of measure of the angle
     inp.g_input.check_class_consistency()
     # create the mesh object
-    mesh = create_mesh.create_mesh(ioctrl=inp.ctrl_io, g_input=inp.g_input, ctrl=inp.ctrl)
+    mesh = create_mesh.create_mesh(
+        ioctrl=inp.ctrl_io, g_input=inp.g_input, ctrl=inp.ctrl
+    )
     # Extract coordinate
     # Plot geometry:
     path = Path(__file__).resolve().parents[1]
