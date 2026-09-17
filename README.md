@@ -82,11 +82,12 @@ Then, for running the suite of experiments:
 ```bash 
     python generation_cases/generate_cases_real_plate.py --plate Mexico
 ```
-The argument `--plate` is the one defining the name of the suite: three names are available: `Mexico`, `Japan` and `Sensitivity_test_ss`. The script will produce the `.csv` files associated with the plate: 
+The argument `--plate` is the one defining the name of the suite: the names available are defined as top-level keys in `generation_cases/real_plate_parametric_config.yml` — currently `Mexico`, `Japan`, `steady_s_sensitivity`, and `td_s_sensitivity` (time-dependent counterpart of the steady-state sensitivity suite). The script will produce the `.csv` files associated with the plate: 
 
 - cases_Sensitivity_Japan.csv
 - cases_Sensitivity_Mexico.csv
-- cases_Sensitivity_test_ss.csv 
+- cases_Sensitivity_steady_s_sensitivity.csv
+- cases_Sensitivity_td_s_sensitivity.csv
 
 These files collect all the experiments to run.
 
@@ -165,8 +166,8 @@ After all the runs are performed, the user can use the post-processing script:
 ```bash
 python sensitivity_steady_state_figure_plot.py --name_suite Mexico --steady_state 1 --type sh --csv cases_Sensitivity_Mexico.csv --function_plot real
 python sensitivity_steady_state_figure_plot.py --name_suite Japan --steady_state 1 --type sh --csv cases_Sensitivity_Japan.csv --function_plot real
-python sensitivity_steady_state_figure_plot.py --name_suite Sensitivity_test_ss --steady_state 1 --type sh --csv cases_Sensitivity_Sensitivity_test_ss.csv --function_plot real
-python sensitivity_steady_state_figure_plot.py --name_suite Sensitivity_test_ss --steady_state 1 --type nsh --csv cases_Sensitivity_Sensitivity_test_ss.csv --function_plot real
+python sensitivity_steady_state_figure_plot.py --name_suite steady_s_sensitivity --steady_state 1 --type sh --csv cases_Sensitivity_steady_s_sensitivity.csv --function_plot real
+python sensitivity_steady_state_figure_plot.py --name_suite steady_s_sensitivity --steady_state 1 --type nsh --csv cases_Sensitivity_steady_s_sensitivity.csv --function_plot real
 
 ```
 The script must be fed with: 
