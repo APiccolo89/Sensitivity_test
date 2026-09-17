@@ -231,6 +231,7 @@ def interpolate_value_0D(ar:np.ndarray,x:np.ndarray,depth:float,ind:None|int)->f
     val = ar[ind]+(dv/dx)*(depth-ar[ind])
     
     return val,ind 
+# --- 
 def find_real_ell_z(isotherm:float, ell:NDArray, z: NDArray,temp:NDArray)->tuple[float,float]:
     def interpolate_value(ind,dtemp,temp0,dval,val0,val1):
         val = (dval/dtemp) * (isotherm-temp0) + val0
@@ -314,7 +315,6 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str,partial,dict_column
 
 
                 # prepare the surface for being integrated into the database
-                
                 z_slab = np.array(f[f'{i}/X_S'][1,:])
                 x_heat = np.array(f[f'{i}/x_top'][:])
                 z_ocean = np.array(f[f'{i}/X_O'][1,:])
@@ -326,8 +326,22 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str,partial,dict_column
                 pres_o, _  = interpolate_surfaces_slab(np.array(f[f'{i}/P_O'][:]),z_ocean)
                 tau_surf, _ = interpolate_surfaces_slab(np.array(f[f'{i}/tau_shear']),z_slab)
                 heat_f,x_heat_n = interpolate_surfaces_slab(np.array(f[f'{i}/heat_flux'][:]),x_heat)
-                temp_s_dc = np.interp(-80.0,z_slab_n,temp_s)
-                pres_s_dc = np.interp(-80.0,z_slab_n,pres_s)
+                x_slab,_ =  interpolate_surfaces_slab(np.array(f[f'{i}/X_S'][0,:]),z_slab)
+
+                if f'{i}/decoupling' in f:
+                    dc = -f[f'{i}/decoupling'][()]
+                else:
+                    dc = -80
+                temp_s_dc = np.interp(dc,z_slab_n,temp_s)
+                pres_s_dc = np.interp(dc,z_slab_n,pres_s)  
+                dc_x = np.interp(dc,z_slab_n,x_slab)
+                # Extract the maximum tau x position
+                buf = f[f'{i}/tau_shear'][()]
+                maxtau = np.max(buf)
+                ind = np.where(buf==maxtau)[0]
+                x_maxtau = np.interp(z_slab[ind],z_slab_n,x_slab)
+                
+                
                 dict_data_base = {
                     "case_id": case_id,
                     "option_thermal": option_thermal,
@@ -357,7 +371,9 @@ def create_data_frame(data_table:pd.DataFrame, hdf5_file:str,partial,dict_column
                     'tau_max' : f[f'{i}/tau_shear_max'][()],
                     'tau_min' :f[f'{i}/tau_shear_min'][()],
                     'tau_std':f[f'{i}/tau_shear_max'][()],
-                    'tau_srf':tau_surf
+                    'tau_srf':tau_surf,
+                    'maxtauxc':x_maxtau,
+                    'maxdcxc':dc_x,
                 }
                 for m in dict_column:
                     if m == 'case_index':
@@ -447,6 +463,8 @@ def wrapper_merging_h5(aux_path:str
     "Q",
     "T_s_dc",
     "P_s_dc",
+    "maxtauxc",
+    "maxdcxc"
     ]   
     args_test = args_column.copy()
     for i in keys: 

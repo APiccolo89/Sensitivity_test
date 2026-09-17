@@ -1397,6 +1397,167 @@ def box_plot_thermal_model_max_depth(path2save: str, pdb: pd.DataFrame,figure_nu
                       letter='[f]')
 
     fig.savefig(f'{path2save}/{name_plot}', dpi=600, transparent=TRANSPARENT)    
+
+def plot_heat_flux_slab_real(ax,pdb:pd.DataFrame,x_heat:np.ndarray,c='forestgreen')-> tuple[mpl_axes,list,list]:
+    heat_flux = create_array(pdb['Q'])*1000
+    # -extract max,min
+    hf_min = np.min(heat_flux,0)
+    hf_max = np.max(heat_flux,0)
+    
+    # -extract min_max tau_x 
+    x_min_tau = pdb['maxtauxc'].min()[0]
+    x_max_tau = pdb['maxtauxc'].max()[0]
+    # -extract min_max dc 
+    x_min_dc = pdb['maxdcxc'].min()
+    x_max_dc = pdb['maxdcxc'].max()
+
+    if x_min_dc != x_max_dc:
+        ax.axvspan(x_min_dc, x_max_dc, alpha=.2, color='purple')    
+
+    else: 
+        ax.axvline(x_min_dc,color='purple',linewidth=0.8)
+    
+    ax.axvspan(x_min_tau, x_max_tau, alpha=.2, color='orange')    
+    
+    
+    ax.plot(x_heat,hf_min,color=c,linewidth=0.7,linestyle=':')
+    ax.plot(x_heat,hf_max,color=c,linewidth=0.7,linestyle=':')
+    ax.fill_between(x_heat,hf_min,hf_max,color=c,alpha=0.4)
+    
+
+    return ax
+
+def plot_slab_slab_real(ax,pdb:pd.DataFrame,c='forestgreen')-> tuple[mpl_axes,list,list]:
+    T_S = create_array(pdb['T_S'])
+    P_S = create_array(pdb['P_S'])
+    temp_min = np.min(T_S,0)
+    temp_max = np.max(T_S,0)
+    # -extract max,min
+    ax.plot(temp_min,P_S[0,:],color=c,linewidth=0.7,linestyle=':')
+    ax.plot(temp_max,P_S[0,:],color=c,linewidth=0.7,linestyle=':')
+    ax.fill_betweenx(P_S[0,:],temp_min, temp_max, color=c, alpha=0.4)
+
+    return ax
+
+def plot_eye_candy(a:pd.DataFrame
+                   ,b:pd.DataFrame
+                   ,c:pd.DataFrame
+                   ,hplt:np.ndarray
+                   ,s0:CoordinateSurface
+                   ,s1:CoordinateSurface
+                   ,s2:CoordinateSurface
+                   ,ptsave:str):
+    # name plot
+    name_plot = f'{ptsave}/eye_candy.png'
+    # Main figure canvas 
+    fig = plt.figure(figsize=(16, 12))
+    # Slab panel surface
+    bx_a = 0.08 
+    by_a = 0.10 
+    sx_a = 1/2-bx_a
+    sy_a = 0.85
+    # Heat fluxes panel 
+    bx_b = bx_a+sx_a+0.08
+    by_b = 0.1 
+    sx_b = 0.38
+    sy_b = 0.22
+    dy_b = 0.08 
+    
+    ax0 = fig.add_axes([bx_a,by_a,sx_a,sy_a])
+    ax1 = fig.add_axes([bx_b,by_b,sx_b,sy_b])
+    ax2 = fig.add_axes([bx_b,by_b+1*dy_b+1*sy_b,sx_b,sy_b])
+    ax3 = fig.add_axes([bx_b,by_b+2*dy_b+2*sy_b,sx_b,sy_b])
+
+    # Slab P-T -> create arrays 
+    
+    # Plot the petrological database
+    
+    # -> Heat Flux Sensitivity 
+    ax3 = plot_heat_flux_slab_real(ax3,a,s0.x_heat_flux,'silver')
+    # -> Heat Flux Mexico 
+    ax2 = plot_heat_flux_slab_real(ax2,b,s1.x_heat_flux,'firebrick')
+    # -> Heat Flux Japan 
+    ax1 = plot_heat_flux_slab_real(ax1,c,s2.x_heat_flux,'forestgreen')
+
+    # Create Envelope P-T for each of the three esembles 
+    ax0 = plot_slab_slab_real(ax=ax0,pdb=a,c='silver')
+    ax0 = plot_slab_slab_real(ax=ax0,pdb=b,c='firebrick')
+    ax0 = plot_slab_slab_real(ax=ax0,pdb=c,c='forestgreen')
+    ax0.scatter(hplt.T,hplt.P,s=5.0,c='k',marker='s')
+    # Few stuff
+    ax3.text(
+        0.30, 1.1,r'Sensitivity cases',
+        transform=ax3.transAxes,
+        c='w',
+        fontweight='demibold',
+        fontsize=15,
+        va='top',
+        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'k', 'alpha': 0.7}
+    )
+    
+    ax2.text(
+        0.30, 1.1,r'Mexico',
+        transform=ax2.transAxes,
+        c='w',
+        fontweight='demibold',
+        fontsize=15,
+        va='top',
+        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'k', 'alpha': 0.7}
+    )
+
+    ax1.text(
+        0.30, 1.1,r'Central Honshu',
+        transform=ax1.transAxes,
+        c='w',
+        fontweight='demibold',
+        fontsize=15,
+        va='top',
+        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'k', 'alpha': 0.7}
+    )
+
+    # Create Envelope for each heat fluxes 
+    ax0 = modify_axes(ax0,
+                      label_x=[r'T [$^{\circ}C$]','y'],
+                      label_y=[r'P [GPa]','y'],
+                      lim_y=[0,4],
+                      ticks_y=[0,1,2,3,4],
+                      lim_x=[0,1100],
+                      letter='[a]')
+
+    ax1 = modify_axes(ax1,
+                      label_x=['Distance [km]','y'],
+                      label_y=[r'q $[mW]$','y'],
+                      ticks_y=[30,60,90],
+                      ticks_label_y=[30,60,90],
+                      lim_y=[20,100],
+                      lim_x=[0,500],
+                      letter='[d]')
+    
+
+    ax2 = modify_axes(ax2,
+                      label_x=['n','n'],
+                      label_y=[r'q $[mW]$','y'],
+                      ticks_y=[30,60,90],
+                      ticks_label_y=[30,60,90],
+                      lim_y=[20,100],
+                      lim_x=[0,500],
+                      letter='[c]')
+    
+
+    ax3 = modify_axes(ax3,
+                      label_x=['n','n'],
+                      label_y=[r'q $[mW]$','y'],
+                      ticks_y=[30,60,90],
+                      ticks_label_y=[30,60,90],
+                      lim_y=[20,100],
+                      lim_x=[0,500],
+                      letter='[b]')
+
+    # Save this crap 
+    fig.savefig(name_plot,dpi=600,transparent = TRANSPARENT)
+        
+    
+
 # --- 
 # --- 
     
