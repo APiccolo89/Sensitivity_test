@@ -269,10 +269,10 @@ def configure_run_save():
             save_test_data(name_suite=name_suite, pathtotest=pathtest, arguments=arguments)
         # remove the tests folder
 
-    print(f"Removing path test {pathtest}")
-    shutil.rmtree(Path(pathtest))
-    print(f"Removed pathtest {pathtest}")
-    print(f"Finished group {arguments['case_index']}")
+        print(f"Removing path test {pathtest}")
+        shutil.rmtree(Path(pathtest))
+        print(f"Removed pathtest {pathtest}")
+        print(f"Finished group {arguments['case_index']}")
 
 
 # ---
