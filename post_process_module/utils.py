@@ -1,3 +1,9 @@
+"""Utility functions for configuring StonedFEniCSx runs.
+
+Includes helpers to adjust the slab geometry from a named real plate,
+assign material properties per phase, and parse CLI arguments for the
+driver scripts.
+"""
 import argparse
 import os
 from dataclasses import fields

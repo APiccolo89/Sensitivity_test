@@ -1,4 +1,6 @@
-# Global value for general configuration of the tests. These values are used to define the material properties and the shear heating law.
+"""
+Global variables that all the scripts must know 
+"""
 _TP_ = 1350
 _DECOUPLING_ = 80
 _PHI_ = 5.0

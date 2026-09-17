@@ -47,52 +47,7 @@ class CoordinateSurface:
 def compute_distance(p0: list, p1: list) -> float:
     return np.sqrt((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2)
 
-
-@njit
-def find_distance_isotherm(
-    c_md: np.ndarray, XS: np.ndarray, ell: np.ndarray
-) -> tuple[float, float]:
-    """_summary_
-
-    Args:
-        x (float): x coordinate of the max depth of the given isotherm
-        y (float): y coordinate of the max depth of the given isotherm
-        XS (np.ndarray): Slab geometry in 2D (shape: 2 x n_points)
-        ell (np.ndarray): 1D array of the arc length along the slab geometry (shape: n_points)
-
-    Returns:
-        tuple[float,float]: dist: distance from the point (x,y) to the slab geometry. ell_point: interpolated length of the projection.
-    """
-    x = c_md[1]
-    y = c_md[0]
-    # Find the index of the segments containing the projection of the point onto the curve
-    ind_x = np.nonzero(x >= XS[0, :])[0][0]
-    ind_y = np.nonzero(y >= XS[1, :])[0][0]
-    # create the temporary array for the segment
-    distance = np.zeros(ind_y - ind_x - 1)
-    # loop over the segments and calculate the distance from the point to each segment
-    for j in range(ind_x, ind_y - 1):
-        # calculate the distance from the point to the segment
-        x_m = (XS[0, j] / 2 + XS[0, j + 1] / 2, XS[1, j] / 2 + XS[1, j + 1] / 2)
-        distance[j - ind_x] = compute_distance(x_m, [x, y])
-    # find the minimum distance and the corresponding segmen
-    min_distance = np.nonzero(np.min(distance) >= distance)[0]
-    # calculate the distance from the point to the curve
-    dx, dy = (
-        XS[0, min_distance + 1] - XS[0, min_distance],
-        XS[1, min_distance + 1] - XS[1, min_distance],
-    )
-    num = np.abs(
-        dx * (y - XS[1, min_distance + 1]) - dy * (x - XS[0, min_distance + 1])
-    )
-    dist = num / np.sqrt(dx * dx + dy * dy)
-    seg_len2 = dx * dx + dy * dy
-    t = ((x - XS[0, min_distance]) * dx + (y - XS[1, min_distance]) * dy) / seg_len2
-    t = np.minimum(1.0, np.maximum(0.0, t))
-    ell_point = ell[min_distance] + t * (ell[min_distance + 1] - ell[min_distance])
-    return dist, ell_point
-
-
+# ---
 def interpolate_surfaces_slab(
     v: np.ndarray, x_or: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
