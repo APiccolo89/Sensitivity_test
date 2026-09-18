@@ -9,12 +9,13 @@
 
 
 ---
-This routine has been used to produce the sensitivity analysis of (name of the manuscript). Everything is set up to reproduce these experiments; as such, the scripts have several hardcoded values. However, the workflow that is described here can be translated to use the code for other purposes.
+This routine has been used to produce the sensitivity analysis of (name of the manuscript). Everything is set up to reproduce these experiments; as such, the scripts have several hard-coded values. However, the workflow that is described here can be translated to use the code for other purposes. The scripts here have not been developed with the idea to generate a package. Indeed, it is the reflection of the main author chaotic mind. 
 
 The experiments can be divided into 6 groups, and for each group there is a number of single-case experiments. So, there are n single experiment cases that differ only in three or two parameters, and that are run with different common values as a function of their group.
 
 In the main manuscript, 6 groups were run for the sensitivity test, while for the real cases **Mexico** and **Central Honshu** (called Japan) only the cases with shear heating were run.
 
+> **Important:** **Automation**  I like testing new functionalities, new approach, and time to time. I will list all the libraries that I used for this project. 
 
 |**group** | **shear heating** | **k** | 
 |------|-----|---|
@@ -122,6 +123,7 @@ The arguments are:
 - `--np`: the number of processors
 - `--steady_state`: the steady state flag that indicates the type of simulations. 
 These bash scripts run a Python configuration script called `script_run_stoned.py`.
+
 > **Important:** **Automation**  It is possible to create a wrap that automate these operations. However, it depends on your HPC, the command has been spelled out, just for facilitating the usage of this work flow. 
 
 > **Important:** **bash_clean** After all the runs are completed, the user can use the same signature of the bash script to call
