@@ -1,3 +1,8 @@
+"""Merge the per-batch h5 databases of a test suite into one file per
+group, and turn the merged h5 into the pandas DataFrame + coordinate/2D
+data structures used by the plotting routines.
+"""
+
 import gc
 import os
 import time as timing
@@ -43,20 +48,22 @@ class SlabPlot2D:
 
 @dataclass(slots=True)
 class CoordinateSurface:
+    """Small data class holding the common along-surface coordinate grids
+    (heat flux, slab, ocean) that per-case profiles are interpolated onto.
+    """
+
     x_heat_flux: np.ndarray[np.float32]
     z_slab: np.ndarray[np.float32]
     z_ocean: np.ndarray[np.float32]
 
 
-@njit
-def compute_distance(p0: list, p1: list) -> float:
-    return np.sqrt((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2)
-
 # ---
 def interpolate_surfaces_slab(
     v: np.ndarray, x_or: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
-    """_summary_
+    """Resample `v` (given at coordinates `x_or`) onto a common 200-point
+    regular grid spanning `[min(x_or), max(x_or)]`, so per-case profiles
+    of different length can be compared/averaged.
 
     Args:
         v (np.ndarray): array to interpolate
@@ -94,6 +101,23 @@ def interpolate_surfaces_slab(
 
 
 def merge_data_base(name_suite, list_of_partial_files, plate, partial, recreate=True):
+    """Merge the per-batch Data_Base h5 files of one group into a single
+    h5 file, combining the running mean/variance of each batch with
+    Welford's algorithm and copying every case group across.
+
+    Args:
+        name_suite (str): name of the test suite
+        list_of_partial_files (list[str]): paths to the per-batch h5 files
+        plate (str): unused, kept for signature compatibility -> the
+                output filename is actually built from `name_suite`
+        partial (tuple): [group name, steady-state flag]
+        recreate (bool, optional): if True, delete any existing merged
+                file and rebuild it from scratch; if False and the merged
+                file already exists, skip the merge. Defaults to True.
+
+    Returns:
+        str: a short status message
+    """
     output_file = f"{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5"
     i = 0
 
@@ -157,7 +181,9 @@ def update_Welfrod_single_batch(
     mean_l: np.ndarray,
     var_l: np.ndarray,
 ) -> tuple[float, float, int]:
-    """_summary_
+    """Combine the running mean/variance of two batches (global so far and
+    one local batch) into an updated global mean/variance, following
+    Welford's parallel-batch update formula (Chan et al.).
 
     Args:
         n_g (int): global count of samples
@@ -179,7 +205,16 @@ def update_Welfrod_single_batch(
 
 
 # ---------------------------------------------------------------------------------
-def create_arrays(Temp: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def create_arrays(Temp: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Allocate zero-filled running-mean and running-variance accumulators
+    with the same shape as `Temp`, for use with `update_Welfrod_single_batch`.
+
+    Args:
+        Temp (np.ndarray): template array whose shape is copied
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: (T_m, T_v) zero-filled arrays
+    """
 
     T_m = np.zeros_like(Temp)
     T_v = np.zeros_like(Temp)
@@ -188,40 +223,37 @@ def create_arrays(Temp: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]
 
 
 # ---------------------------------------------------------------------------------
-def compute_total_length(X_S: np.ndarray) -> float:
-
-    return np.cumsum(np.sqrt(np.diff(X_S[0, :]) ** 2 + np.diff(X_S[1, :]) ** 2))
-
-
-@njit
-def interpolate_value_0D(
-    ar: np.ndarray, x: np.ndarray, depth: float, ind: None | int
-) -> float:
-    """Interpolate 0D (aka was to lazy to look the interp function)
+def compute_total_length(X_S: np.ndarray) -> np.ndarray:
+    """Cumulative along-surface distance from the first point of `X_S`.
 
     Args:
-        ar (np.ndarray): targer array
-        x (np.ndarray): coordinate
-        depth (float): target depth
-        ind (None | int): ind of the current array
+        X_S (np.ndarray): surface coordinates, shape (2, n) as (x, y)
 
     Returns:
-        float: interpoalted value
+        np.ndarray: cumulative arc length at each point (length n-1)
     """
-    if ind is None:
-        ind = np.nonzero(depth >= x)[0][0]
 
-    dv = ar[ind + 1] - ar[ind]
-    dx = x[ind + 1] - x[ind]
-    val = ar[ind] + (dv / dx) * (depth - ar[ind])
-
-    return val, ind
+    return np.cumsum(np.sqrt(np.diff(X_S[0, :]) ** 2 + np.diff(X_S[1, :]) ** 2))
 
 
 # ---
 def find_real_ell_z(
     isotherm: float, ell: NDArray, z: NDArray, temp: NDArray
 ) -> tuple[float, float]:
+    """Find the along-surface length and depth where the slab crosses a
+    given isotherm, linearly interpolating between the two bracketing
+    points when the isotherm falls between grid points.
+
+    Args:
+        isotherm (float): target temperature
+        ell (NDArray): along-surface length at each point
+        z (NDArray): depth at each point
+        temp (NDArray): temperature at each point
+
+    Returns:
+        tuple[float, float]: (ell_p, z_p) at the isotherm crossing
+    """
+
     def interpolate_value(ind, dtemp, temp0, dval, val0, val1):
         val = (dval / dtemp) * (isotherm - temp0) + val0
         return val
@@ -246,19 +278,25 @@ def find_real_ell_z(
 def create_data_frame(
     data_table: pd.DataFrame, hdf5_file: str, partial, dict_column
 ) -> tuple[pd.DataFrame, namedtuple, namedtuple]:
-    def extract_max_depth(f: h5py.File, case_key: str, isotherm: str) -> float:
-        y = f[f"{case_key}/y_{isotherm}"][()]
-        return y
-
     """Read the h5file to produce a data frame storing the relevant information
     for the sensitivity test.
 
     Args:
         data_table (pd.DataFrame): initial data table
         hdf5_file (str): path to the h5file
+        partial (tuple): [group name, steady-state flag]
+        dict_column (dict): {column_name: []} template used to know which
+                per-case scalar fields to copy from the h5 file
     Returns:
-        Data Frame with all the information, named tuple with the coordinate system of the surface, name tuple with the 2D averages of the slab
+        tuple[pd.DataFrame, CoordinateSurface, SlabPlot2D]: data frame with
+                all the information, coordinate system of the surface, 2D
+                averages of the slab
     """
+
+    def extract_max_depth(f: h5py.File, case_key: str, isotherm: str) -> float:
+        y = f[f"{case_key}/y_{isotherm}"][()]
+        return y
+
     rows = []
     ind = None
 

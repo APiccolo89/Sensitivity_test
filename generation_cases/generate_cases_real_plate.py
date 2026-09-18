@@ -1,3 +1,8 @@
+"""Generate the .csv table of sensitivity-test cases for a given
+plate/suite: Latin-hypercube-sample the parameter ranges defined in
+real_plate_parametric_config.yml and write one row per case.
+"""
+
 import argparse
 import csv
 import itertools
@@ -11,6 +16,16 @@ _PLOT_ = False
 
 
 def plot(scaled_sample: np.ndarray, path_save: str, keys: list) -> None:
+    """Save diagnostic scatter plots of the Latin-hypercube sample: age vs
+    convergence velocity, and thermal parameter vs Tp / age.
+
+    Args:
+        scaled_sample (np.ndarray): sampled parameter values, shape
+                (n_cases, n_params)
+        path_save (str): directory to save the figures in
+        keys (list): [name, column_index] pairs mapping parameter names to
+                columns of `scaled_sample`
+    """
 
     dict_keys = {i[0]: i[1] for i in keys}
 
@@ -51,6 +66,16 @@ def plot(scaled_sample: np.ndarray, path_save: str, keys: list) -> None:
 
 
 def read_yml_configuration_file(path: str, plate: str) -> dict:
+    """Read the parameter ranges for one plate/suite from
+    real_plate_parametric_config.yml.
+
+    Args:
+        path (Path): directory containing real_plate_parametric_config.yml
+        plate (str): top-level key of the suite to read (e.g. "Mexico")
+
+    Returns:
+        dict: {param_name: [low, high]} plus "n_cases", as defined in the yml
+    """
 
     import yaml
 
@@ -63,7 +88,19 @@ def read_yml_configuration_file(path: str, plate: str) -> dict:
     return dict_value
 
 
-def extract_information(dict_conf: dict) -> tuple[np.ndarray, np.ndarray]:
+def extract_information(dict_conf: dict) -> tuple[np.ndarray, np.ndarray, list, int]:
+    """Split a suite's configuration dict into the sampling bounds and
+    number of cases.
+
+    Args:
+        dict_conf (dict): {param_name: [low, high]} plus "n_cases", as
+                returned by `read_yml_configuration_file`
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, list, int]: (lbounds, hbounds, keys,
+                n_cases) - lower/upper bounds per parameter, [name, index]
+                pairs, and the number of cases to sample
+    """
 
     len_dictionary = len(dict_conf)
     # remove the n_cases
@@ -85,6 +122,9 @@ def extract_information(dict_conf: dict) -> tuple[np.ndarray, np.ndarray]:
 
 
 def main() -> None:
+    """Sample the cases for the suite named by --plate and write them to
+    cases_Sensitivity_{plate}.csv.
+    """
     # Parse the input argument
     # Find the real folder of the current file
     # Read yml file

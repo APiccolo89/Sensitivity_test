@@ -25,6 +25,9 @@ def change_geometry(plate: str, args: SimpleNamespace, inp) -> None:
     The plate name is a string that corresponds to the key of the dictionary. The dictionary is defined in the file geometric_input_real_plate.yml. The function reads the dictionary and changes the geometry of the input data according to the plate name.
         Args:
             plate (str): Name of the plate to use for the real geometry (only the basic one stored in StonedFEniCSx is available). If None, the default geometry is used.
+            args (SimpleNamespace): updated arguments of the script (unused,
+                    kept for signature consistency with other case-config
+                    helpers)
             inp (SimpleNamespace): Input data of StonedFEniCSx
     """
     if plate != "None":
@@ -124,6 +127,23 @@ def define_material_properties(Ph, args):
 
 # ---
 def choose_material_properties(k: float) -> dict:
+    """Build the per-phase material-property dictionary for a thermal
+    model: fixed density/conductivity/heat-capacity/radiogenic-heating
+    defaults, plus either a constant thermal conductivity (k = 3.1 or 5.0)
+    or a full P-T dependent rheology (k < 0.0, the "non-linear" model).
+
+    Args:
+        k (float): thermal-conductivity code: 3.1 or 5.0 for a constant
+                conductivity model, a negative value for the non-linear
+                (P-T dependent) model, with |k| used as the mantle's k
+
+    Raises:
+        ValueError: if k is neither in (3.1, 5.0) nor negative
+
+    Returns:
+        dict: {material: {property: value}} for "mantle", "oceanic_crust",
+                "upper_crust", "lower_crust"
+    """
 
     materials = ("mantle", "oceanic_crust", "upper_crust", "lower_crust")
     properties = (
@@ -235,6 +255,18 @@ def create_case_dictionary() -> dict:
 
 # ---
 def print_meta_data_id_db(key_from_submission: str, cases: NDArray) -> str:
+    """Build a one-line human-readable summary of a case's thermal model
+    and shear-heating setting.
+
+    Args:
+        key_from_submission (str): group name as passed on the CLI (e.g.
+                "k3sh")
+        cases (NDArray): structured array with fields "k" and
+                "shear_heating", as returned by `create_case_dictionary`
+
+    Returns:
+        str: summary line
+    """
 
     def thermal_model(k) -> str:
         if k in (3.1, 5.0):
@@ -260,7 +292,10 @@ def print_meta_data_id_db(key_from_submission: str, cases: NDArray) -> str:
 
 # Global flag to decide wether or not to remove the results -> debug reason.
 def parse_the_argument(args: argparse.Namespace, pathtotable: str) -> dict:
-    """_summary_
+    """Resolve the CLI arguments and the case's row in the cases table
+    into the flat argument dictionary consumed by the rest of the
+    pipeline: group/thermal-model/shear-heating settings, material
+    properties, and the case's own parameter values.
 
     Args:
         args (argparse.Namespace): argument parser

@@ -27,6 +27,15 @@ from post_process_module.data_extractor import Test
 
 
 def save_dataset(group, name, data, compress=True):
+    """Create an h5py dataset under `group`, gzip-compressing array data.
+
+    Args:
+        group (h5py.Group): destination group
+        name (str): dataset name
+        data: value to store; arrays are gzip-compressed, scalars are not
+        compress (bool, optional): whether to gzip-compress array data.
+                Defaults to True.
+    """
     if compress and hasattr(data, "shape") and data.shape != ():
         group.create_dataset(
             name,
@@ -43,7 +52,17 @@ def save_dataset(group, name, data, compress=True):
 
 
 def save_namedtuple_fields(group, data, aliases=None, skip_fields=None):
-    """Save all values from a namedtuple using its field names."""
+    """Save all values from a namedtuple using its field names.
+
+    Args:
+        group (h5py.Group): destination group
+        data (NamedTuple): namedtuple whose fields are saved as datasets
+        aliases (dict, optional): {field_name: dataset_name} overrides for
+                fields that should be saved under a different name.
+                Defaults to None.
+        skip_fields (set, optional): field names to skip entirely.
+                Defaults to None.
+    """
     aliases = aliases or {}
     skip_fields = skip_fields or set()
 
@@ -58,6 +77,16 @@ def save_namedtuple_fields(group, data, aliases=None, skip_fields=None):
 
 
 def write_case_log(log_path, case_index, id_batch, success, path_h5):
+    """Append one JSON-line record for a case to the shared log file,
+    using a file lock so concurrent MPI ranks don't interleave writes.
+
+    Args:
+        log_path (str): path to the .jsonl log file
+        case_index (int): index of the case (row of the .csv table)
+        id_batch: id of the batch/worker that ran the case
+        success (bool): whether the test produced the expected output
+        path_h5 (str): path to the case's h5 database file
+    """
     record = {
         "case_index": int(case_index),
         "id_batch": (id_batch),
@@ -74,6 +103,15 @@ def write_case_log(log_path, case_index, id_batch, success, path_h5):
 
 # ---
 def timing_function(fun):
+    """Decorator that prints how long the wrapped function took to run.
+
+    Args:
+        fun: function to time
+
+    Returns:
+        the wrapped function
+    """
+
     @wraps(fun)
     def wrapper(*args, **kwargs):
         time_A = timing.time()
@@ -100,9 +138,11 @@ def test_success(name_test: str, steadystate=True):
 
     Args:
         name_test (str): path2test
+        steadystate (bool, optional): True to check for the steady-state
+                output file, False for the time-dependent one. Defaults to True.
 
     Returns:
-        _type_: Bool: False if the test did not produce the expected output, True if it did
+        bool: False if the test did not produce the expected output, True if it did
     """
     if steadystate:
         file = f"{name_test}/Steady_state.h5"
@@ -112,6 +152,19 @@ def test_success(name_test: str, steadystate=True):
     return os.path.isfile(file) != False
 # ---
 def extract_slab_surface(T: Test, steady_state=True, ts=0) -> np.ndarray:
+    """Interpolate the temperature field on the slab domain for a test.
+
+    Args:
+        T (Test): the test to read
+        steady_state (bool, optional): True to read the steady-state
+                field, False to read time step `ts` of the time-dependent
+                field. Defaults to True.
+        ts (int, optional): time step index, used only when steady_state
+                is False. Defaults to 0.
+
+    Returns:
+        np.ndarray: interpolated slab-surface temperature
+    """
     if steady_state:
         T_slab_surf = T.interpolate_data_slab("SteadyState.Temp")
     else:
@@ -123,6 +176,19 @@ def extract_slab_surface(T: Test, steady_state=True, ts=0) -> np.ndarray:
 def compute_tau_rheological_law(
     eps: float, temp_slab: np.ndarray, pres_slab: np.ndarray, tag: str
 ) -> np.ndarray:
+    """Compute the viscous shear stress along the slab from a
+    dislocation-creep flow law, using the water-fugacity correction.
+
+    Args:
+        eps (float): strain rate
+        temp_slab (np.ndarray): temperature at the slab surface [C]
+        pres_slab (np.ndarray): pressure at the slab surface [GPa]
+        tag (str): name of the rheological law to read from the phase
+                database
+
+    Returns:
+        np.ndarray: viscous shear stress along the slab
+    """
 
     from stonedfenicsx.config.phase_db import read_rheology
 
@@ -149,11 +215,12 @@ def extract_shearzone_data(
 
     Args:
         temp_slab (np.ndarray): temperature at the surface of the slab
-        PS (np.ndarray): pressure at the surface of the slab
+        pres_slab (np.ndarray): pressure at the surface of the slab
         args (args.NamedSpace): input data -> to improve, need to find way to save the metadata of the simulation
 
     Returns:
-        np.ndarray: tau_eff
+        tuple[np.ndarray, list]: tau_eff (per-node effective shear stress)
+                and tau_val (its [mean, std, median, min, max])
     """
     vel = args["vc"] * 1e-2 / 365.25 / 60 / 60 / 24
     eps = 0.5 * (vel * 1 / 500)
@@ -183,6 +250,22 @@ def extract_shearzone_data(
 def extract_slab_oceanic_surface_Temperature(
     T: Test, steady_state=True, ts=0
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Extract, sort by along-surface distance, and return the temperature
+    and pressure profiles along both the slab surface and the oceanic
+    surface.
+
+    Args:
+        T (Test): the test to read
+        steady_state (bool, optional): True to read the steady-state
+                field, False to read time step `ts` of the time-dependent
+                field. Defaults to True.
+        ts (int, optional): time step index, used only when steady_state
+                is False. Defaults to 0.
+
+    Returns:
+        tuple: (cd_s, cd_o, T_S, T_O, P_S, P_O) - slab and oceanic surface
+                coordinates, temperature and pressure profiles
+    """
     if steady_state:
         Data = T.Data_raw.SteadyState
         temp = Data.Temp
@@ -225,6 +308,21 @@ def extract_slab_oceanic_surface_Temperature(
 def extract_heat_flux(
     T: Test, steady_state: bool = True, ts: int = 0
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Extract the vertical heat flux along the top of the model
+    (0 <= x < 600 km, y ~ 0), sorted by x.
+
+    Args:
+        T (Test): the test to read
+        steady_state (bool, optional): True to read the steady-state
+                field, False to read time step `ts` of the time-dependent
+                field. Defaults to True.
+        ts (int, optional): time step index, used only when steady_state
+                is False. Defaults to 0.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: (x_top, q) - x-coordinate and heat
+                flux along the top boundary
+    """
 
     if not steady_state:
         q = T.Data_raw.TimeDependent.qy[:, ts]
@@ -250,6 +348,19 @@ def extract_heat_flux(
 
 
 def extract_isotherm(X, Y, T, level):
+    """Find the (x, y) position of the shallowest point of a given
+    isotherm, using matplotlib's contouring as a cheap isoline extractor.
+
+    Args:
+        X (np.ndarray): x grid
+        Y (np.ndarray): y grid
+        T (np.ndarray): temperature field on the (X, Y) grid
+        level (float): isotherm temperature to extract
+
+    Returns:
+        tuple[float, float]: (x, y) of the shallowest point on the
+                `level` isotherm
+    """
     import matplotlib.pyplot as plt
 
     T = T + 0.3 * np.abs(Y)
@@ -273,7 +384,10 @@ def extract_isotherm(X, Y, T, level):
 # ---
 @timing_function
 def extract_relevant_data_td(path: str, args: dict) -> namedtuple:
-    """_summary_
+    """Extract, for every time step of a time-dependent test, the
+    150/350/450/600 C isotherm positions, the slab/oceanic surface
+    temperature and pressure profiles, the shear-zone stress statistics,
+    and the top-boundary heat flux, and bundle them into one namedtuple.
 
     Args:
         path (str): path to the test
@@ -402,6 +516,18 @@ def extract_relevant_data_td(path: str, args: dict) -> namedtuple:
 # ---
 @timing_function
 def extract_relevant_data(path: str, args: dict) -> list:
+    """Steady-state counterpart of `extract_relevant_data_td`: extract the
+    isotherm positions (150 to 900 C), slab/oceanic surface temperature
+    and pressure profiles, shear-zone stress statistics, and top-boundary
+    heat flux for a steady-state test, bundled into one namedtuple.
+
+    Args:
+        path (str): path to the test
+        args (dict): meta_data of the simulation
+
+    Returns:
+        named_tuple: data of the simulation.
+    """
     X_O = None
     X_S = None
     T = Test(path_2_test=path)
@@ -531,6 +657,19 @@ def save_test_data(
     arguments: dict | None = None,
     pathtotest: tuple[str, str] = None,
 ) -> None:
+    """Extract the relevant data of a steady-state test and append it as a
+    new group in the shared per-group Data_Base h5 file, logging success or
+    failure to `Failed_tests.jsonl`.
+
+    Args:
+        name_suite (str, optional): name of the test suite, used to build
+                the output directory name. Defaults to "Sensitivity".
+        arguments (dict, optional): metadata/config of the case being
+                saved (case_index, group, id_batch, steady_state, ...).
+                Defaults to None.
+        pathtotest (tuple[str, str], optional): path to the test's output
+                folder. Defaults to None.
+    """
 
     print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
 
@@ -646,6 +785,19 @@ def save_test_data(
 
 # ---
 def update_Welfrod_ALG(Temp: np.ndarray, mean: np.ndarray, var: np.ndarray, n: int):
+    """One update step of Welford's online algorithm for running mean and
+    variance.
+
+    Args:
+        Temp (np.ndarray): new sample
+        mean (np.ndarray): running mean before this update
+        var (np.ndarray): running (unnormalised) sum of squared deviations
+                before this update
+        n (int): number of samples seen so far, including this one
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: updated (mean, var)
+    """
     delta = Temp - mean
     mean = mean + delta / n
     delta2 = Temp - mean
@@ -656,6 +808,15 @@ def update_Welfrod_ALG(Temp: np.ndarray, mean: np.ndarray, var: np.ndarray, n: i
 
 # ---
 def create_arrays(Temp: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Allocate zero-filled running-mean and running-variance accumulators
+    with the same shape as `Temp`, for use with `update_Welfrod_ALG`.
+
+    Args:
+        Temp (np.ndarray): template array whose shape is copied
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: (T_m, T_v) zero-filled arrays
+    """
 
     T_m = np.zeros_like(Temp)
     T_v = np.zeros_like(Temp)
@@ -664,106 +825,25 @@ def create_arrays(Temp: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 @timing_function
-def save_test_data_td(
-    name_suite: str = "Sensitivity_td",
-    arguments: dict = None,
-    pathtotest: tuple[str, str] = None,
-) -> None:
-
-    print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
-
-    main_dir = Path(__file__).resolve().parents[1]
-    path2save = main_dir / "h5_outputs" / f"{name_suite}_h5_files_{arguments['group']}"
-    path2save.mkdir(parents=True, exist_ok=True)
-
-    print(f"Test data will be saved in {path2save}")
-
-    save_grid = True
-    # Paths
-    name_test = PurePath(pathtotest).name
-    real_test = pathtotest
-
-    print(
-        f"Extracting relevant data for case {arguments['case_index']} and saving to Data_Base.h5"
-    )
-    print(f"name_test: {name_test}")
-    test_successful = test_success(real_test, steadystate=False)
-    if test_successful:
-        list_data = extract_relevant_data_td(path=f"{real_test}", args=arguments)
-
-        print(f"  Print Meta_data for case {arguments['case_index']} and {name_test}")
-        for key, value in vars(arguments).items():
-            print(f"  - {key}: {value}")
-
-        print(f"Case {arguments['case_index']}: {name_test} ")
-
-        with h5py.File(f"{path2save}/Data_Base_{arguments['id_batch']}.h5", "a") as f:
-            print("  - Saving data to Data_Base.h5")
-            print(f"{path2save}/Data_Base_{arguments['id_batch']}.h5 ")
-            if save_grid:
-                if "Xi" not in f:
-                    f.create_dataset("Xi", data=list_data.Xi)
-
-                if "Yi" not in f:
-                    f.create_dataset("Yi", data=list_data.Yi)
-
-                if "Xi" in f and "Yi" in f:
-                    save_grid = False
-
-            if name_test in f:
-                print(f"Overwriting existing case group: {name_test}")
-                flag_welford = False
-                del f[name_test]
-            else:
-                flag_welford = True
-            grp = f.create_group(name_test)
-
-            for key in arguments.keys():
-                value = arguments[key]
-                if isinstance(value, str):
-                    grp.create_dataset(
-                        key,
-                        data=value,
-                        dtype=h5py.string_dtype(encoding="utf-8"),
-                    )
-                elif key == "mat_prop":
-                    pass
-                else:
-                    grp.create_dataset(key, data=value)
-
-            save_namedtuple_fields(
-                grp,
-                list_data,
-                aliases={"tau_slab": "tau_shear"},
-                skip_fields={"Xi", "Yi"},
-            )
-            del list_data
-            gc.collect()
-    else:
-        test_successful = False
-
-    write_case_log(
-        log_path=f"{path2save}/Failed_tests.jsonl",
-        case_index=arguments["case_index"],
-        id_batch=arguments["id_batch"],
-        success=test_successful,
-        path_h5=f"{path2save}/Data_Base_{arguments['id_batch']}.h5",
-    )
-
-    print(
-        "==================================================================================================================="
-    )
-
-
-# ---
-
-
-@timing_function
 def save_test_data_td_alt(
     name_suite: str = "Sensitivity_td",
     arguments: dict = None,
     pathtotest: tuple[str, str] = None,
 ) -> None:
+    """Extract the relevant data of a time-dependent test and append it as
+    a new group in the shared per-group Data_Base h5 file, alongside
+    StonedFEniCSx's git info, logging success or failure to
+    `Failed_tests.jsonl`.
+
+    Args:
+        name_suite (str, optional): name of the test suite, used to build
+                the output directory name. Defaults to "Sensitivity_td".
+        arguments (dict, optional): metadata/config of the case being
+                saved (case_index, group, id_batch, steady_state, ...).
+                Defaults to None.
+        pathtotest (tuple[str, str], optional): path to the test's output
+                folder. Defaults to None.
+    """
 
     print(f"Saving test data for case {arguments['case_index']} to Data_Base.h5")
 

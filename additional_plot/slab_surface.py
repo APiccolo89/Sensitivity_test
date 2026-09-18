@@ -1,3 +1,7 @@
+"""Build a StonedFEniCSx mesh for a given slab/plate and plot its boundary
+conditions, for inspection or for the manuscript's mesh figures.
+"""
+
 import sys
 from importlib.resources import files
 from pathlib import Path
@@ -25,8 +29,8 @@ def extract_boundary(GD, X, dict_boundary: dict) -> dict:
 
 
     Args:
-        GD (_type_): Global Domain
-        X (_type_): Coordinates of the point
+        GD: Global Domain object (StonedFEniCSx mesh + boundary tags)
+        X (np.ndarray): Coordinates of the point
         dict_boundary (dict): Internal dictionary of the boundary condition
 
     Returns:
@@ -84,6 +88,15 @@ def extract_boundary(GD, X, dict_boundary: dict) -> dict:
 
 # ---
 def plot_mesh_boundary(mesh, name_mesh: str, path2save: str) -> None:
+    """Plot the mesh nodes and the boundary polylines (colored by whether
+    the boundary is an ocean/crust boundary or an internal one) and save
+    the figure.
+
+    Args:
+        mesh: StonedFEniCSx mesh object (must expose `.global_domain`)
+        name_mesh (str): name used for the output file
+        path2save (str): directory to save the figure in
+    """
 
     name_file = f"{path2save}/{name_mesh}.png"
 
@@ -129,8 +142,11 @@ def process_mesh(slab: str = "CustomRibe", name_plate: str = "Default") -> None:
     topic that requires a bit of knowledge on how I organised this monstruosity.
 
     Args:
-        slab (str, optional): _description_. Defaults to 'CustomRibe'.
-        name_plate (str, optional): _description_. Defaults to 'Default'.
+        slab (str, optional): slab-geometry name; also used as the plate
+                name when name_plate != "CustomRibe". Defaults to 'CustomRibe'.
+        name_plate (str, optional): "CustomRibe" to use the built-in slab
+                geometry, anything else to load `slab`'s geometry from a
+                real-plate file instead. Defaults to 'Default'.
     """
 
     import stonedfenicsx.create_mesh.create_mesh as create_mesh
@@ -155,9 +171,7 @@ def process_mesh(slab: str = "CustomRibe", name_plate: str = "Default") -> None:
     inp.g_input.resolution_refine = 1.5  # resolution around the slab top surface and the oceanic crust within the slab.
 
     if name_plate != "CustomRibe":
-        change_geometry(
-            plate=slab, path=str(Path(__file__).resolve().parents[1]), inp=inp
-        )
+        change_geometry(plate=slab, args=None, inp=inp)
         inp.g_input.slab_type = "FromFile"  # type of slab geometry
         inp.g_input.sub_path = str(
             files("stonedfenicsx").resolve().parents[0]
@@ -186,6 +200,7 @@ def process_mesh(slab: str = "CustomRibe", name_plate: str = "Default") -> None:
 
 # ---
 def main():
+    """Build and plot the mesh for the Japan real-plate geometry."""
     plate_name = "FromFile"
     slab = "Japan"
     process_mesh(slab=slab, name_plate=plate_name)

@@ -1,3 +1,9 @@
+"""Produce the manuscript's sensitivity-study figures for one suite/group:
+validate that all required cases were run, merge their h5 databases, and
+generate either the synthetic-geometry ("basic") or real-plate ("real")
+figure set.
+"""
+
 import argparse
 from pathlib import Path
 
@@ -18,11 +24,9 @@ from post_process_module.process_data_visualisation import wrapper_merging_h5
 
 # ---
 class ErrorParsing(Exception):
-    """_summary_
-
-    Args:
-        Exception (_type_): Error of the parser. Check if the user provide the right errors, and create an instance
-        of the error on the basis of the most likely mistake.
+    """Error raised by `check_parsed_arguments` when the CLI arguments or
+    the on-disk case data don't match what's expected. `error_code`
+    selects which of the canned messages `__str__` reports.
     """
 
     def __init__(self, message: str, error_code: int):
@@ -61,10 +65,15 @@ class ErrorParsing(Exception):
 
 # ---
 def check_parsed_arguments(args) -> None:
-    """_summary_
+    """Validate the parsed CLI arguments: normalise --steady_state to
+    "SS"/"TD", check that required arguments were given, that --sh is
+    "sh"/"nsh", that every thermal-model group of the suite was actually
+    run (either merged already or its raw output folder exists), and that
+    the named .csv table exists.
 
     Args:
-        args (_type_): parsed argument of the script
+        args: parsed argument namespace (mutated in place: steady_state
+                is rewritten from 1/0 to "SS"/"TD")
 
     Raises:
         ErrorParsing: If the group name is wrong, or all the test are not performed, or any of the test is not
@@ -139,6 +148,21 @@ def check_parsed_arguments(args) -> None:
 # ---
 @timing_function
 def create_data_structure(aux_path: str, args):
+    """Merge the per-group h5 databases (k3, k5, nl, for the given
+    shear-heating flag) into one combined data table and stack of 2D slab
+    fields.
+
+    Args:
+        aux_path (str): path to the Output_h5_files directory
+        args: parsed argument namespace (uses .sh, .steady_state,
+                .name_suite, .csv)
+
+    Returns:
+        tuple[pd.DataFrame, tuple, CoordinateSurface]: (data_table,
+                slab_2D, surface_data_0) - combined case data, the three
+                groups' 2D slab fields, and the k3 group's coordinate
+                system
+    """
     print("Merging partial data files...")
 
     data_table_0, surface_data_0, slab_2D_0 = wrapper_merging_h5(
@@ -225,10 +249,13 @@ def plot_sensitivity_study_steady_state(args) -> None:
 
 # ---
 def plot_real_case_study_steady_state(args):
-    """_summary_
+    """Produce the real-plate figure set: print IQR/median statistics for
+    the seismogenic length and isotherm depths, then box plots of the
+    seismogenic length and maximum isotherm depth per thermal model.
 
     Args:
-        args (_type_): _description_
+        args: parsed argument namespace (uses .sh, .name_suite,
+                .steady_state, .csv)
     """
 
     check_parsed_arguments(args)
@@ -256,10 +283,12 @@ def plot_real_case_study_steady_state(args):
 
 # ---
 def main():
-    """Generation.
+    """Entry point: parse the CLI arguments and dispatch to
+    `plot_sensitivity_study_steady_state` ("basic") or
+    `plot_real_case_study_steady_state` ("real").
 
     Raises:
-        ErrorParsing: _description_
+        ErrorParsing: if --function_plot is neither "basic" nor "real"
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(

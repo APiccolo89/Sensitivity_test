@@ -12,6 +12,15 @@ r_grid = 800
 
 
 def get_nested_attr(obj, path):
+    """Resolve a dotted attribute path on an object, e.g. "SteadyState.Temp".
+
+    Args:
+        obj: object to walk
+        path (str): dot-separated chain of attribute names
+
+    Returns:
+        The value found at the end of the chain.
+    """
     for part in path.split("."):
         obj = getattr(obj, part)
     return obj
@@ -25,10 +34,10 @@ class Test:
     Data_Raw: class containing the field
 
     methods:
-    _interpolate_data(): function that interpolate the raw data (unstructured triangular grid) to a regular quadrangular
+    interpolate_data(): function that interpolate the raw data (unstructured triangular grid) to a regular quadrangular
     grid. It uses the additional information provided by the boundary to filter artifact
 
-    _interpolate_data_slab(): function that interpolate the raw data of the simulation and select only the slab domain.
+    interpolate_data_slab(): function that interpolate the raw data of the simulation and select only the slab domain.
     """
 
     def __init__(self, path_2_test: str, td: bool = False):
@@ -36,7 +45,8 @@ class Test:
 
         Args:
             path_2_test (str): the path to the test
-            td (bool, optional): _description_.Tell the class if the test is steady state or not. False: means steady state, True: means timedependent
+            td (bool, optional): whether the test is time-dependent.
+                    False: steady state, True: time-dependent.
         """
         self.path_2_test = path_2_test
         self.MeshData = MeshData(self.path_2_test, td)
@@ -73,6 +83,11 @@ class Test:
         """Interpolate the data on a regular grid for visualisation
         Args:
             Data_field (str): field to be interpolated
+            ts (int, optional): time step index, used only when
+                    steady_state is False. Defaults to 0.
+            steady_state (bool, optional): True to read the steady-state
+                    field, False to read a single time step of the
+                    time-dependent field. Defaults to True.
         Returns:
             Zi (np.array): interpolated data
 
@@ -102,13 +117,18 @@ class Test:
 
 # ---
 class Data_Raw:
+    """Thin wrapper that holds either the steady-state or the
+    time-dependent `Data_experiment` for a test, depending on `td`.
+    """
+
     def __init__(self, f: str, num: int, td: bool = False):
-        """_summary_
+        """Build the raw-data container for a test.
 
         Args:
             f (str): path 2 the file
             num (int): number of nodes of the unstructured grid
-            td (bool, optional): _description_. Defaults to False. time dependent flag: True: Time Dependent; False: Steady state
+            td (bool, optional): time dependent flag: True: Time Dependent;
+                    False: Steady state. Defaults to False.
         """
         if not td:
             self.SteadyState = Data_experiment(f, num, ts=False)
@@ -220,6 +240,16 @@ class Data_experiment:
         self.extract_data(f, ts)
 
     def extract_data(self, f: str, ts: bool):
+        """Read the h5 output of StonedFEniCSx and fill the
+        temperature/pressure/velocity/material-property arrays allocated
+        in `__init__`.
+
+        Args:
+            f (str): path to the test
+            ts (bool): True to read the time-dependent file
+                    ("time_dependent.h5"), False to read the steady-state
+                    file ("Steady_state.h5")
+        """
 
         import h5py
         import numpy as np
@@ -290,12 +320,20 @@ class Data_experiment:
 
 # ---
 class MeshData:
+    """Mesh geometry and derived masks for a test: node coordinates,
+    the interpolation grid, and the polygons (+ inside/outside masks)
+    used to clip interpolated data to the model domain / slab domain.
+    """
+
     def __init__(self, f: str, td: bool = False):
         """Extract the mesh data from the h5 file.
 
         Produce the visualisation grid and the polygon
                 Args:
                     f (str): path to the test
+                    td (bool, optional): True to read the time-dependent
+                            file, False to read the steady-state file.
+                            Defaults to False.
         """
         if td:
             f1 = "%s/time_dependent.h5" % f
@@ -331,6 +369,14 @@ class MeshData:
 
     # ---
     def create_polygon_slab(self):
+        """Build the polygon enclosing the slab domain (inlet, bottom slab,
+        bottom, and slab-top boundaries) and the mask of grid points that
+        fall inside it.
+
+        Returns:
+            tuple[shapely.Polygon, np.ndarray]: the polygon and a boolean
+                    mask over `self.Xi`/`self.Yi` marking points inside it
+        """
 
         def extract_coordinates(mesh_tag: list) -> np.ndarray:
 
@@ -386,6 +432,14 @@ class MeshData:
 
     # ---
     def create_polygon(self):
+        """Build the polygon enclosing the whole model domain (left,
+        bottom, right and top boundaries) and the mask of grid points that
+        fall inside it.
+
+        Returns:
+            tuple[shapely.Polygon, np.ndarray]: the polygon and a boolean
+                    mask over `self.Xi`/`self.Yi` marking points inside it
+        """
 
         x_min = np.min(self.X[:, 0])
 

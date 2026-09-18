@@ -1,3 +1,9 @@
+"""Configure and run one StonedFEniCSx sensitivity-test case: build the
+input data for a case from the .csv table and CLI arguments, run the
+simulation (with retry to work around a mesh/cache race condition), and
+save the reduced results.
+"""
+
 import argparse
 import os
 import shutil
@@ -27,11 +33,13 @@ def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
     """A fake wrap.
 
     Args:
-        inp (_type_): input configuration data
-        Ph (_type_): phase data base
+        inp (SimpleNamespace): input configuration data
+        Ph (PhInput): phase data base
+        arguments (dict): case configuration, used to print the slab type
+                on each attempt
 
     Raises:
-        ValueError: failed attempt
+        ValueError: after 3 failed attempts to run stoned_fenicsx
 
     This is a quick hack solution. In the original plan, I would have been able to configure a no-race condition
     for the mesh generation and cache generation for the thermal properties. In practice, I was not able to find a proper solution.
@@ -94,7 +102,10 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
             name_suite (str, optional): Name of the test suite. Defaults to 'debug'.
 
         Raises:
-            ValueError: _description_
+            ValueError: propagated from wrap_stoned() after 3 failed
+                    attempts to run stoned_fenicsx, or from change_geometry()
+                    if args["plate_real"] names a plate that isn't in
+                    real_plate_configuration/geometric_input_real_plate.yml
 
         Returns:
             tuple[str,str]: general path of the tests and name of the test
@@ -197,6 +208,10 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
 # ---
 @timing_function
 def configure_run_save():
+    """Entry point: parse the CLI arguments, run one case with
+    `perform_test`, save its reduced results, and remove the raw test
+    folder.
+    """
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
