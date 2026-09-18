@@ -8,12 +8,10 @@
       "request": "launch",
       "program": "${workspaceFolder}/sensitivity_steady_state_figure_plot.py",
       "args": [
-        "--sh","sh",
-        "--name_suite","Mexico",
+        "--sh","nsh",
+        "--name_suite","steady_s_sensitivity",
         "--steady_state","1",
-        "--csv","cases_Sensitivity_steady_s_sensitivity.csv",
-        "--function_plot","real"
-      ],
+        "--csv","cases_Sensitivity_steady_s_sensitivity.csv",      ],
       "console": "integratedTerminal"
     },
     {
