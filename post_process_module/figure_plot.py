@@ -29,7 +29,15 @@ plt.rcParams.update(
         "mathtext.fontset": "cm",  # Computer Modern
     }
 )
-
+# ---
+class data_base_PT_whitney:
+    """Class that stores the data of HPLT database, 
+    and read the csv file. 
+    """
+    def __init__(self):
+        T, P = np.loadtxt("PT_whitney.csv", delimiter=",", skiprows=1, unpack=True)
+        self.T = T
+        self.P = P
 # ---
 def print_save_IQ_information(pdb: pd.DataFrame, pt2save: str, prop: str):
     """Generate basic statistics for a given property and a given database
@@ -254,8 +262,6 @@ def check_precision(value: float, m: bool) -> float:
     value_u = (np.floor(value_u) + corr) * scale * direction
 
     return value_u
-
-
 # ---
 def create_common_data_set(
     pdb: pd.DataFrame,
@@ -304,23 +310,33 @@ def create_common_data_set(
     )
 
     return a_common, b_common, c_common
-
-
 # ---
-class data_base_PT_whitney:
-    """Class that stores the data of HPLT database, 
-    and read the csv file. 
+def extract_limit_array(ar: np.ndarray) -> tuple[list,list]:
+    """Function that extract the limit of an array 
+    -> This array is the concatenated arrays that have been flatten into a 0D array
+
+    Args:
+        ar (np.ndarray): target array
+
+    Returns:
+        tuple of lim and ticks list
     """
-    def __init__(self):
-        T, P = np.loadtxt("PT_whitney.csv", delimiter=",", skiprows=1, unpack=True)
-        self.T = T
-        self.P = P
 
 
-# ---
+    # Find the min and max
+    lim = [np.min(ar.flatten()), np.max(ar.flatten())]
+    # Check the precision and round up the limits to the 0.05 highest multiply or the lowest 0.05 multiply
+    lim = [check_precision(lim[0], True), check_precision(lim[1], False)]
+    # Create the ticks 
+    ticks = create_list_tick(lim)
+    # Enlarge the limits of 0.1 just for being sure to not cut the plot using the mean
+    mean_lim = np.abs(np.mean(lim))
+    exp = np.floor(np.log10(mean_lim))
+    mean_lim = (mean_lim * 10 ** (-exp)) * 0.5
+    # Correct additionally the limits
+    lim = [lim[0] - mean_lim, lim[1] + mean_lim]
 
-
-
+    return lim, ticks
 # ---
 def modify_axes(
     ax: mpl_axes = None,
@@ -430,24 +446,24 @@ def modify_axes(
 
 
 # ---
-def plot_slab_variances(A, path2save: str, number_figure: int) -> None:
+def plot_slab_variances(A, path2save: str, number_figure: str) -> None:
+    """Plot of the average slab temperature computed with the Welford alg
+
+    Args:
+        A (_type_): Data structure with the slabs temperature
+        path2save (str): the path in which the figure is saved
+        number_figure (str): a figure number/letter
+
+    Returns:
+        _type_: Nothingness
+    """
+
     import matplotlib.pyplot as plt
     import numpy as np
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
     name_plot = f"Figure_{number_figure}.png"
 
-    def extract_limits(k3, k5, NL):
-        l_m = []
-        l_M = []
-
-        l_m.append(np.nanmin(NL.temp_mean_2d - k3.temp_mean_2d))
-        l_M.append(np.nanmax(NL.temp_mean_2d - k3.temp_mean_2d))
-
-        l_m.append(np.nanmin(NL.temp_mean_2d - k5.temp_mean_2d))
-        l_M.append(np.nanmax(NL.temp_mean_2d - k5.temp_mean_2d))
-
-        return l_m, l_M
 
     fig = plt.figure(figsize=(12, 12))
 
@@ -464,13 +480,11 @@ def plot_slab_variances(A, path2save: str, number_figure: int) -> None:
     ax0 = fig.add_axes([bx, by, sx, sy])
     ax1 = fig.add_axes([bx + sx + dx, by, sx, sy])
 
-    lima, limb = extract_limits(k3, k5, NL)
 
     lim_x = [0.0, 800.0]
     lim_y = [-600, 0.0]
 
-    levels0 = np.linspace(np.floor(lima[0]), np.ceil(limb[0]), 10)
-    levels1 = np.linspace(np.floor(lima[1]), np.ceil(limb[1]), 10)
+
     alpha = 1.0
 
     a = ax0.pcolormesh(
@@ -561,8 +575,6 @@ def plot_slab_variances(A, path2save: str, number_figure: int) -> None:
 
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
     plt.close(fig)
-
-
 # ---
 def figure_slab_surface(
     path2save: str,
@@ -571,6 +583,16 @@ def figure_slab_surface(
     petro_db: data_base_PT_whitney,
     figure_number: str,
 ) -> None:
+    """_summary_
+
+    Args:
+        path2save (str): path to save the figure
+        pdb (pd.DataFrame): The dataframe containing all the simulation data
+        crd (CoordinateSurface): coordinate data structure
+        petro_db (data_base_PT_whitney): Petrological database 
+        figure_number (str): the number of the figure
+    """
+
 
     def difference_surface(pdb_a: pd.DataFrame, pdb_b: pd.DataFrame) -> np.ndarray:
         """Enclosure to find the dT array
@@ -831,10 +853,31 @@ def figure_slab_surface(
     )
 
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
-
+# ---
 def plot_slab_versus_thermalpar(
     path2save: str, pdb: pd.DataFrame, figure_number: str = 0
 ):
+    """Function that plot the maximum depth of the isotherm against the thermal parameters
+
+    The function operates in the following way: 
+    1st. Collect the maximum depth of each of the thermal model for a given isotherm
+    2nd. Divide the dataset as a function of a fixed number of interval of thermal parameter
+    3rd. Proceed per each "bin", compute the main statistics, and create the median, and min-max curve
+    -> Plot these data with a hard coded color that represents each thermal model. 
+    ---- 
+    It additional repeats the same operation to compute the relative error with between the linear
+    and non linear experiments assuming that the realisation of the non-linear model for a given set of 
+    parameters is the true value. This picture highlights how much the sensitivity wrt the thermal 
+    parameter is affected by the thermal model used. 
+    
+    Args:
+        path2save (str): path to save
+        pdb (pd.DataFrame): DataFrame containing all the simulation data
+        figure_number (str, optional): figure number
+
+    Returns:
+            None
+    """
 
     name_plot = f"Figure_{figure_number}.png"
 
@@ -1108,31 +1151,13 @@ def plot_slab_versus_thermalpar(
     )
 
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
-
-
+# ---
 def extract_max_dpth(db: pd.DataFrame, isotherms: int) -> np.ndarray:
     buf0 = np.zeros(len(db[f"max_dpth{isotherms}"]), dtype=float)
     for i in range(len(db[f"max_dpth{isotherms}"])):
         bufb = db.iloc[i]
         buf0[i] = bufb[f"max_dpth{isotherms}"]
     return buf0
-
-
-def _extract_limit_array(ar: np.ndarray) -> list:
-
-    lim = [np.min(ar.flatten()), np.max(ar.flatten())]
-    lim = [check_precision(lim[0], True), check_precision(lim[1], False)]
-    ticks = create_list_tick(lim)
-    # Enlarge the limits of 0.1 just for being sure to not cut the plot using the mean
-    mean_lim = np.abs(np.mean(lim))
-    exp = np.floor(np.log10(mean_lim))
-    mean_lim = (mean_lim * 10 ** (-exp)) * 0.5
-
-    lim = [lim[0] - mean_lim, lim[1] + mean_lim]
-
-    return lim, ticks
-
-
 # ---
 def box_plot_thermal_model(
     path2save: str, pdb: pd.DataFrame, figure_number: str = 0
@@ -1249,8 +1274,6 @@ def box_plot_thermal_model(
     )
 
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
-
-
 # ---
 def box_plot_thermal_model_max_depth(
     path2save: str, pdb: pd.DataFrame, figure_number: str = 0
@@ -1498,8 +1521,7 @@ def box_plot_thermal_model_max_depth(
     )
 
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
-
-
+# ---
 def plot_heat_flux_slab_real(
     ax, pdb: pd.DataFrame, x_heat: np.ndarray, c="forestgreen"
 ) -> tuple[mpl_axes, list, list]:
@@ -1528,23 +1550,35 @@ def plot_heat_flux_slab_real(
     ax.fill_between(x_heat, hf_min, hf_max, color=c, alpha=0.4)
 
     return ax
-
-
+# ---
 def plot_slab_slab_real(
     ax, pdb: pd.DataFrame, c="forestgreen"
 ) -> tuple[mpl_axes, list, list]:
+    """Helper function for the eyecandie figure
+
+    Args:
+        ax (_type_): the current object axis
+        pdb (pd.DataFrame): the database containing the P-T condition of the slab
+        c (str, optional):Color.
+
+    Returns:
+        tuple[mpl_axes, list, list]:List of data: axes, limit list and automatic ticks
+    """
+    # Extract array
     T_S = create_array(pdb["T_S"])
     P_S = create_array(pdb["P_S"])
+    # Extract the minimum T and the maximum T per each depth/Pressure
     temp_min = np.min(T_S, 0)
     temp_max = np.max(T_S, 0)
     # -extract max,min
+    # Create the plot: plot the bounding curve
     ax.plot(temp_min, P_S[0, :], color=c, linewidth=0.7, linestyle=":")
     ax.plot(temp_max, P_S[0, :], color=c, linewidth=0.7, linestyle=":")
+    # Fill the bounding lines
     ax.fill_betweenx(P_S[0, :], temp_min, temp_max, color=c, alpha=0.4)
 
     return ax
-
-
+# ---
 def plot_eye_candy(
     a: pd.DataFrame,
     b: pd.DataFrame,
