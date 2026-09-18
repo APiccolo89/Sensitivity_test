@@ -20,12 +20,38 @@ _PT_CM_ = 0.035
 _TICKSFONTSIZE_ = 0.8 / _PT_CM_
 _LABELFONTSIZE_ = 0.9 / _PT_CM_
 _TEXTFONTSIZE_ = 0.65 / _PT_CM_
-
+# latex Font
+TRANSPARENT = True
+plt.rcParams.update(
+    {
+        "text.usetex": False,
+        "font.family": "serif",
+        "mathtext.fontset": "cm",  # Computer Modern
+    }
+)
 
 # ---
 def print_save_IQ_information(pdb: pd.DataFrame, pt2save: str, prop: str):
+    """Generate basic statistics for a given property and a given database
+
+    Args:
+        pdb (pd.DataFrame): Data frame containing the merged database
+        pt2save (str): Path to save the csv file
+        prop (str): Property
+    """
+
 
     def compute_stats(a: pd.DataFrame, name: str) -> dict:
+        """Enclosure computing the basic statistics
+
+        Args:
+            a (pd.DataFrame): The Target database - i.e., the reduced one
+            name (str): name of the property
+
+        Returns:
+            dict: Dictionary containing all the related data
+        """
+        
         dict_stat = {}
         quartiles = a.quantile([0.05, 0.25, 0.75, 0.95])
         quartiles = quartiles.to_numpy()
@@ -39,6 +65,7 @@ def print_save_IQ_information(pdb: pd.DataFrame, pt2save: str, prop: str):
         return dict_stat
 
     # ---
+    # Check if all the test have been run and create a common dataset
     k3, k5, knl = create_common_data_set(pdb=pdb)
 
     knl_a = knl[prop]
@@ -55,7 +82,7 @@ def print_save_IQ_information(pdb: pd.DataFrame, pt2save: str, prop: str):
     stat_dab = compute_stats(dab, "NL-k3")
     stat_dac = compute_stats(dac, "NL-k5")
 
-    for i in stat_nla.keys():
+    for i in stat_nla:
         if i == "name":
             continue
         else:
@@ -73,7 +100,7 @@ def print_save_IQ_information(pdb: pd.DataFrame, pt2save: str, prop: str):
 
     pathcsv = f"{pt2save}/table_csv_{prop}.csv"
     # Prepare list of field
-    field = [i for i in stat_nla.keys()]
+    field = [i for i in stat_nla]
     with open(pathcsv, "a", newline="") as f:
         writer = csv.DictWriter(
             f,
@@ -85,7 +112,22 @@ def print_save_IQ_information(pdb: pd.DataFrame, pt2save: str, prop: str):
 
 # ---
 def create_array(buf: pd.DataFrame) -> np.ndarray:
+    """Create array: helper function that creates an array. 
+    In the DataFrame, I saved arrays to be forcing the connection
+    between input data and 1D arrays representing the state of the 
+    surface of the slab. However, it is difficult to plot en-mass 
+    these data, thus it is necessary to oderly collect the data
+    and transform in an array of (num_test,num_points). 
 
+    Args:
+        buf (pd.DataFrame): The reduced database
+
+    Raises:
+        ValueError: If this function is used for scalar, it defeats its purpose
+
+    Returns:
+        array(np.ndarray): The output array
+    """
     if len(buf.shape) > 1:
         raise ValueError("The function accept only 1D dataframe")
 
@@ -98,12 +140,32 @@ def create_array(buf: pd.DataFrame) -> np.ndarray:
 
 
 # ---
-def sign(num):
+def sign(num:float)->float|int:
+    """Helper function to extract the sign of a given number
+
+    Args:
+        num (_type_): a number (float, int)
+
+    Returns:
+        _type_: signed integer/float
+    """
     return -1 if num < 0 else 1
 
 
 # ---
-def ranges(x, y, z):
+def ranges(x, y, z)->list:
+    """Helper function that finds the global maximum 
+    and global minimum of three arrays. This function
+    helps to standardise the limit 
+    --- To be removed, as I find a better approach. 
+    Args:
+        x (_type_): array 1
+        y (_type_): array 2
+        z (_type_): array 2
+
+    Returns:
+        _type_: list of common lim
+    """
     lim = [
         np.floor(np.nanmin([np.nanmin(x), np.nanmin(y), np.nanmin(z)])),
         np.ceil(np.nanmax([np.nanmax(x), np.nanmax(y), np.nanmax(z)])),
@@ -155,14 +217,16 @@ def create_list_tick(lim: list) -> list:
 
 # ---
 def check_precision(value: float, m: bool) -> float:
-    """_summary_
+    """Function to check the log10 of a given value. 
+    This allow to round up the value to a definite number
+    such that the ticks are created automatically
 
     Args:
-        value (float): _description_
-        m (True): _description_
+        value (float): the target value
+        m (True): is the minimum value or the maximum value
 
     Returns:
-        float: _description_
+        float: corrected value
     """
     if value == 0.0:
         return 0.0
@@ -202,6 +266,8 @@ def create_common_data_set(
 
     Args:
         a (pd.DataFrame): main database
+        
+    WARNING: this function has hard coded value related to the main manuscript!!!!
 
     Returns:
         tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]: filtered database
@@ -242,6 +308,9 @@ def create_common_data_set(
 
 # ---
 class data_base_PT_whitney:
+    """Class that stores the data of HPLT database, 
+    and read the csv file. 
+    """
     def __init__(self):
         T, P = np.loadtxt("PT_whitney.csv", delimiter=",", skiprows=1, unpack=True)
         self.T = T
@@ -249,15 +318,7 @@ class data_base_PT_whitney:
 
 
 # ---
-# latex Font
-TRANSPARENT = True
-plt.rcParams.update(
-    {
-        "text.usetex": False,
-        "font.family": "serif",
-        "mathtext.fontset": "cm",  # Computer Modern
-    }
-)
+
 
 
 # ---
@@ -276,13 +337,16 @@ def modify_axes(
     letter: str|None = "[a]",
     precision: str = "%.1f",
 ) -> mpl_axes:
-    """Function that modifies the axes.
+    """Function that modifies the axes and standardisze the axes
     Args:
         ax (mpl_axes, optional): current axis. Defaults to None.
-        label_x (list, optional): [label, show_ticklabels ('y'/'n')]. Defaults to ['n','n']. -> in case of the label name = string to use as label
+        label_x (list, optional): [label, show_ticklabels ('y'/'n')].
+                Defaults to ['n','n']. -> in case of the label name = string to use as label
         lim_x (list, optional): limits of the x-axis. Defaults to None.
         lim_y (list, optional): limits of the y-axis. Defaults to None.
-        label_y (list, optional): [label, show_ticklabels ('y'/'n')]. Defaults to ['n','n']. -> in case of the label name = string to use as label
+        label_y (list, optional): 
+                    [label, show_ticklabels ('y'/'n')]. Defaults to ['n','n']
+                    . -> in case of the label name = string to use as label
         ticks_x (list, optional): x tick positions. Defaults to None.
         ticks_y (list, optional): y tick positions. Defaults to None.
         isotherms (int, optional): isotherm option. Defaults to 0.
@@ -505,7 +569,7 @@ def figure_slab_surface(
     pdb: pd.DataFrame,
     crd: CoordinateSurface,
     petro_db: data_base_PT_whitney,
-    figure_number: int,
+    figure_number: str,
 ) -> None:
 
     def difference_surface(pdb_a: pd.DataFrame, pdb_b: pd.DataFrame) -> np.ndarray:
@@ -544,8 +608,6 @@ def figure_slab_surface(
 
     name_plot = f"Figure_{figure_number}.png"
 
-    from matplotlib.collections import LineCollection
-
     fig = plt.figure(figsize=(16, 10))
 
     # Top row:
@@ -581,8 +643,8 @@ def figure_slab_surface(
 
 
     # Extract the temperature of the non linear experiments
-    k_nl_slab_temp = create_array(knl.loc[(knl["k"] == 0), f"T_S"])
-    k_nl_slab_pres = create_array(knl.loc[(knl["k"] == 0), f"P_S"])
+    k_nl_slab_temp = create_array(knl.loc[(knl["k"] == 0), "T_S"])
+    k_nl_slab_pres = create_array(knl.loc[(knl["k"] == 0), "P_S"])
 
     # Extract the difference between the groups
     dtemp_k3 = difference_surface(knl, k3)
@@ -690,7 +752,7 @@ def figure_slab_surface(
     ax3 = modify_axes(
         ax3,
         label_x=[r"$\gamma$ [1000 km]", "y"],
-        label_y=[r"$\Delta \ell^{450-150}$ [km]", "y"],
+        label_y=[r"$\ell^{\mathrm{seismic}}$ [km]", "y"],
         lim_y=lim_y,
         lim_x=lim_x,
         ticks_x=ticks_x,
@@ -771,7 +833,7 @@ def figure_slab_surface(
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
 
 def plot_slab_versus_thermalpar(
-    path2save: str, pdb: pd.DataFrame, figure_number: int = 0
+    path2save: str, pdb: pd.DataFrame, figure_number: str = 0
 ):
 
     name_plot = f"Figure_{figure_number}.png"
@@ -1073,7 +1135,7 @@ def _extract_limit_array(ar: np.ndarray) -> list:
 
 # ---
 def box_plot_thermal_model(
-    path2save: str, pdb: pd.DataFrame, figure_number: int = 0
+    path2save: str, pdb: pd.DataFrame, figure_number: str = 0
 ) -> None:
     name_plot = f"Figure_{figure_number}.png"
     # Create common dataset
@@ -1082,10 +1144,7 @@ def box_plot_thermal_model(
     d_seismic_nl = knl["d_seismic_ell"]
     d_seismic_k3 = k3["d_seismic_ell"]
     d_seismic_k5 = k5["d_seismic_ell"]
-    #
-    # Seaborn rompe il cazzo quando uso le mie funzioni. Sono al livello di non riuscire a fottermene di questi problemi finti
-    # Ah, si, se qualcuno mi legge, magari potenziale revisore ne sono cosciente che sta roba - come gli ultimi 30 anni di questa
-    # impostura intellettuale, non dovrebbe esistere. Ma proprio dal 2001 in avanti.
+
     fig = plt.figure(figsize=(12, 12))
     bx = 0.11
     by = 0.1
@@ -1194,7 +1253,7 @@ def box_plot_thermal_model(
 
 # ---
 def box_plot_thermal_model_max_depth(
-    path2save: str, pdb: pd.DataFrame, figure_number: int = 0
+    path2save: str, pdb: pd.DataFrame, figure_number: str = 0
 ) -> None:
 
     name_plot = f"Figure_{figure_number}.png"
@@ -1496,6 +1555,23 @@ def plot_eye_candy(
     s2: CoordinateSurface,
     ptsave: str,
 ):
+    """Figure plotting function: it plots the figure depicting the 
+    T-P condition of the surface of the slab, together with the HPLT
+    database from Whitney. It plots, additionally, the heatfluxes from
+    the main suite of experiments that has been performed. This 
+    function can be used also for plotting other groups of the experiments
+    it has been conceived to show the non-linear with shear heating experiment. 
+
+    Args:
+        a (pd.DataFrame): Sensitivity tests database
+        b (pd.DataFrame): Mexico tests databases
+        c (pd.DataFrame): Japan tests database
+        hplt (np.ndarray): Database of HPLT
+        s0 (CoordinateSurface): Coordinate of the Sensitivity tests
+        s1 (CoordinateSurface): Coordinate of the Mexican tests
+        s2 (CoordinateSurface): Coordinate of the Japan tests
+        ptsave (str): path to save
+    """
     # name plot
     name_plot = f"{ptsave}/Figure_f.png"
     # Main figure canvas

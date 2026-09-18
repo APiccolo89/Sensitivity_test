@@ -17,6 +17,7 @@ from matplotlib.collections import LineCollection
 from numba import njit
 from numpy.typing import NDArray
 
+# dictionary of the groups 
 dict_partial = {
     "nlsh": 0,
     "k3sh": 3.1,
@@ -29,6 +30,10 @@ dict_partial = {
 
 @dataclass(slots=True)
 class SlabPlot2D:
+    """Small data class containing the average temperature
+    the variance and the standard deviation computed with
+    the Welford alg. 
+    """
     temp_mean_2d: np.ndarray[np.float32]
     temp_var_2d: np.ndarray[np.float32]
     temp_std_2d: np.ndarray[np.float32]

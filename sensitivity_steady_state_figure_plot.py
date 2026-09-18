@@ -193,6 +193,11 @@ def plot_sensitivity_study_steady_state(args) -> None:
 
     # Create the main data structure to produce the figure of the paper.
 
+    if args.steady_state == 1:
+        args.steady_state = "SS"
+    elif args.steady_state == 0:
+        args.steady_state = "TD"
+
     data_table, slab_2D, surface_data_0 = create_data_structure(
         aux_path=aux_path_data_base, args=args
     )
