@@ -1181,7 +1181,7 @@ def box_plot_thermal_model(
     ax3 = fig.add_axes([bx + dx + sx, by + dy + sy, sx, sy])
 
     data = np.array([d_seismic_k3, d_seismic_k5, d_seismic_nl])
-    lim_y, ticks_y = _extract_limit_array(data)
+    lim_y, ticks_y = extract_limit_array(data)
 
     labels = ["k=3.1", "k=5.0", "NL"]
     colors = ["cadetblue", "olive", "firebrick"]
@@ -1214,7 +1214,7 @@ def box_plot_thermal_model(
             k5["thermal_parameter"].to_numpy(),
         ]
     )
-    lim1_x, ticks_x1 = _extract_limit_array(data1)
+    lim1_x, ticks_x1 = extract_limit_array(data1)
 
     data2 = np.array(
         [
@@ -1223,10 +1223,10 @@ def box_plot_thermal_model(
             k5["decoupling"].to_numpy(),
         ]
     )
-    lim2_x, ticks_x2 = _extract_limit_array(data2)
+    lim2_x, ticks_x2 = extract_limit_array(data2)
 
     data3 = np.array([knl["Tp"].to_numpy(), k3["Tp"].to_numpy(), k5["Tp"].to_numpy()])
-    lim3_x, ticks_x3 = _extract_limit_array(data3)
+    lim3_x, ticks_x3 = extract_limit_array(data3)
 
     ax0 = modify_axes(
         ax0,
@@ -1301,7 +1301,7 @@ def box_plot_thermal_model_max_depth(
     max_depth1 = extract_max_dpth(k3, 150)
     max_depth2 = extract_max_dpth(k5, 150)
     data = np.array([max_depth1, max_depth2, max_depth3])
-    lim_y0, ticks_y0 = _extract_limit_array(data)
+    lim_y0, ticks_y0 = extract_limit_array(data)
 
     labels = ["k3", "k5", "NL"]
     colors = ["cadetblue", "olive", "firebrick"]
@@ -1321,7 +1321,7 @@ def box_plot_thermal_model_max_depth(
     max_depth1 = extract_max_dpth(k3, 450)
     max_depth2 = extract_max_dpth(k5, 450)
     data = np.array([max_depth1, max_depth2, max_depth3])
-    lim_y1, ticks_y1 = _extract_limit_array(data)
+    lim_y1, ticks_y1 = extract_limit_array(data)
     labels = ["k3", "k5", "NL"]
     colors = ["cadetblue", "olive", "firebrick"]
     bplot = ax1.boxplot(
@@ -1340,7 +1340,7 @@ def box_plot_thermal_model_max_depth(
     max_depth1 = extract_max_dpth(k3, 600)
     max_depth2 = extract_max_dpth(k5, 600)
     data = np.array([max_depth1, max_depth2, max_depth3])
-    lim_y2, ticks_y2 = _extract_limit_array(data)
+    lim_y2, ticks_y2 = extract_limit_array(data)
     labels = ["k3", "k5", "NL"]
     colors = ["cadetblue", "olive", "firebrick"]
     bplot = ax2.boxplot(
@@ -1359,7 +1359,7 @@ def box_plot_thermal_model_max_depth(
     max_depth1 = max_depth3 - extract_max_dpth(k3, 150)
     max_depth2 = max_depth3 - extract_max_dpth(k5, 150)
     data = np.array([max_depth1, max_depth2])
-    lim_y3, ticks_y3 = _extract_limit_array(data)
+    lim_y3, ticks_y3 = extract_limit_array(data)
 
     labels = ["k3", "k5"]
     colors = ["cadetblue", "olive"]
@@ -1380,7 +1380,7 @@ def box_plot_thermal_model_max_depth(
     max_depth1 = max_depth3 - extract_max_dpth(k3, 450)
     max_depth2 = max_depth3 - extract_max_dpth(k5, 450)
     data = np.array([max_depth1, max_depth2])
-    lim_y4, ticks_y4 = _extract_limit_array(data)
+    lim_y4, ticks_y4 = extract_limit_array(data)
     labels = ["k3", "k5"]
     colors = ["cadetblue", "olive"]
     bplot = ax4.boxplot(
@@ -1400,7 +1400,7 @@ def box_plot_thermal_model_max_depth(
     max_depth1 = max_depth3 - extract_max_dpth(k3, 600)
     max_depth2 = max_depth3 - extract_max_dpth(k5, 600)
     data = np.array([max_depth1, max_depth2])
-    lim_y5, ticks_y5 = _extract_limit_array(data)
+    lim_y5, ticks_y5 = extract_limit_array(data)
     labels = ["k3", "k5"]
     colors = ["cadetblue", "olive"]
     bplot = ax5.boxplot(
