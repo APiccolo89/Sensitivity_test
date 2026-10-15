@@ -25,6 +25,7 @@ dict_partial = {
     "k3nsh": 3.1,
     "k5nsh": 5.0,
     "nlnsh": 0,
+    "nlpsh":0,
 }
 
 
@@ -197,7 +198,7 @@ def compute_total_length(X_S: np.ndarray) -> float:
 def interpolate_value_0D(
     ar: np.ndarray, x: np.ndarray, depth: float, ind: None | int
 ) -> float:
-    """Interpolate 0D (aka was to lazy to look the interp function)
+    """Interpolate a 0D field.
 
     Args:
         ar (np.ndarray): targer array

@@ -30,7 +30,7 @@ def extract_boundary(GD, X, dict_boundary: dict) -> dict:
         dict_boundary (dict): Internal dictionary of the boundary condition
 
     Returns:
-        dict: dictionary that associated the boundary condition with ordered coordinates -> yes, I am abusing of the dictionary
+        dict: Boundary coordinates ordered by boundary condition.
     """
 
     import dolfinx
@@ -46,7 +46,6 @@ def extract_boundary(GD, X, dict_boundary: dict) -> dict:
     boundary_structure = {}
 
     for b in dict_boundary.keys():
-        # Copy these horrible arrays
         x = x_real.copy()
         z = z_real.copy()
         # Find the facets
@@ -59,8 +58,6 @@ def extract_boundary(GD, X, dict_boundary: dict) -> dict:
         # Select the right node from the lesser copies
         x = x[nodes]
         z = z[nodes]
-        # Check which direction should happen the sorting (I had to change the boudary, because it appears that one method that works with a
-        # processed mesh, is working wrongly with the real data of the mesh.) -> WRONG FUNCTION INITIALLY ARGSORT!!!!!!
         if b in ["Top", "Bottom_sla", "Bottom_wed"]:
             ind = x.argsort()
         else:
@@ -68,15 +65,12 @@ def extract_boundary(GD, X, dict_boundary: dict) -> dict:
         # Readapt the array following the ordering
         x = x[ind]
         z = z[ind]
-        # Transpose the vector because is (1,nx) and it is annoying and create the
-        # array that host the chosen one
         x_bd = np.zeros([len(x.T), 2], dtype=np.float32)
         # put the data in the new structure
         x_bd[:, 0] = x[:]
         x_bd[:, 1] = z[:]
         # update the empty dictionary
         boundary_structure[b] = x_bd
-        # Just warn me whether or not you did the task
         print(f"Collecting the data for the boundary {b}")
 
     return boundary_structure
@@ -126,7 +120,7 @@ def process_mesh(slab: str = "CustomRibe", name_plate: str = "Default") -> None:
     """Script that uses a few functionalities of stonedfenicsx to build up a mesh.xmf file
     The main aim is to use the full functionalities to produce a mesh.xdmf file, and using the
     routines to produce the plot of each of the meshes used in this work. It is an advanced
-    topic that requires a bit of knowledge on how I organised this monstruosity.
+    topic that requires familiarity with the StonedFEniCSx mesh-generation utilities.
 
     Args:
         slab (str, optional): _description_. Defaults to 'CustomRibe'.
@@ -165,7 +159,7 @@ def process_mesh(slab: str = "CustomRibe", name_plate: str = "Default") -> None:
             / "data"
             / f"{slab}_slab.pz"
         )
-    # create the fake folders:
+    # Set the output paths:
     inp.ctrl_io.path_save = Path(__file__).resolve().parents[0] / "mesh"
     inp.ctrl_io.test_name = Path(__file__).resolve().parents[0] / "mesh"
 

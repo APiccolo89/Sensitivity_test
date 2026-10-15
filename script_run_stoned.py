@@ -24,7 +24,7 @@ from post_process_module.utils import (
 
 
 def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
-    """A fake wrap.
+    """Run StonedFEniCSx, retrying transient failures during mesh or cache generation.
 
     Args:
         inp (_type_): input configuration data
@@ -33,10 +33,8 @@ def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
     Raises:
         ValueError: failed attempt
 
-    This is a quick hack solution. In the original plan, I would have been able to configure a no-race condition
-    for the mesh generation and cache generation for the thermal properties. In practice, I was not able to find a proper solution.
-    This should be possible, but, I am not willing to spend a few hours in this task. So, here you are the quick and dirty solution.
-    TO DO: Reintegrate the h5 file routine for the thermal properties and create a control called: caching.
+    Each attempt uses copies of the input objects so that failed runs do not
+    leave partially modified state for the next attempt.
     """
     import copy
 
@@ -46,9 +44,7 @@ def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
     attempt = 0
     success = 0
     last_error = None
-    # Try to run the test, if it fails, wait for 20 seconds and try again. This is to avoid the problem of the cache that can cause the test to fail.
-    # I need to solve the issue of the cache. In the future I will split the problem of mesh and cache generation, before the actual run
-    # Or find a proper way to cleanly use race conditions. Meanwhile, this quick fix seems robust.
+    # Retry after a delay to mitigate transient cache-generation failures.
 
     while attempt < 3 and success == 0:
         # Copy the classes otherwise it crashes
@@ -65,10 +61,6 @@ def wrap_stoned(inp, Ph, arguments: dict) -> tuple:
             inp = copy.deepcopy(A)
             Ph = copy.deepcopy(B)
         except Exception as e:
-            # ok, understood. This method is not safe guarding the test path, this create a few issue, and error I patch
-            # it. The reason that I am doing it is the following: it is not only for lazyness. I want to use the same version
-            # of the code for this paper. If i start aiming the perfection, I will enter in an never ending loop that produce
-            # a wonderful code, that will not have any paper attached.
             last_error = e
 
             time.sleep(20)  # seconds, float allowed
@@ -120,6 +112,7 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
 
     # controls
     # Assume that the decoupling is always active
+    inp.ctrl.pressure_dependency=args['pressure_dependency']
     inp.ctrl.decoupling_ctrl = 1
     # Choose the mode of stonedFEniCSx
     inp.ctrl.steady_state = args["steady_state"]

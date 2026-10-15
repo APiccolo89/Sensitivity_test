@@ -55,7 +55,6 @@ def define_material_properties(Ph, args):
     # Set the default and fixed parameter
     # Select the type of simulation
     # Adjust the material property as a consequence
-    # Print the output because I am paranoid
     """Function that construct the material properties in a programmatical way,
     using the avaiable option.
 
@@ -202,8 +201,7 @@ def choose_material_properties(k: float) -> dict:
 
 # ---
 def create_case_dictionary() -> dict:
-    """Small function that creates the dictionary of the cases Kind of overkill
-    -> future yaml file.
+    """Create the dictionary of experiment cases.
 
     Returns:
         dict: dictionary of cases
@@ -227,7 +225,7 @@ def create_case_dictionary() -> dict:
         "k3sh": make_case(3.1, True),
         "k5sh": make_case(5.0, True),
         "nlsh": make_case(-1.0, True),
-        "nlclsh": make_case(-2.0, True),
+        "nlpsh": make_case(-3.0, True),
         "debug": make_case(-1.0, True),
     }
     return dict_case
@@ -318,7 +316,10 @@ def parse_the_argument(args: argparse.Namespace, pathtotable: str) -> dict:
     args_test["group"] = args.group
     args_test["id_batch"] = args.id_batch
     args_test["case_index"] = args.case_index
-
+    if group_sim['k'] == -3:
+        args_test['pressure_dependency'] = 1
+    else: 
+        args_test['pressure_dependency'] = 0
     return args_test
 
 

@@ -9,13 +9,11 @@
 
 
 ---
-This routine has been used to produce the sensitivity analysis of (name of the manuscript). Everything is set up to reproduce these experiments; as such, the scripts have several hard-coded values. However, the workflow that is described here can be translated to use the code for other purposes. The scripts here have not been developed with the idea to generate a package. Indeed, it is the reflection of the main author chaotic mind. 
+This routine has been used to produce the sensitivity analysis described in the manuscript. Everything is set up to reproduce these experiments; as such, the scripts have several hard-coded values. However, the workflow described here can be adapted to use the code for other purposes. The scripts have not been developed as a package.
 
 The experiments can be divided into 6 groups, and for each group there is a number of single-case experiments. So, there are n single experiment cases that differ only in three or two parameters, and that are run with different common values as a function of their group.
 
 In the main manuscript, 6 groups were run for the sensitivity test, while for the real cases **Mexico** and **Central Honshu** (called Japan) only the cases with shear heating were run.
-
-> **Important:** **Automation**  I like testing new functionalities, new approach, and time to time. I will list all the libraries that I used for this project. 
 
 |**group** | **shear heating** | **k** | 
 |------|-----|---|
@@ -67,7 +65,7 @@ The workflow is the following:
 3.3 Generate the figures.
 
 
-In the following README.md, I try to spell out the workflow in such a way that the main insights can be exploited by other researchers, both to use StonedFEniCSx and to reproduce the results, and to make me write a long list of errata for the manuscript that I am writing. Feel free to crush my self-esteem and improve it.
+This README describes the workflow so that other researchers can use StonedFEniCSx and reproduce the results.
 
 ---
 ## Quick start: 
@@ -93,8 +91,9 @@ The argument `--plate` is the one defining the name of the suite: the names avai
 These files collect all the experiments to run.
 
 To run the experiments, there are three bash scripts that handle all the runs; the bash scripts must be launched from the top folder:
-:warning: **Warning:** This is the work flow that has been used to produce the data of the paper. This means that you need to readapt these files to the policy of your HPC or your server or your local machine.
+:warning: **Warning:** 1) This is the work flow that has been used to produce the data of the paper. This means that you need to readapt these files to the policy of your HPC or your server or your local machine.
 
+:warning: **Warning:** 2) The generation of the .csv table relies on the `scipy.stats.qmc.LatinHypercube`. Everytime that generation_case.py is called, generates a new set of random parameters. This entails that to compare the experiments of different groups they MUST refer to the same .csv. If during the run of different group, a new csv is generated with the same name, the experiments become no longer the same. 
 
 **Test Sensitivity_test with generic mesh**
 ```bash
@@ -104,6 +103,8 @@ bash submission_file/ss_sens_submission.sh --group nlnsh --name_suite steady_s_s
 bash submission_file/ss_sens_submission.sh --group k3sh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
 bash submission_file/ss_sens_submission.sh --group k5sh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
 bash submission_file/ss_sens_submission.sh --group nlsh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
+bash submission_file/ss_sens_submission.sh --group nlpsh  --name_suite steady_s_sensitivity --np 1 --steady_state 1 
+
 ```
 **Test Mexico**
 ```bash
@@ -190,4 +191,4 @@ assumes that the non-linear thermal model with shear heating of Mexico, Central 
 
 ### Usage of AI 
 
-AI (Claude/ChatGPT) has been used mostly to look for specific functionalities of the code and to correct my grammar. I am fully responsible for the crimes against nature that I devised for this project.
+AI (Claude/ChatGPT) was used to look up specific code functionalities and to assist with grammar. The author is responsible for the code and its design.

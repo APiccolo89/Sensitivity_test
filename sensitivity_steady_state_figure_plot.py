@@ -157,7 +157,7 @@ def create_data_structure(aux_path: str, args):
     )
     data_table_2, _, slab_2D_2 = wrapper_merging_h5(
         aux_path,
-        partial=(f"nl{args.sh}", args.steady_state),
+        partial=(f"nlp{args.sh}", args.steady_state),
         name_suite=args.name_suite,
         recreate=False,
         csv=args.csv,
@@ -202,7 +202,7 @@ def plot_sensitivity_study_steady_state(args) -> None:
         aux_path=aux_path_data_base, args=args
     )
     # Generate path
-    path2save = aux_path / f"Result_shear_heating_{args.sh}_{args.name_suite}"
+    path2save = aux_path / f"Result_shear_heating_{args.sh}_{args.name_suite}_exp"
     # Create folder
     path2save.mkdir(exist_ok=True)
     # Plot mean difference

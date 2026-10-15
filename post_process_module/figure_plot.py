@@ -35,7 +35,9 @@ class data_base_PT_whitney:
     and read the csv file. 
     """
     def __init__(self):
-        T, P = np.loadtxt("PT_whitney.csv", delimiter=",", skiprows=1, unpack=True)
+        from pathlib import Path
+        path = Path(__file__).resolve().parents[0]
+        T, P = np.loadtxt(f"{path}/PT_whitney.csv", delimiter=",", skiprows=1, unpack=True)
         self.T = T
         self.P = P
 # ---
@@ -165,7 +167,6 @@ def ranges(x, y, z)->list:
     """Helper function that finds the global maximum 
     and global minimum of three arrays. This function
     helps to standardise the limit 
-    --- To be removed, as I find a better approach. 
     Args:
         x (_type_): array 1
         y (_type_): array 2
@@ -183,13 +184,10 @@ def ranges(x, y, z)->list:
 
 # ---
 def create_list_tick(lim: list) -> list:
-    """Attempt to create an automatic ticks generation for the plot.
-    Story: The idea to just open an interactive plot to check how to make the most charming plot is not
-    so tantalising. I am trying to standardise with this small brute-force algoritm the generation
-    of ticks
+    """Generate a standardized set of ticks for the plot.
 
     Args:
-        lim (list): limits (which must be corrected in a such way that the min and max are multiple of 5)
+        lim (list): Axis limits.
 
     Returns:
         list: ticks list
@@ -900,10 +898,10 @@ def plot_slab_versus_thermalpar(
             bufb = db.iloc[i]
             if normalised:
                 buf0[i] = np.abs(
-                    bufa[f"max_dpth{isotherms}"][0] - bufb[f"max_dpth{isotherms}"][0]
+                    bufa[f"max_dpth{isotherms}"] - bufb[f"max_dpth{isotherms}"]
                 )
             else:
-                buf0[i] = bufb[f"max_dpth{isotherms}"][0]
+                buf0[i] = bufb[f"max_dpth{isotherms}"]
 
         d = np.nanmedian(buf0)
         std = np.nanstd(buf0)
@@ -1724,7 +1722,6 @@ def plot_eye_candy(
         letter="[b]",
     )
 
-    # Save this crap
     fig.savefig(name_plot, dpi=600, transparent=TRANSPARENT)
 
 

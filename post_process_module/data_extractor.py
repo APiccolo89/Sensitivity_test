@@ -51,8 +51,9 @@ class Test:
         Returns:
             Zi (np.array): interpolated data
 
-            Paraview is not able to visualise unstructured data properly, so we need to interpolate the data on a regular grid for visualisation purposes.
-            The nan mask is used to mask the data outside the domain, and giving you the illusion that I was able to generate a curved mesh in python. Ahah.
+            Paraview does not visualise unstructured data in the required format,
+            so the data are interpolated onto a regular grid. A NaN mask excludes
+            points outside the domain.
         """
         import numpy as np
         from scipy.interpolate import griddata
@@ -76,8 +77,9 @@ class Test:
         Returns:
             Zi (np.array): interpolated data
 
-            Paraview is not able to visualise unstructured data properly, so we need to interpolate the data on a regular grid for visualisation purposes.
-            The nan mask is used to mask the data outside the domain, and giving you the illusion that I was able to generate a curved mesh in python. Ahah.
+            Paraview does not visualise unstructured data in the required format,
+            so the data are interpolated onto a regular grid. A NaN mask excludes
+            points outside the domain.
         """
         import numpy as np
         from scipy.interpolate import griddata
@@ -120,8 +122,6 @@ class Data_experiment:
     """
     Class to extract the data from either the steady state or time dependent h5 file.
     the init function requires the path to the test, the number of points and the number of timestep
-    The main issue is for the timedependent case, as I need to extract the number of timesteps from the
-    the h5 file, but I will create the function later, and will be in the metadata field of the test.
     times     = time array
     time_list = time list
     Temp      = Temperature array [C]
