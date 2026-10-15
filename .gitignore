@@ -11,3 +11,5 @@ test_folder/*
 *.csv
 !PT_whitney.csv
 TODO_code_style.md
+submission_file/*
+
