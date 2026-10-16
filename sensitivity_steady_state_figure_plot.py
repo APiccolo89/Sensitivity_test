@@ -53,6 +53,8 @@ class ErrorParsing(Exception):
             )
         elif self.error_code == 4:
             string_error = f"Code error {self.error_code}. WRONG CSV file:\n{self.message}"
+        elif self.error_code == 5:
+            string_error = f"Code error {self.error_code}. Wrong function plot:\n{self.message}"
         else:
             string_error = "Ops, unknown error... "
 
@@ -157,15 +159,41 @@ def create_data_structure(aux_path: str, args):
     )
     data_table_2, _, slab_2D_2 = wrapper_merging_h5(
         aux_path,
-        partial=(f"nlp{args.sh}", args.steady_state),
+        partial=(f"nl{args.sh}", args.steady_state),
         name_suite=args.name_suite,
         recreate=False,
         csv=args.csv,
     )
+    no_pressure = False
+    try:
+        data_table_3, _, slab_2D_3 = wrapper_merging_h5(
+        aux_path,
+        partial=(f"nlp{args.sh}", args.steady_state),
+        name_suite=args.name_suite,
+        recreate=False,
+        csv=args.csv,
+        )    
+        no_pressure = True
 
-    slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
+    except Exception as e:
+        print(f"Error in merging nl{args.sh} and nlp{args.sh}: {e}")
+        print("Proceeding with available data.")
+        slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
+        data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
+    finally:
+        if no_pressure:
+            print("Merging completed with pressure data.")
+            slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2, slab_2D_3)
+            data_table = pd.concat([data_table_0, data_table_1, data_table_2, data_table_3], ignore_index=True)
+        else:
+            print("Merging completed without pressure dependecy.")
+            data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
+            slab_2D = (slab_2D_0, slab_2D_1, slab_2D_2)
 
-    data_table = pd.concat([data_table_0, data_table_1, data_table_2], ignore_index=True)
+        
+        
+        
+        print("Merging completed.")
 
     return data_table, slab_2D, surface_data_0
 

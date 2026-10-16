@@ -189,6 +189,18 @@ Result_shear_heating_sh_{name_suite}/
 On top of this script, there is another script that produces a figure with the P-T conditions of the top surface of the slab and the heat fluxes. This script
 assumes that the non-linear thermal model with shear heating of Mexico, Central Honshu and the sensitivity cases has been run.
 
+### Main Output
+
+Below, the overall performance of the tests. 
+
+| group | n_tests | perform_test_s | configure_run_save_s | solve_s | outer_iterations | combined_res_abs | combined_res_rel | rel difference | L1inf_T_res_K | L2_T_res_K |
+|---|---|---|---|---|---|---|---|---|---|---|
+| sensitivity_study_k3nsh | 7000 | 188.632 | 192.927 | 141.49 | 40.1876 | 1.26505e-06 | 0.00923214 | 4.56049e-06 | 0.00889464 | 0.00154495 |
+| sensitivity_study_k5nsh | 7000 | 194.631 | 198.95 | 143.72 | 37.3014 | 2.49656e-07 | 0.00213116 | 5.52193e-06 | 0.00888703 | 0.00167577 |
+| sensitivity_study_nlnsh | 7000 | 293.003 | 297.189 | 241.429 | 37.5694 | 2.45995e-07 | 0.00175062 | 5.28206e-06 | 0.00883886 | 0.00160054 |
+
+
+
 ### Usage of AI 
 
 AI (Claude/ChatGPT) was used to look up specific code functionalities and to assist with grammar. The author is responsible for the code and its design.
