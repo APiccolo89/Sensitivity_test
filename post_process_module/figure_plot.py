@@ -154,10 +154,10 @@ def sign(num:float)->float|int:
     """Helper function to extract the sign of a given number
 
     Args:
-        num (_type_): a number (float, int)
+        num (float | int): a number
 
     Returns:
-        _type_: signed integer/float
+        int: -1 if num is negative, 1 otherwise
     """
     return -1 if num < 0 else 1
 
@@ -167,13 +167,14 @@ def ranges(x, y, z)->list:
     """Helper function that finds the global maximum 
     and global minimum of three arrays. This function
     helps to standardise the limit 
+    --- To be removed, as I find a better approach.
     Args:
-        x (_type_): array 1
-        y (_type_): array 2
-        z (_type_): array 2
+        x (np.ndarray | float): array 1
+        y (np.ndarray | float): array 2
+        z (np.ndarray | float): array 3
 
     Returns:
-        _type_: list of common lim
+        list: [global_min, global_max]
     """
     lim = [
         np.floor(np.nanmin([np.nanmin(x), np.nanmin(y), np.nanmin(z)])),
@@ -269,8 +270,8 @@ def create_common_data_set(
     select the common successfull data
 
     Args:
-        a (pd.DataFrame): main database
-        
+        pdb (pd.DataFrame): main database
+
     WARNING: this function has hard coded value related to the main manuscript!!!!
 
     Returns:
@@ -363,7 +364,18 @@ def modify_axes(
                     . -> in case of the label name = string to use as label
         ticks_x (list, optional): x tick positions. Defaults to None.
         ticks_y (list, optional): y tick positions. Defaults to None.
-        isotherms (int, optional): isotherm option. Defaults to 0.
+        label_x_c (str, optional): x tick-label format; "categorical" uses
+                ticks_label_x verbatim, anything else formats numerically
+                with `precision`. Defaults to "Numeric".
+        label_y_c (str, optional): same as label_x_c, for the y-axis.
+                Defaults to "Numeric".
+        ticks_label_x (list, optional): explicit x tick labels, used when
+                label_x_c == "categorical". Defaults to None.
+        ticks_label_y (list, optional): explicit y tick labels. Defaults to None.
+        letter (str, optional): panel letter/label drawn in the top-left
+                corner of the axis. Defaults to "[a]".
+        precision (str, optional): printf-style format string for numeric
+                tick labels. Defaults to "%.1f".
     Returns:
         mpl_axes: modified axis
     """
@@ -448,12 +460,14 @@ def plot_slab_variances(A, path2save: str, number_figure: str) -> None:
     """Plot of the average slab temperature computed with the Welford alg
 
     Args:
-        A (_type_): Data structure with the slabs temperature
+        A (tuple): (k3, k5, NL) objects, one per thermal model, each
+                exposing `.xi`, `.yi` (grid coordinates) and
+                `.temp_mean_2d` (mean temperature on that grid)
         path2save (str): the path in which the figure is saved
         number_figure (str): a figure number/letter
 
     Returns:
-        _type_: Nothingness
+        None
     """
 
     import matplotlib.pyplot as plt
@@ -581,13 +595,15 @@ def figure_slab_surface(
     petro_db: data_base_PT_whitney,
     figure_number: str,
 ) -> None:
-    """_summary_
+    """Plot the P-T conditions along the slab surface (NL vs k3.1/k5.0
+    thermal-model differences) together with the petrological database and
+    the seismogenic-length statistics.
 
     Args:
         path2save (str): path to save the figure
         pdb (pd.DataFrame): The dataframe containing all the simulation data
         crd (CoordinateSurface): coordinate data structure
-        petro_db (data_base_PT_whitney): Petrological database 
+        petro_db (data_base_PT_whitney): Petrological database
         figure_number (str): the number of the figure
     """
 
@@ -1151,6 +1167,17 @@ def plot_slab_versus_thermalpar(
     fig.savefig(f"{path2save}/{name_plot}", dpi=600, transparent=TRANSPARENT)
 # ---
 def extract_max_dpth(db: pd.DataFrame, isotherms: int) -> np.ndarray:
+    """Extract the per-experiment maximum depth reached by a given isotherm.
+
+    Args:
+        db (pd.DataFrame): reduced database, must contain a
+                `max_dpth{isotherms}` column
+        isotherms (int): isotherm temperature used to pick the column
+                (e.g. 150, 450, 600)
+
+    Returns:
+        np.ndarray: 1D array, one value per experiment/row in `db`
+    """
     buf0 = np.zeros(len(db[f"max_dpth{isotherms}"]), dtype=float)
     for i in range(len(db[f"max_dpth{isotherms}"])):
         bufb = db.iloc[i]
@@ -1160,6 +1187,16 @@ def extract_max_dpth(db: pd.DataFrame, isotherms: int) -> np.ndarray:
 def box_plot_thermal_model(
     path2save: str, pdb: pd.DataFrame, figure_number: str = 0
 ) -> None:
+    """Box plot of the seismogenic length per thermal model (k=3.1, k=5.0,
+    NL), plus scatter plots of the same quantity against thermal parameter,
+    decoupling depth and potential temperature.
+
+    Args:
+        path2save (str): path to save the figure
+        pdb (pd.DataFrame): main database
+        figure_number (str, optional): figure number/letter used in the
+                output filename. Defaults to 0.
+    """
     name_plot = f"Figure_{figure_number}.png"
     # Create common dataset
     k3, k5, knl = create_common_data_set(pdb=pdb)
@@ -1276,6 +1313,15 @@ def box_plot_thermal_model(
 def box_plot_thermal_model_max_depth(
     path2save: str, pdb: pd.DataFrame, figure_number: str = 0
 ) -> None:
+    """Box plot of the maximum depth reached by the 150, 450 and 600 C
+    isotherms per thermal model (k=3.1, k=5.0, NL).
+
+    Args:
+        path2save (str): path to save the figure
+        pdb (pd.DataFrame): main database
+        figure_number (str, optional): figure number/letter used in the
+                output filename. Defaults to 0.
+    """
 
     name_plot = f"Figure_{figure_number}.png"
 
@@ -1523,6 +1569,22 @@ def box_plot_thermal_model_max_depth(
 def plot_heat_flux_slab_real(
     ax, pdb: pd.DataFrame, x_heat: np.ndarray, c="forestgreen"
 ) -> tuple[mpl_axes, list, list]:
+    """Plot the min/max heat-flux envelope along the slab, shaded, with
+    bands marking the decoupling-depth range and the range of the depth of
+    maximum shear stress.
+
+    Args:
+        ax (mpl_axes): the current axis
+        pdb (pd.DataFrame): database containing per-experiment heat flux
+                ("Q"), decoupling depth ("maxdcxc") and depth of maximum
+                shear stress ("maxtauxc")
+        x_heat (np.ndarray): x-coordinate (along-slab distance) shared by
+                all the heat-flux profiles
+        c (str, optional): line/fill color. Defaults to "forestgreen".
+
+    Returns:
+        mpl_axes: the axis with the heat-flux envelope drawn on it
+    """
     heat_flux = create_array(pdb["Q"]) * 1000
     # -extract max,min
     hf_min = np.min(heat_flux, 0)
@@ -1555,12 +1617,12 @@ def plot_slab_slab_real(
     """Helper function for the eyecandie figure
 
     Args:
-        ax (_type_): the current object axis
+        ax (mpl_axes): the current object axis
         pdb (pd.DataFrame): the database containing the P-T condition of the slab
-        c (str, optional):Color.
+        c (str, optional): Color.
 
     Returns:
-        tuple[mpl_axes, list, list]:List of data: axes, limit list and automatic ticks
+        mpl_axes: the axis with the min/max T-P envelope of the slab drawn on it
     """
     # Extract array
     T_S = create_array(pdb["T_S"])
@@ -1723,7 +1785,5 @@ def plot_eye_candy(
     )
 
     fig.savefig(name_plot, dpi=600, transparent=TRANSPARENT)
-
-
 # ---
 # ---
