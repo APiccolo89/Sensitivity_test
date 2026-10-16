@@ -194,13 +194,31 @@ assumes that the non-linear thermal model with shear heating of Mexico, Central 
 
 ### Main Output
 
-Below is the overall performance of the tests. 
+Below is the overall performance of the tests. In the following table, the name of the suite of experiment, the number of the test and their average duration and number of iteration are listed. 
 
-| group | n_tests | duration [s] | outer_iterations |$r_{cors}$ abs| $r_{cors}$ abs | $r_{dif}$ | $`L_{\infty}(\Delta T)`$ [K]| $`L_{2}(\Delta T)`$ [K] |
+The residual are listed as well: 
+
+- $`r_{cors}`$ abs: the average final combined conservation equation residual. This quantity is the absolute one, and it is dimensionless. 
+- $`r_{cors}`$ rel: the average final combined equation residual (relative to the first iteration). 
+-$`r_{dif}`$: the average relative combined difference between iteration. This quantity is compute by computing the relative difference of each of solution variable using the following equation $`r_v = L_{2}(v^{k+1}-v^{k})/(v^{k+1}+v^{k})`$, where `v` is the target solution variable (temperature, pressure, velocity and lithostatic pressure). Then each of the residual is combined using an eucleadian norm. 
+- $`L_{\infty}(\Delta T)`$ is the average L1 norm of the absolute difference in temperature between iterations of all experiments. This norm is used to decide whether or not the problem is converged (0.01 K). 
+-  $`L_{2}(\Delta T)`$ is the average L2 norm of the temperature difference of all experiments.
+
+#### Sensitivity Tests
+| group | n_tests | duration [s] | iterations | $`r_{cors}`$ abs | $`r_{cors}`$ rel | $`r_{dif}`$ | $`L_{\infty}(\Delta T)`$ [K] | $`L_{2}(\Delta T)`$ [K] |
 |---|---|---|---|---|---|---|---|---|
 | sensitivity_study_k3nsh | 7000 | 192.927 | 40.1876 | 1.26505e-06 | 0.00923214 | 4.56049e-06 | 0.00889464 | 0.00154495 |
 | sensitivity_study_k5nsh | 7000 | 198.95 | 37.3014 | 2.49656e-07 | 0.00213116 | 5.52193e-06 | 0.00888703 | 0.00167577 |
-| sensitivity_study_nlnsh | 7000 | 297.189 |  37.5694 | 2.45995e-07 | 0.00175062 | 5.28206e-06 | 0.00883886 | 0.00160054 |
+| sensitivity_study_nlnsh | 7000 | 297.189 | 37.5694 | 2.45995e-07 | 0.00175062 | 5.28206e-06 | 0.00883886 | 0.00160054 |
+| sensitivity_study_k3sh | 7000 | 189.214 | 40.1999 | 7.16584e-07 | 0.00530286 | 4.58042e-06 | 0.00889934 | 0.00155349 |
+| sensitivity_study_k5sh | 7000 | 174.929 | 37.2961 | 1.31351e-07 | 0.00121911 | 5.52591e-06 | 0.00888951 | 0.00167953 |
+| sensitivity_study_nlpsh | 7000 | 290.001 | 35.5666 | 1.04691e-07 | 0.000925267 | 5.87498e-06 | 0.00881412 | 0.0016635 |
+| sensitivity_study_nlsh | 7000 | 281.643 | 37.5433 | 1.28771e-07 | 0.000976184 | 5.27888e-06 | 0.00883921 | 0.00160237 |
+
+#### Japan - Central Honshu - 
+
+#### Mexico 
+
 
 The linear tests took on average 3 hours and 44 minutes, while the non-linear tests took on average 5 hours and 50 minutes (using 100 array jobs). The linear numerical experiments cost significantly less than the non-linear experiments and require 64\% of the total resources used by the non-linear ones. 
 
