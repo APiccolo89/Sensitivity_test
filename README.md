@@ -22,11 +22,12 @@ In the main manuscript, 6 groups were run for the sensitivity test, while for th
 |*nlnsh*  | no  | non-linear|
 |*k3sh*| yes | 3.1|
 |*k5sh*   | yes  | 5.0|  
-|*nlsh*  | yes  | non-linear|
+|*nlsh*  | yes  | non-linear temperature dependency only|
+|*nlpsh*  | yes  | non-linear P-T dependency|
 
 The name of the group, in practice, represents the combination of the thermal model (`k3`, `k5`, `nl`) and a flag that indicates whether or not shear heating is activated. The post-processing routines generate plots as a function of the **shear heating** flag (`sh` or `nsh`). This guarantees that comparisons are made only between tests sharing the same physics.
 
-:warning: **Warning:** **StonedFEniCSx** is still under development. The core functionality and the related numerical part will remain the same, but a few details of the input/output may change. In the Zenodo repository, the user will find the version of the code that has been used for this work.
+
 
 The routines presented are:
 ```
@@ -50,6 +51,8 @@ Sensitivity_Test/
     ├── time_dependent.py
 ```
 
+>[!NOTE]
+> In the zenodo repository there will be the databases, and also the simulations metadata. There will be a guide for the databases. 
 ---
 
 ## Workflow
@@ -77,7 +80,7 @@ After the installation, the user needs to copy the repository:
 ```bash
     git clone https://github.com/APiccolo89/Sensitivity_test.git
 ```
-Then, for running the suite of experiments: 
+Then, to run the suite of experiments: 
 ```bash 
     python generation_cases/generate_cases_real_plate.py --plate Mexico
 ```
@@ -91,9 +94,10 @@ The argument `--plate` is the one defining the name of the suite: the names avai
 These files collect all the experiments to run.
 
 To run the experiments, there are three bash scripts that handle all the runs; the bash scripts must be launched from the top folder:
-:warning: **Warning:** 1) This is the work flow that has been used to produce the data of the paper. This means that you need to readapt these files to the policy of your HPC or your server or your local machine.
+> [!WARNING]
+> 1. This is the workflow that was used to produce the data in the paper. This means that you need to adapt these files to the policies of your HPC cluster, your server or your local machine.
+> 2. The generation of the .csv table relies on `scipy.stats.qmc.LatinHypercube`. A seed option has been introduced in the script that generates the cases; however, if the user generates new cases and there is a round-off error in the new table, the post-processing routines may break. Once a case .csv has been generated, the script should not be run again.
 
-:warning: **Warning:** 2) The generation of the .csv table relies on the `scipy.stats.qmc.LatinHypercube`. Everytime that generation_case.py is called, generates a new set of random parameters. This entails that to compare the experiments of different groups they MUST refer to the same .csv. If during the run of different group, a new csv is generated with the same name, the experiments become no longer the same. 
 
 **Test Sensitivity_test with generic mesh**
 ```bash
@@ -125,14 +129,13 @@ The arguments are:
 - `--steady_state`: the steady state flag that indicates the type of simulations. 
 These bash scripts run a Python configuration script called `script_run_stoned.py`.
 
-> **Important:** **Automation**  It is possible to create a wrap that automate these operations. However, it depends on your HPC, the command has been spelled out, just for facilitating the usage of this work flow. 
-
-> **Important:** **bash_clean** After all the runs are completed, the user can use the same signature of the bash script to call
-
-```bash
-bash submission_file/bash_clean.sh --group nlsh --name_suite Japan --np 1 --steady_state 1
-```
-`bash_clean` cleans up the output and compresses all the logs of the simulations using the name of the simulation. This ensures the preservation of the logs and the reduction of the number of files.
+>[!IMPORTANT]
+>**Automation**  It is possible to create a wrapper that automates these operations. However, it depends on your HPC; the commands have been spelled out just to facilitate the use of this workflow.
+>**bash_clean** After all the runs are completed, the user can use the same signature of the bash script to call
+>```bash
+>bash submission_file/bash_clean.sh --group nlsh >--name_suite Japan --np 1 --steady_state 1
+>```
+>`bash_clean` cleans up the output and compresses all the logs of the simulations using the name of the simulation. This ensures the preservation of the logs and the reduction of the number of files.
 
 ### Python scripts
 
@@ -158,9 +161,9 @@ In `h5_Outputs`, the reduced database of the results is stored. Each sub-folder 
 
 In `test_folder` there is the actual output of **StonedFEniCSx**, divided into group and suite folders. The outputs of the single tests are removed. However, the user can modify the Python script to keep all the output. This depends on the tolerance of the cluster towards the number of files that you are allowed to store.
 
-> **Important:** **StonedFEniCSx** always requires an input.yml file.
+[!IMPORTANT]
+> **StonedFEniCSx** always requires an input.yml file.
 
-:warning: **Warning:** If the user wants to reproduce the results of the manuscript, he should not modify input_tests.yml. All the main required modifications are made by the Python configuration scripts.
 
 ### Post-processing script
 
@@ -191,13 +194,19 @@ assumes that the non-linear thermal model with shear heating of Mexico, Central 
 
 ### Main Output
 
-Below, the overall performance of the tests. 
+Below is the overall performance of the tests. 
 
-| group | n_tests | perform_test_s | configure_run_save_s | solve_s | outer_iterations | combined_res_abs | combined_res_rel | rel difference | L1inf_T_res_K | L2_T_res_K |
-|---|---|---|---|---|---|---|---|---|---|---|
-| sensitivity_study_k3nsh | 7000 | 188.632 | 192.927 | 141.49 | 40.1876 | 1.26505e-06 | 0.00923214 | 4.56049e-06 | 0.00889464 | 0.00154495 |
-| sensitivity_study_k5nsh | 7000 | 194.631 | 198.95 | 143.72 | 37.3014 | 2.49656e-07 | 0.00213116 | 5.52193e-06 | 0.00888703 | 0.00167577 |
-| sensitivity_study_nlnsh | 7000 | 293.003 | 297.189 | 241.429 | 37.5694 | 2.45995e-07 | 0.00175062 | 5.28206e-06 | 0.00883886 | 0.00160054 |
+| group | n_tests | duration [s] | outer_iterations |$r_{cors}$ abs| $r_{cors}$ abs | $r_{dif}$ | $`L_{\infty}(\Delta T)`$ [K]| $`L_{2}(\Delta T)`$ [K] |
+|---|---|---|---|---|---|---|---|---|
+| sensitivity_study_k3nsh | 7000 | 192.927 | 40.1876 | 1.26505e-06 | 0.00923214 | 4.56049e-06 | 0.00889464 | 0.00154495 |
+| sensitivity_study_k5nsh | 7000 | 198.95 | 37.3014 | 2.49656e-07 | 0.00213116 | 5.52193e-06 | 0.00888703 | 0.00167577 |
+| sensitivity_study_nlnsh | 7000 | 297.189 |  37.5694 | 2.45995e-07 | 0.00175062 | 5.28206e-06 | 0.00883886 | 0.00160054 |
+
+The linear tests took on average 3 hours and 44 minutes, while the non-linear tests took on average 5 hours and 50 minutes (using 100 array jobs). The linear numerical experiments cost significantly less than the non-linear experiments and require 64\% of the total resources used by the non-linear ones. 
+
+Initially, **StonedFEniCSx** was organised to have a common set of equations, and it adjusted each member as a function of the case; however, linear models do not require the recompilation of the thermal form. The differences, thus, are a consequence of the last update of the code. 
+
+
 
 
 
