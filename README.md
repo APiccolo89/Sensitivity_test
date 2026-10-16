@@ -161,7 +161,7 @@ In `h5_Outputs`, the reduced database of the results is stored. Each sub-folder 
 
 In `test_folder` there is the actual output of **StonedFEniCSx**, divided into group and suite folders. The outputs of the single tests are removed. However, the user can modify the Python script to keep all the output. This depends on the tolerance of the cluster towards the number of files that you are allowed to store.
 
-[!IMPORTANT]
+>[!IMPORTANT]
 > **StonedFEniCSx** always requires an input.yml file.
 
 
