@@ -1,3 +1,7 @@
 job_id:7891906 name_suite:steady_s_sensitivity, group:k3nsh, mode:SS
 job_id:7892177 name_suite:steady_s_sensitivity, group:k3nsh, mode:SS
 job_id:7892305 name_suite:steady_s_sensitivity, group:k3nsh, mode:SS
+job_id:8284185 name_suite:steady_s_sensitivity, group:k3sh, mode:SS
+job_id:8284186 name_suite:steady_s_sensitivity, group:k5sh, mode:SS
+job_id:8284187 name_suite:steady_s_sensitivity, group:nlsh, mode:SS
+job_id:8284188 name_suite:steady_s_sensitivity, group:nlpsh, mode:SS

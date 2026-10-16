@@ -1,6 +1,9 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
+
+    
 
         {
       "name": "TestPlot",
@@ -21,12 +24,11 @@
       "program": "${workspaceFolder}/script_run_stoned.py",
       "args": [
         "--case_index", "0",
-        "--group", "k3sh",
+        "--group", "nlpsh",
         "--id_batch", "1",
         "--name_suite", "debug",
        "--steady_state","1",
-        "--name_csv", "cases_Sensitivity_mexico.csv",
-        "--plate_real", "Mexico",
+        "--name_csv", "cases_Sensitivity_steady_s_sensitivity.csv",
       ],
       "console": "integratedTerminal"
     }

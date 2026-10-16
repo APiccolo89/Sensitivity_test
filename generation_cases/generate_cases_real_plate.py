@@ -97,6 +97,9 @@ def main() -> None:
         "--plate", default="Mexico", type=str, help="name of the plate/suite"
     )
 
+    SEED = 42
+    rng = np.random.default_rng(SEED)
+
     args = parser.parse_args()
     #
     path_real = Path(__file__).resolve().parents[0]
@@ -106,7 +109,7 @@ def main() -> None:
     # Define lbounds and hbounds
     lbounds, hbounds, keys, n = extract_information(dict_value)
 
-    sampler = scipy.stats.qmc.LatinHypercube(d=len(keys))
+    sampler = scipy.stats.qmc.LatinHypercube(d=len(keys), seed=SEED)
     sample = sampler.random(n=n)
     scaled_sample = scipy.stats.qmc.scale(sample, lbounds, hbounds)
     random_cases = np.linspace(0, (n) - 1, num=n, dtype=int)
