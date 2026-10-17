@@ -161,7 +161,7 @@ def perform_test(args: dict | None, name_suite: str = "debug") -> tuple[str, str
         change_geometry(plate=args["plate_real"], args=args, inp=inp)
         inp.g_input.slab_type = "FromFile"  # type of slab geometry
         inp.g_input.sub_path = str(
-            files("stonedfenicsx").resolve().parents[0]
+            files("stonedfenicsx").resolve().parents[1]
             / "examples"
             / "data"
             / f"{args['plate_real']}_slab.pz"

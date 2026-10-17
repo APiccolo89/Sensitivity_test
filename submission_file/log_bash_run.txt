@@ -5,3 +5,12 @@ job_id:8284185 name_suite:steady_s_sensitivity, group:k3sh, mode:SS
 job_id:8284186 name_suite:steady_s_sensitivity, group:k5sh, mode:SS
 job_id:8284187 name_suite:steady_s_sensitivity, group:nlsh, mode:SS
 job_id:8284188 name_suite:steady_s_sensitivity, group:nlpsh, mode:SS
+job_id:8286558 name_suite:Mexico, group:k3sh, mode:SS
+job_id:8286570 name_suite:Mexico, group:k5sh, mode:SS
+job_id:8293126 name_suite:Mexico, group:nlsh, mode:SS
+job_id:8293127 name_suite:Mexico, group:nlpsh, mode:SS
+job_id:8293357 name_suite:Japan, group:k3sh, mode:SS
+job_id:8293358 name_suite:Japan, group:k5sh, mode:SS
+job_id:8293882 name_suite:Japan, group:k5sh, mode:SS
+job_id:8293883 name_suite:Japan, group:nlsh, mode:SS
+job_id:8293884 name_suite:Japan, group:nlpsh, mode:SS
