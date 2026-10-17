@@ -299,7 +299,12 @@ The residuals are listed as well:
 | steady_s_sensitivity_nlsh | 7000 | 281.643 | 37.5433 | 1.28771e-07 | 0.000976184 | 5.27888e-06 | 0.00883921 | 0.00160237 |
 
 ### Japan (Central Honshu)
-
+| group | n_tests | duration [s] | iterations | $`r_{cors}`$ abs | $`r_{cors}`$ rel | $`r_{dif}`$ | $`L_{\infty}(\Delta T)`$ [K] | $`L_{2}(\Delta T)`$ [K] |
+|---|---|---|---|---|---|---|---|---|
+| Japan_k3sh | 3500 | 377.13 | 42.1032 | 5.8081e-07 | 1.77534e-05 | 7.24735e-06 | 0.025283 | 0.00315286 |
+| Japan_k5sh | 3500 | 301.063 | 39.1163 | 1.96196e-07 | 1.09703e-05 | 5.62147e-06 | 0.0141992 | 0.00193145 |
+| Japan_nlsh | 3500 | 544.847 | 38.8527 | 2.98045e-07 | 4.77301e-06 | 1.32404e-05 | 0.0420607 | 0.0050128 |
+| Japan_nlpsh | 3500 | 487.683 | 36.818 | 3.26171e-07 | 1.21505e-05 | 1.22268e-05 | 0.0329247 | 0.00401188 |
 ### Mexico
 
 | group | n_tests | duration [s] | iterations | $`r_{cors}`$ abs | $`r_{cors}`$ rel | $`r_{dif}`$ | $`L_{\infty}(\Delta T)`$ [K] | $`L_{2}(\Delta T)`$ [K] |
