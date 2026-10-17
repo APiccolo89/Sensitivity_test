@@ -7,12 +7,16 @@
 </p>
 
 ---
+>[!NOTE]
+> This is the workflow that has been used for the manuscript. I tried to release all my workflow. This workflow would 
+> work straight in Aire, but I cannot guarantee that in other HPC will work. In the main Zenodo repository
+> I will release the h5 files that reproduce the pictures.
 
 This routine has been used to produce the sensitivity analysis described in the manuscript. Everything is set up to reproduce these experiments; as such, the scripts have several hard-coded values. However, the workflow described here can be adapted to use the code for other purposes. The scripts have not been developed as a package.
 
 The experiments can be divided into 6 groups, and for each group there is a number of single-case experiments. So, there are n single-experiment cases that differ only in two or three parameters, and that are run with different common values as a function of their group.
 
-In the main manuscript, 6 groups were run for the sensitivity test, while for the real cases **Mexico** and **Central Honshu** (called `Japan`) only the cases with shear heating were run.
+In the main manuscript, 7 groups were run for the sensitivity test, while for the real cases **Mexico** and **Central Honshu** (called `Japan`) only the cases with shear heating were run.
 
 | **group** | **shear heating** | **k** |
 |---|---|---|
