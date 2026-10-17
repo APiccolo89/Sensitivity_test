@@ -115,12 +115,14 @@ bash submission_file/ss_sens_submission.sh --group nlpsh  --name_suite steady_s_
 bash submission_file/mexico_submission.sh --group k3sh --name_suite Mexico --np 1 --steady_state 1
 bash submission_file/mexico_submission.sh --group k5sh --name_suite Mexico --np 1 --steady_state 1
 bash submission_file/mexico_submission.sh --group nlsh --name_suite Mexico --np 1 --steady_state 1
+bash submission_file/mexico_submission.sh --group nlpsh --name_suite Mexico --np 1 --steady_state 1
 ```
 **Test Japan**
 ```bash
 bash submission_file/japan_submission.sh --group k3sh --name_suite Japan --np 1 --steady_state 1
 bash submission_file/japan_submission.sh --group k5sh --name_suite Japan --np 1 --steady_state 1
 bash submission_file/japan_submission.sh --group nlsh --name_suite Japan --np 1 --steady_state 1
+bash submission_file/japan_submission.sh --group nlpsh --name_suite Japan --np 1 --steady_state 1
 ```
 The arguments are: 
 - `--name_suite`: the name of the suite, used to generate the output name. 
@@ -133,7 +135,7 @@ These bash scripts run a Python configuration script called `script_run_stoned.p
 >**Automation**  It is possible to create a wrapper that automates these operations. However, it depends on your HPC; the commands have been spelled out just to facilitate the use of this workflow.
 >**bash_clean** After all the runs are completed, the user can use the same signature of the bash script to call
 >```bash
->bash submission_file/bash_clean.sh --group nlsh >--name_suite Japan --np 1 --steady_state 1
+>bash submission_file/bash_clean.sh --group nlsh --name_suite Japan --np 1 --steady_state 1
 >```
 >`bash_clean` cleans up the output and compresses all the logs of the simulations using the name of the simulation. This ensures the preservation of the logs and the reduction of the number of files.
 
@@ -218,7 +220,12 @@ The residual are listed as well:
 #### Japan - Central Honshu - 
 
 #### Mexico 
-
+| group | n_tests | duration [s] | iterations | $`r_{cors}`$ abs | $`r_{cors}`$ rel | $`r_{dif}`$ | $`L_{\infty}(\Delta T)`$ [K] | $`L_{2}(\Delta T)`$ [K] |
+|---|---|---|---|---|---|---|---|---|
+| Mexico_k3sh | 3500 | 87.6235 | 29.0349 | 1.48178e-07 | 4.58714e-06 | 5.32437e-05 | 0.0360183 | 0.0040375 |
+| Mexico_k5sh | 3500 | 86.9429 | 28.9277 | 1.66025e-08 | 7.50896e-06 | 2.3091e-05 | 0.00980348 | 0.00119388 |
+| Mexico_nlsh | 3500 | 118.762 | 28.238 | 4.22902e-08 | 3.80492e-06 | 4.47199e-05 | 0.0225374 | 0.00260068 |
+| Mexico_nlpsh | 3500 | 136.022 | 28.0354 | 3.33262e-08 | 4.36059e-06 | 3.86298e-05 | 0.0180891 | 0.00208725 |
 
 The linear tests took on average 3 hours and 44 minutes, while the non-linear tests took on average 5 hours and 50 minutes (using 100 array jobs). The linear numerical experiments cost significantly less than the non-linear experiments and require 64\% of the total resources used by the non-linear ones. 
 

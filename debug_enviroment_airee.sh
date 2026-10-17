@@ -8,3 +8,4 @@ spack load py-h5py
 spack load py-numpy
 spack load py-petsc4py@3.22.1
 source /users/wlnw570/stoned_fenicsx_env/bin/activate
+alias count="wc -l *.txt"
