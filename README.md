@@ -171,7 +171,8 @@ where `<case_index>` is the actual case number (i.e., the row of the `.csv` tabl
 
 `Output_h5_files/` stores the reduced database of the results. Each sub-folder represents a group. Inside `<name_suite>_h5_files_<group>_<SSTD>/` there are small h5 files that contain the relevant information for that group of simulations.
 
-`test_folder/` contains the actual output of **StonedFEniCSx**, divided into group and suite folders. The outputs of the single tests are removed. However, the user can modify the Python script to keep all the output. This depends on the tolerance of the cluster towards the number of files that you are allowed to store.
+>[!IMPORTANT]
+> **StonedFEniCSx** always requires an input.yml file.
 
 > [!IMPORTANT]
 > **StonedFEniCSx** always requires an `input.yml` file.
