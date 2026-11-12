@@ -25,6 +25,7 @@ dict_partial = {
     "k3nsh": 3.1,
     "k5nsh": 5.0,
     "nlnsh": 0,
+    "nlpnsh": 0,
     "nlpsh":0,
 }
 
@@ -95,7 +96,11 @@ def interpolate_surfaces_slab(
 
 
 def merge_data_base(name_suite, list_of_partial_files, plate, partial, recreate=True):
-    output_file = f"{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5"
+    
+    if not os.path.exists("final_h5_files"):
+        os.makedirs("final_h5_files")
+    
+    output_file = f"final_h5_files/{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5"
     i = 0
 
     if recreate and os.path.exists(output_file):
@@ -242,6 +247,33 @@ def find_real_ell_z(
 
     return ell_p, z_p
 
+def compute_average_slab_angle(slab_crd: np.ndarray) -> float:
+    """Compute the average angle of the slab based on its coordinates.
+
+    Args:
+        slab_crd (np.ndarray): Coordinates of the slab, shape (2, N).
+
+    Returns:
+        float: Average angle of the slab in radians. 
+    """
+    # Calculate differences in x and z coordinates
+    
+    x = slab_crd[0, :]
+    z = slab_crd[1, :]
+    x = x[(z >= -200.0) & (z <= -50.0)]
+    z = z[(z >= -200.0) & (z <= -50.0)]
+    slab_crd = np.vstack((x, z))    
+    
+    dx = np.diff(slab_crd[0, :])
+    dz = np.diff(slab_crd[1, :])
+
+    # Calculate angles in radians and then convert to degrees
+    angles_rad = np.arctan2(dz, dx)
+
+    # Compute the average angle
+    average_angle = np.abs(np.mean(angles_rad))
+
+    return average_angle
 
 # ---------------------------------------------------------------------------------
 def create_data_frame(
@@ -290,7 +322,7 @@ def create_data_frame(
                 case_id = i
                 option_thermal = 1 if partial[0] == "nl" else 0
                 max_dpth150 = extract_max_depth(f, i, "150")
-                max_dpth300 = extract_max_depth(f, i, "300")
+                max_dpth350 = extract_max_depth(f, i, "350")
                 max_dpth400 = extract_max_depth(f, i, "400")
                 max_dpth450 = extract_max_depth(f, i, "450")
                 max_dpth500 = extract_max_depth(f, i, "500")
@@ -305,8 +337,10 @@ def create_data_frame(
 
                 slab_surf_150 = find_real_ell_z(150.0, ell, z, temp_slab)
                 slab_surf_450 = find_real_ell_z(450.0, ell, z, temp_slab)
-                slab_surf_600 = find_real_ell_z(600.0, ell, z, temp_slab)
-                d_seismic = slab_surf_450[0] - slab_surf_150[0]
+                slab_surf_350 = find_real_ell_z(350.0, ell, z, temp_slab)
+                d_seismic_total = slab_surf_450[0] - slab_surf_150[0]
+                d_seismic_locked = slab_surf_350[0] - slab_surf_150[0]
+                
                 d_seismic_450 = slab_surf_450[1]
                 d_seismic_150 = slab_surf_150[1]
 
@@ -355,7 +389,7 @@ def create_data_frame(
                     "case_id": case_id,
                     "option_thermal": option_thermal,
                     "max_dpth150": max_dpth150,
-                    "max_dpth300": max_dpth300,
+                    "max_dpth350": max_dpth350,
                     "max_dpth400": max_dpth400,
                     "max_dpth450": max_dpth450,
                     "max_dpth500": max_dpth500,
@@ -363,12 +397,13 @@ def create_data_frame(
                     "max_dpth600": max_dpth600,
                     "max_dpth700": max_dpth700,
                     "max_dpth800": max_dpth800,
-                    "d_seismic_ell": d_seismic,
+                    "d_seismic_ell_total": d_seismic_total,
+                    "d_seismic_ell_locked": d_seismic_locked,
                     "d_seismic_450": d_seismic_450,
                     "d_seismic_150": d_seismic_150,
                     "slab_surf_150": slab_surf_150,
                     "slab_surf_450": slab_surf_450,
-                    "slab_surf_600": slab_surf_600,
+                    "slab_surf_350": slab_surf_350,
                     "T_S": temp_s,
                     "P_S": pres_s,
                     "T_O": temp_o,
@@ -389,11 +424,13 @@ def create_data_frame(
                         continue
                     dict_data_base[m] = f[f"{i}/{m}"][()]
 
+                theta = compute_average_slab_angle(slab_crd = np.array(f[f"{i}/X_S"]))
+
                 dict_data_base["thermal_parameter"] = (
                     dict_data_base["age"]
                     * dict_data_base["vc"]
                     * (1 / 1e5 * 1e6)
-                    * np.sin(np.radians(45.0))
+                    * np.sin(theta)
                 )
                 dict_data_base["k"] = dict_partial[partial[0]]
 
@@ -440,7 +477,7 @@ def wrapper_merging_h5(
                                                           coordinate system for plotting 1D profile and 2D plot
                                                           slab 2D meshes to visualise them
     """
-    name_merged_file = f"{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5"
+    name_merged_file = f"final_h5_files/{name_suite}_h5_files_{partial[0]}_{partial[1]}.h5"
     aux_path2 = aux_path / f"{name_suite}_h5_files_{partial[0]}_{partial[1]}"
 
     path2csv = Path(__file__).resolve().parents[1] / "generation_cases" / csv
@@ -461,34 +498,14 @@ def wrapper_merging_h5(
     cases_columns = cases.columns
     args_column = {m: [] for m in cases_columns if m != "case_index"}
     keys = [
-        "option_thermal",
-        "max_dpth150",
-        "max_dpth300",
-        "max_dpth450",
-        "max_dpth500",
-        "max_dpth600",
-        "max_dpth700",
-        "max_dpth800",
-        "d_seismic_ell",
-        "d_seismic_dpth",
-        "d_seismic_150",
-        "slab_surf_150",
-        "slab_surf_450",
-        "slab_surf_600",
-        "tau_mean",
-        "tau_max",
-        "tau_min",
-        "tau_std",
-        "Tau_s",
-        "T_S",
-        "P_S",
-        "T_O",
-        "P_O",
-        "Q",
-        "T_s_dc",
-        "P_s_dc",
-        "maxtauxc",
-        "maxdcxc",
+    "case_id", "option_thermal",
+    "max_dpth150", "max_dpth350", "max_dpth400", "max_dpth450", "max_dpth500",
+    "max_dpth550", "max_dpth600", "max_dpth700", "max_dpth800",
+    "d_seismic_ell_total", "d_seismic_ell_locked", "d_seismic_450", "d_seismic_150",
+    "slab_surf_150", "slab_surf_450", "slab_surf_350",
+    "T_S", "P_S", "T_O", "P_O", "Q", "T_s_dc", "P_s_dc",
+    "tau_mean", "tau_max", "tau_min", "tau_std", "tau_srf",
+    "maxtauxc", "maxdcxc","thermal_parameter"
     ]
     args_test = args_column.copy()
     for i in keys:

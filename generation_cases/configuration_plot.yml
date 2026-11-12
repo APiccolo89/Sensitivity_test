@@ -1,0 +1,18 @@
+Mexico:
+  sh: sh
+  name_suite: Mexico
+  steady_state: 1
+  csv: cases_Sensitivity_Mexico.csv
+  function_plot: real
+Japan:
+  sh: sh
+  name_suite: Japan
+  steady_state: 1
+  csv: cases_Sensitivity_Japan.csv
+  function_plot: real
+Sensitivity_steady_s_sensitivity:
+  sh: sh
+  name_suite: Sensitivity_steady_s_sensitivity
+  steady_state: 1
+  csv: cases_Sensitivity_steady_s_sensitivity.csv
+  function_plot: basic

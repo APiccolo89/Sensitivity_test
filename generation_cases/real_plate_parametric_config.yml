@@ -1,13 +1,13 @@
 Mexico: 
   age: [12.0, 15.0]
   vc: [4.6, 6.6]
-  decoupling: [60, 90]
+  phi: [0, 9]
   Tp: [1350,1450]
   n_cases: 3500
 Japan:
-  age: [110,120]
-  vc: [7,10]
-  decoupling: [60, 90]
+  age: [120,130]
+  vc: [7,9]
+  phi: [0, 9]
   Tp: [1350,1450]
   n_cases: 3500
 steady_s_sensitivity: 

@@ -1,6 +1,20 @@
 {
   "version": "0.2.0",
   "configurations": [
+  
+  
+  
+
+
+
+  
+
+
+
+
+
+
+
     
 
     
@@ -11,10 +25,11 @@
       "request": "launch",
       "program": "${workspaceFolder}/sensitivity_steady_state_figure_plot.py",
       "args": [
-        "--sh","nsh",
+        "--sh","sh",
         "--name_suite","steady_s_sensitivity",
         "--steady_state","1",
-        "--csv","cases_Sensitivity_steady_s_sensitivity.csv",      ],
+        "--csv","cases_Sensitivity_steady_s_sensitivity.csv",    
+        "--function_plot","basic"  ],
       "console": "integratedTerminal"
     },
     {

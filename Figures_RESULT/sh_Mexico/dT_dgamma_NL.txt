@@ -1,0 +1,3 @@
+Delta depth: -9.11, Delta gamma: 329.50, dT/dgamma: -0.0276
+Delta depth: -8.60, Delta gamma: 329.50, dT/dgamma: -0.0261
+Delta depth: -1.15, Delta gamma: 329.50, dT/dgamma: -0.0035

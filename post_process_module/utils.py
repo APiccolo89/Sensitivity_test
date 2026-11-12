@@ -221,7 +221,7 @@ def create_case_dictionary() -> dict:
         "k3nsh": make_case(3.1, False),
         "k5nsh": make_case(5.0, False),
         "nlnsh": make_case(-1.0, False),
-        "nlcnsh": make_case(-2.0, False),
+        "nlpnsh": make_case(-3.0, False),
         "k3sh": make_case(3.1, True),
         "k5sh": make_case(5.0, True),
         "nlsh": make_case(-1.0, True),
@@ -299,6 +299,9 @@ def parse_the_argument(args: argparse.Namespace, pathtotable: str) -> dict:
     cases = pd.read_csv(pathtotable)
     cases_columns = cases.columns
     args_test = {}
+    print('---')
+    {print(m) for m in cases_columns}
+    print('---')
     args_test = {m: None for m in cases_columns}
 
     row = cases.iloc[case_index]

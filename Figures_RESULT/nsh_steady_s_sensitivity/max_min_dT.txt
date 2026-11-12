@@ -1,0 +1,4 @@
+Panel 0: min=-88.18, max=76.40
+Panel 1: min=-100.08, max=111.80
+Panel 2: min=-14.67, max=29.45
+Panel 3: min=-8.83, max=78.56

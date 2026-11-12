@@ -6,8 +6,9 @@
     ns_depth: 50.0
     lab_d: 100.0
     decoupling: 80.0
-    transition: 5.0
-    resolution_refine: 1.5
+    transition: 2.5
+    resolution_normal: 8.0
+    resolution_refine: 0.5
   #Place holders 
   
   Japan:
@@ -15,11 +16,11 @@
     cr: 40.0 # Overriding Crust {if lc==0.0 -> only overriding upper crust}
     ocr: 7.0 # Oceanic crust
     lc: 0.6
-    resolution_normal: 3.0
-    resolution_refine: 1.5 
+    resolution_normal: 8.0
+    resolution_refine: 0.5 
     ns_depth: 50.0
     lab_d: 100.0
-    transition: 5.0
+    transition: 2.5
     decoupling: 80.0
 
   Chile:

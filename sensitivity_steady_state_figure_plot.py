@@ -8,12 +8,17 @@ from post_process_module.figure_plot import (
     box_plot_thermal_model_max_depth,
     data_base_PT_whitney,
     figure_slab_surface,
+    plot_heat_flux_relative_error,
     plot_slab_variances,
+    figure_seismic_length_difference,
     plot_slab_versus_thermalpar,
     print_save_IQ_information,
 )
 from post_process_module.post_process_data import timing_function
 from post_process_module.process_data_visualisation import wrapper_merging_h5
+
+aux_path_final = Path(__file__).resolve().parent / 'final_h5_files'
+aux_path = Path(__file__).resolve().parent
 
 
 # ---
@@ -95,39 +100,6 @@ def check_parsed_arguments(args) -> None:
         s0 = "Wrong steady state flag"
         raise ErrorParsing(s0, 1)
 
-    aux_path = Path(__file__).resolve().parent
-    folder = []
-    sub_group = ("k3", "k5", "nl")
-    for i in sub_group:
-        aux_path_data_base = (
-            aux_path
-            / "Output_h5_files"
-            / f"{args.name_suite}_h5_files_{i}{args.sh}_{args.steady_state}"
-        )
-        aux_path_post_process = (
-            aux_path / f"{args.name_suite}_h5_files_{i}{args.sh}_{args.steady_state}.h5"
-        )
-        if aux_path_post_process.is_file():
-            folder.extend([True])
-            print("The merged file exist, so the check is not necessary")
-        else:
-            folder.extend([aux_path_data_base.is_dir()])
-
-    s0 = None
-    # Check whether or not all the folder are not existing
-    if all(not value for value in folder):
-        s0 = f"error_0: name suite error. All the groups for {args.sh} are missing. Check the spelling or run the suite\n"
-        raise ErrorParsing(s0, 2)
-        # Check if any folder is false
-    elif not all(folder):
-        indices = [index for index, value in enumerate(folder) if not value]
-        values = [f"{sub_group[i]}{args.sh}" for i in indices]
-        suite_wrong = ""
-        for i in values:
-            suite_wrong = suite_wrong + " " + i
-        s0 = f"error_1: not all the group has been executed. missing suites: {suite_wrong!r}/n"
-        raise ErrorParsing(s0, 3)
-
     csv_path = aux_path / "generation_cases" / args.csv
     if not csv_path.is_file():
         s0 = f"The csv file listed is not existing. Actual value {args.csv!r}"
@@ -174,7 +146,7 @@ def create_data_structure(aux_path: str, args):
         csv=args.csv,
         )    
         no_pressure = True
-
+        data_table_3['k'] = -1.0
     except Exception as e:
         print(f"Error in merging nl{args.sh} and nlp{args.sh}: {e}")
         print("Proceeding with available data.")
@@ -215,26 +187,32 @@ def plot_sensitivity_study_steady_state(args) -> None:
     """
     check_parsed_arguments(args)
 
-    aux_path = Path(__file__).resolve().parent
 
     aux_path_data_base = aux_path / "Output_h5_files"
 
     # Create the main data structure to produce the figure of the paper.
 
-    if args.steady_state == 1:
-        args.steady_state = "SS"
-    elif args.steady_state == 0:
-        args.steady_state = "TD"
 
     data_table, slab_2D, surface_data_0 = create_data_structure(
         aux_path=aux_path_data_base, args=args
     )
     # Generate path
-    path2save = aux_path / f"Result_shear_heating_{args.sh}_{args.name_suite}_exp"
+    path2save = aux_path/ 'Figures_RESULT' / f"{args.sh}_{args.name_suite}"
     # Create folder
-    path2save.mkdir(exist_ok=True)
+    path2save.mkdir(exist_ok=True,parents=True)
+    
+    plot_heat_flux_relative_error(
+    pdb=data_table,
+    crd=surface_data_0,
+    path2save=str(path2save),
+    figure_number="e",)    
+    plot_slab_versus_thermalpar(path2save=path2save, pdb=data_table, figure_number="c")
+    
     # Plot mean difference
     plot_slab_variances(slab_2D, path2save=path2save, number_figure="a")
+
+    figure_seismic_length_difference(path2save=path2save,pdb=data_table,figure_number='d')
+
     # Create the database
     # Plot the 1D (P-T) of the slab surface
     figure_slab_surface(
@@ -248,7 +226,6 @@ def plot_sensitivity_study_steady_state(args) -> None:
 
     print(f"Saving picture into {path2save}...")
     # Plot the main
-    plot_slab_versus_thermalpar(path2save=path2save, pdb=data_table, figure_number="c")
 
 
 # ---
@@ -261,15 +238,15 @@ def plot_real_case_study_steady_state(args):
 
     check_parsed_arguments(args)
 
-    aux_path = Path(__file__).resolve().parent
 
     aux_path_data_base = aux_path / "Output_h5_files"
 
     # Create the main data structure to produce the figure of the paper.
-    path2save = aux_path / f"Result_shear_heating_{args.sh}_{args.name_suite}"
+    path2save = aux_path/ 'Figures_RESULT' / f"{args.sh}_{args.name_suite}"
 
     data_table, _, _ = create_data_structure(aux_path=aux_path_data_base, args=args)
-    print_save_IQ_information(data_table, path2save, "d_seismic_ell")
+    print_save_IQ_information(data_table, path2save, "d_seismic_ell_total")
+    print_save_IQ_information(data_table, path2save, "d_seismic_ell_locked")
     print_save_IQ_information(data_table, path2save, "max_dpth150")
     print_save_IQ_information(data_table, path2save, "max_dpth450")
     print_save_IQ_information(data_table, path2save, "max_dpth600")
